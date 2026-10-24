@@ -1,0 +1,13 @@
+{
+  "name": "english-quest-personal",
+  "version": "4.0.0",
+  "private": true,
+  "description": "English Quest music rewards with Google sign-in and Supabase-backed progress sync",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
