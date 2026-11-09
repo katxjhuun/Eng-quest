@@ -44,7 +44,13 @@ function similarity(a, b) {
 
 // ---- XP uçma animasyonu (cevap kutusundan XP barına) ----
 export function flyXp(fromEl, delta, { target = '#xpNumber', onLand } = {}) {
-  return new Promise(resolve => {
+  return new Promise(res => {
+    // Uygulama arka plana alınırsa animasyon olayları gelmeyebilir: en geç 3 sn sonra bar güncellenir ve akış sürer.
+    let landed = false, finished = false;
+    const userLand = onLand;
+    onLand = () => { if (!landed) { landed = true; userLand?.(); } };
+    const resolve = () => { if (!finished) { finished = true; onLand(); res(); } };
+    setTimeout(resolve, 3000);
     const tgt = document.querySelector(target);
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (!fromEl || !tgt || !delta || reduce) { onLand?.(); setTimeout(resolve, reduce ? 150 : 0); return; }
