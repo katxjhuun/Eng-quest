@@ -1,13 +1,37 @@
 {
-  "name": "english-quest-personal",
-  "version": "4.0.0",
+  "name": "english-quest-app",
+  "version": "2.0.0",
+  "minNativeVersion": "2.0.0",
+  "nativeVersion": "2.0.0",
   "private": true,
-  "description": "English Quest music rewards with Google sign-in and Supabase-backed progress sync",
-  "type": "commonjs",
+  "description": "English Quest — İngilizce quiz mobil uygulaması (Android + iPhone), cihazda kayıt ve uzaktan güncelleme",
   "scripts": {
-    "start": "node server.js"
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/build.mjs && node scripts/serve.mjs",
+    "sync": "node scripts/build.mjs && npx cap sync",
+    "android": "node scripts/build.mjs && npx cap sync android && npx cap open android",
+    "ios": "node scripts/build.mjs && npx cap sync ios && npx cap open ios",
+    "bundle": "node scripts/build.mjs && node scripts/make-update-bundle.mjs",
+    "icons": "npx @capacitor/assets generate --iconBackgroundColor '#2f6152' --iconBackgroundColorDark '#2f6152' --splashBackgroundColor '#f4f0e8' --splashBackgroundColorDark '#1f1c22'",
+    "version:bump": "npm version patch --no-git-tag-version"
+  },
+  "dependencies": {
+    "@capacitor-community/text-to-speech": "8.0.2",
+    "@capacitor/android": "8.6.0",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/filesystem": "8.1.5",
+    "@capacitor/ios": "8.6.0",
+    "@capacitor/preferences": "8.0.1",
+    "@capacitor/share": "8.0.3",
+    "@capgo/capacitor-updater": "8.54.2"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "4.0.0",
+    "@capacitor/cli": "8.6.0",
+    "esbuild": "0.28.2"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   }
 }

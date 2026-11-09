@@ -1,0 +1,26 @@
+{
+  "appId": "com.katxjhuun.englishquest",
+  "appName": "English Quest",
+  "webDir": "www",
+  "backgroundColor": "#f4f0e8",
+  "android": {
+    "allowMixedContent": false
+  },
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#f4f0e8"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": false
+    },
+    "CapacitorUpdater": {
+      "autoUpdate": false,
+      "statsUrl": "",
+      "appReadyTimeout": 10000,
+      "resetWhenUpdate": true,
+      "autoDeleteFailed": true,
+      "autoDeletePrevious": true
+    }
+  }
+}
