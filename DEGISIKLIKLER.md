@@ -1,13 +1,22 @@
+# dam-la 2.2.1 — Renkli petler ve yeni evrim hatları
+
+Uzaktan güncellemeyle gelir.
+- Petler artık siyah değil, kendi doğal renklerinde (yine sade, çizgisiz, yumuşak gölgeli). Yıldızlı/kozmik son formlar kaldırıldı.
+- 🌱 Bitki: Tohumcuk › Filizcik › **Papatya** › **Lale** › **Kaktüs** › **Ulu Ağaç** (çiçekli)
+- 🐣 Civciv: Yumurtacık › Pıtırcık › Tombiş › Kanatçık › **Tavus Yavrusu** › **Tavus Kuşu**
+- 🐱 Kedi: Minnoş › Tekir › **Vaşak** › **Puma** › **Leopar** › **Kara Panter**
+- 🐶 Köpek: Tosbik › Hav › **Çoban** › **Genç Kurt** › **Kurt** › **Alfa Kurt**
+- Mevcut petler bulundukları aşamayı korur; yalnızca görünümleri yenilenir.
+
+---
+
 # dam-la 2.2.0 — Petler ve “dam-la Kedi” teması
 
 Petler ve tema uzaktan güncellemeyle gelir. **Yalnızca “acıktım” bildirimleri** için yeni APK/IPA kurulmalı (bildirim eklentisi yerel koddur).
 
 ## Petler
 - **4 tür, her biri 6 evrim formu** (hepsi özgün çizim, kedi-köpek örneklerindeki sade siluet tarzında, çizgisiz, yumuşak gölgeli):
-  - 🌱 **Bitki:** Tohumcuk › Filizcik › Fidancık › Tomurcuk › Çiçek Perisi › Kadim Ağaç
-  - 🐣 **Civciv:** Yumurtacık › Pıtırcık › Tombiş › Kanatçık › Alevkuş › Anka
-  - 🐈‍⬛ **Kedi:** Minnoş › Mırnav › Pati Ustası › Pars › Aslan › Gök Aslanı
-  - 🐕 **Köpek:** Tosbik › Hav › İzci › Kurtçuk › Ay Kurdu › Yıldız Kurdu
+  - (2.2.1’de renklendirildi ve evrim hatları yenilendi; güncel liste yukarıda.)
 - **Seçim:** İlk açılışta, kalibrasyondan hemen sonra pet seçilir ve adı verilir. Mevcut kullanıcılara da bir kez sorulur.
 - **Yuva:** Seviye çubuğu ile soru tipi düğmesinin arasında. Petin yuvası (saksı, yuva, minder, kulübe), adı, formu ve üç çubuk burada görünür:
   - **❤️ Can:** Yanlış cevaplar azaltır.
