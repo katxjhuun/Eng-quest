@@ -10,6 +10,9 @@ import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { AppIcon } from '@capacitor-community/app-icon';
 import { kokoroSpeak, stopKokoro } from './kokoro.js';
 import { UPDATE_MANIFEST_URL, APP_VERSION, BUILD_TIME, UPDATE_CHECK_INTERVAL_MS } from './config.js';
+// update.json ile aynı deponun sürüm dosyaları: https://github.com/<kullanıcı>/<depo>/releases/download/
+const UPDATE_ASSET_PREFIX = UPDATE_MANIFEST_URL.replace(/\/releases\/latest\/download\/.*$/, '/releases/download/').toLowerCase();
+const trustedAsset = url => { try { const u = new URL(String(url)); return u.protocol === 'https:' && !u.username && !u.password && u.href.toLowerCase().startsWith(UPDATE_ASSET_PREFIX); } catch { return false; } };
 
 const isNative = Capacitor.isNativePlatform();
 const platformName = Capacitor.getPlatform(); // 'android' | 'ios' | 'web'
@@ -228,7 +231,10 @@ const updates = {
       return { state: 'error', message: `Güncelleme sunucusuna ulaşılamadı (${e.message || e}). İnternet bağlantını kontrol et.` };
     }
     if (!manifest || !manifest.version || !manifest.url) return { state: 'error', message: 'Güncelleme bilgisi okunamadı (update.json eksik veya bozuk).' };
-    if (!/^https:\/\//i.test(manifest.url)) return { state: 'error', message: 'Güncelleme adresi güvenli (https) değil; indirilmedi.' };
+    // Paket yalnızca bu deponun GitHub sürümlerinden ve SHA-256 özetiyle kabul edilir.
+    if (!trustedAsset(manifest.url)) return { state: 'error', message: 'Güncelleme adresi beklenen GitHub sürüm adresi değil; güvenlik için indirilmedi.' };
+    if (!/^[0-9a-f]{64}$/i.test(String(manifest.checksum || ''))) return { state: 'error', message: 'Güncelleme paketinin SHA-256 özeti eksik; güvenlik için indirilmedi.' };
+    if (!/^\d+\.\d+\.\d+$/.test(String(manifest.version))) return { state: 'error', message: 'Güncelleme sürüm numarası geçersiz.' };
     if (compareVersions(manifest.version, APP_VERSION) <= 0) return { state: 'latest', manifest, message: `En güncel sürümü kullanıyorsun (${APP_VERSION}).` };
     const native = await getNativeInfo();
     if (manifest.minNativeVersion && compareVersions(native.version, manifest.minNativeVersion) < 0) {
@@ -247,7 +253,8 @@ const updates = {
     try {
       if (onProgress) handle = await CapacitorUpdater.addListener('download', ev => onProgress(Number(ev?.percent) || 0));
       const options = { url: manifest.url, version: manifest.version };
-      if (manifest.checksum) options.checksum = String(manifest.checksum).toLowerCase();
+      if (!trustedAsset(manifest.url) || !/^[0-9a-f]{64}$/i.test(String(manifest.checksum || ''))) throw new Error('Güvenli olmayan güncelleme paketi reddedildi.');
+      options.checksum = String(manifest.checksum).toLowerCase();
       return await CapacitorUpdater.download(options);
     } finally { try { await handle?.remove(); } catch {} }
   },

@@ -1,0 +1,62 @@
+// database.rules.json üretici. Kurallar elle yazılınca tekrar eden yönetici koşulu hataya açık olduğu için buradan üretilir.
+// Yönetici: Firebase'de admins/<uid> = true kaydı olan Google hesabı. E-posta herkese açık depoya yazılmaz.
+import { writeFile } from 'node:fs/promises';
+const ADMIN = "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && root.child('admins').child(auth.uid).val() == true";
+const OWN = 'auth != null && auth.uid == $uid';
+const str = (max, re) => ({ '.validate': `newData.isString() && newData.val().length <= ${max}${re ? ` && newData.val().matches(${re})` : ''}` });
+const num = (max = 10000000) => ({ '.validate': `newData.isNumber() && newData.val() >= 0 && newData.val() <= ${max}` });
+const ts = () => ({ '.validate': 'newData.isNumber() && newData.val() <= now + 300000' });
+const bool = () => ({ '.validate': 'newData.isBoolean()' });
+const NO = { '.validate': false };
+const msgFields = {
+  type: str(10, '/^(message|xp|level|reward)$/'), amount: { '.validate': 'newData.isNumber() && newData.val() >= -100000 && newData.val() <= 100000' },
+  cat: str(6, '/^[a-z]{2,6}$/'), catLevel: num(100), level: str(2, '/^(A1|A2|B1|B2|C1|C2)$/'),
+  title: str(80), text: str(600), emoji: str(16), music: bool(), at: ts(), by: str(120), broadcast: bool(), $other: NO,
+};
+const rules = {
+  rules: {
+    '.read': false, '.write': false,
+    users: {
+      '.read': ADMIN,
+      $uid: {
+        '.read': OWN,
+        // Yönetici kaydı silebilir; kullanıcı kendi kaydının tamamını silebilir (verimi sil).
+        '.write': `(${ADMIN}) || (${OWN} && !newData.exists())`,
+        profile: {
+          '.write': OWN,
+          shortId: str(8, '/^DL-[A-Z0-9]{5}$/'), platform: str(10, '/^(android|ios|web)$/'),
+          appVersion: str(30, '/^[0-9A-Za-z.+-]+$/'), lastOpen: ts(), $other: NO,
+        },
+        stats: {
+          '.write': OWN,
+          shortId: str(8, '/^DL-[A-Z0-9]{5}$/'),
+          xp: num(), total: num(), levelIndex: num(5), correct: num(), wrong: num(), streak: num(), opened: num(), failed: num(), badges: num(1000),
+          level: str(2, '/^(A1|A2|B1|B2|C1|C2)$/'), levelLabel: str(20), mode: str(6, '/^(type|quiz|listen|mix)$/'),
+          cat: str(6, '/^[a-z]{2,6}$/'), dept: str(20, '/^[a-z]{2,20}$/'), theme: str(20, '/^[a-z]{2,20}$/'),
+          catXp: { $c: { '.validate': "$c.matches(/^[a-z]{2,6}$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000" } },
+          updatedAt: ts(), $other: NO,
+        },
+        live: {
+          '.write': OWN,
+          cat: str(6, '/^[a-z]{2,6}$/'), catLabel: str(40), mode: str(20), question: str(1000), answer: str(300), state: str(40),
+          options: { $i: { '.validate': "$i.matches(/^[0-9]$/) && newData.isString() && newData.val().length <= 300" } },
+          at: ts(), $other: NO,
+        },
+        status: { '.write': OWN, state: str(7, '/^(online|offline)$/'), last: ts(), $other: NO },
+        inbox: { $msg: { '.write': `${OWN} && !newData.exists()`, ...msgFields } },
+        $other: NO,
+      },
+    },
+    history: {
+      '.read': ADMIN,
+      $uid: {
+        '.write': `(${ADMIN}) || (${OWN} && !newData.exists())`,
+        $msg: { '.write': `${OWN} && !data.exists()`, ...msgFields, seenAt: ts() },
+      },
+    },
+    admin: { '.read': ADMIN, '.write': ADMIN, labels: { $uid: str(60) } },
+    admins: { $uid: { '.read': 'auth != null && auth.uid == $uid', '.write': false } },
+  },
+};
+await writeFile(new URL('../database.rules.json', import.meta.url), JSON.stringify(rules, null, 2) + '\n');
+console.log('✓ database.rules.json');

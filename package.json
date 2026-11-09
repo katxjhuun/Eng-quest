@@ -1,6 +1,6 @@
 {
   "name": "dam-la",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "minNativeVersion": "2.1.0",
   "nativeVersion": "2.1.0",
   "private": true,
@@ -16,7 +16,9 @@
     "icons": "npx @capacitor/assets generate --iconBackgroundColor '#2f6152' --iconBackgroundColorDark '#2f6152' --splashBackgroundColor '#f4f0e8' --splashBackgroundColorDark '#1f1c22'",
     "version:bump": "npm version patch --no-git-tag-version",
     "build:admin": "node scripts/build-admin.mjs",
-    "build:site": "node scripts/build.mjs && node scripts/build-admin.mjs && node scripts/assemble-site.mjs"
+    "build:site": "node scripts/build.mjs && node scripts/build-admin.mjs && node scripts/assemble-site.mjs",
+    "rules": "node scripts/make-rules.mjs",
+    "test:rules": "node scripts/make-rules.mjs && node tests/rules.test.cjs"
   },
   "dependencies": {
     "@capacitor-community/app-icon": "^7.0.0",
@@ -35,9 +37,14 @@
   "devDependencies": {
     "@capacitor/assets": "4.0.0",
     "@capacitor/cli": "8.6.0",
-    "esbuild": "0.28.2"
+    "esbuild": "0.28.2",
+    "targaryen": "^3.1.0"
   },
   "engines": {
     "node": ">=22"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.13.6",
+    "sharp": "^0.35.4"
   }
 }

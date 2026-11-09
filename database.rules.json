@@ -3,48 +3,248 @@
     ".read": false,
     ".write": false,
     "users": {
-      ".read": "auth != null && ((auth.token.email_verified == true && (auth.token.email == '[yönetici e-postası]' || auth.token.email == '[yönetici e-postası]')) || root.child('admins').child(auth.uid).val() == true)",
+      ".read": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && root.child('admins').child(auth.uid).val() == true",
       "$uid": {
         ".read": "auth != null && auth.uid == $uid",
-        ".write": "auth != null && ((auth.token.email_verified == true && (auth.token.email == '[yönetici e-postası]' || auth.token.email == '[yönetici e-postası]')) || root.child('admins').child(auth.uid).val() == true)",
+        ".write": "(auth != null && auth.token.firebase.sign_in_provider == 'google.com' && root.child('admins').child(auth.uid).val() == true) || (auth != null && auth.uid == $uid && !newData.exists())",
         "profile": {
           ".write": "auth != null && auth.uid == $uid",
-          "shortId": { ".validate": "newData.isString() && newData.val().matches(/^DL-[A-Z0-9]{5}$/)" },
-          "platform": { ".validate": "newData.isString() && newData.val().length <= 20" },
-          "appVersion": { ".validate": "newData.isString() && newData.val().length <= 30" },
-          "lastOpen": { ".validate": "newData.isNumber()" },
-          "$other": { ".validate": false }
+          "shortId": {
+            ".validate": "newData.isString() && newData.val().length <= 8 && newData.val().matches(/^DL-[A-Z0-9]{5}$/)"
+          },
+          "platform": {
+            ".validate": "newData.isString() && newData.val().length <= 10 && newData.val().matches(/^(android|ios|web)$/)"
+          },
+          "appVersion": {
+            ".validate": "newData.isString() && newData.val().length <= 30 && newData.val().matches(/^[0-9A-Za-z.+-]+$/)"
+          },
+          "lastOpen": {
+            ".validate": "newData.isNumber() && newData.val() <= now + 300000"
+          },
+          "$other": {
+            ".validate": false
+          }
         },
-        "stats": { ".write": "auth != null && auth.uid == $uid" },
+        "stats": {
+          ".write": "auth != null && auth.uid == $uid",
+          "shortId": {
+            ".validate": "newData.isString() && newData.val().length <= 8 && newData.val().matches(/^DL-[A-Z0-9]{5}$/)"
+          },
+          "xp": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+          },
+          "total": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+          },
+          "levelIndex": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5"
+          },
+          "correct": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+          },
+          "wrong": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+          },
+          "streak": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+          },
+          "opened": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+          },
+          "failed": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+          },
+          "badges": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+          },
+          "level": {
+            ".validate": "newData.isString() && newData.val().length <= 2 && newData.val().matches(/^(A1|A2|B1|B2|C1|C2)$/)"
+          },
+          "levelLabel": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "mode": {
+            ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^(type|quiz|listen|mix)$/)"
+          },
+          "cat": {
+            ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^[a-z]{2,6}$/)"
+          },
+          "dept": {
+            ".validate": "newData.isString() && newData.val().length <= 20 && newData.val().matches(/^[a-z]{2,20}$/)"
+          },
+          "theme": {
+            ".validate": "newData.isString() && newData.val().length <= 20 && newData.val().matches(/^[a-z]{2,20}$/)"
+          },
+          "catXp": {
+            "$c": {
+              ".validate": "$c.matches(/^[a-z]{2,6}$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+            }
+          },
+          "updatedAt": {
+            ".validate": "newData.isNumber() && newData.val() <= now + 300000"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
         "live": {
           ".write": "auth != null && auth.uid == $uid",
-          "question": { ".validate": "newData.isString() && newData.val().length <= 1000" },
-          "answer": { ".validate": "newData.isString() && newData.val().length <= 300" }
+          "cat": {
+            ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^[a-z]{2,6}$/)"
+          },
+          "catLabel": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "mode": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "question": {
+            ".validate": "newData.isString() && newData.val().length <= 1000"
+          },
+          "answer": {
+            ".validate": "newData.isString() && newData.val().length <= 300"
+          },
+          "state": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "options": {
+            "$i": {
+              ".validate": "$i.matches(/^[0-9]$/) && newData.isString() && newData.val().length <= 300"
+            }
+          },
+          "at": {
+            ".validate": "newData.isNumber() && newData.val() <= now + 300000"
+          },
+          "$other": {
+            ".validate": false
+          }
         },
         "status": {
           ".write": "auth != null && auth.uid == $uid",
-          "state": { ".validate": "newData.val() == 'online' || newData.val() == 'offline'" }
+          "state": {
+            ".validate": "newData.isString() && newData.val().length <= 7 && newData.val().matches(/^(online|offline)$/)"
+          },
+          "last": {
+            ".validate": "newData.isNumber() && newData.val() <= now + 300000"
+          },
+          "$other": {
+            ".validate": false
+          }
         },
         "inbox": {
-          "$msg": { ".write": "auth != null && auth.uid == $uid && !newData.exists()" }
+          "$msg": {
+            ".write": "auth != null && auth.uid == $uid && !newData.exists()",
+            "type": {
+              ".validate": "newData.isString() && newData.val().length <= 10 && newData.val().matches(/^(message|xp|level|reward)$/)"
+            },
+            "amount": {
+              ".validate": "newData.isNumber() && newData.val() >= -100000 && newData.val() <= 100000"
+            },
+            "cat": {
+              ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^[a-z]{2,6}$/)"
+            },
+            "catLevel": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "level": {
+              ".validate": "newData.isString() && newData.val().length <= 2 && newData.val().matches(/^(A1|A2|B1|B2|C1|C2)$/)"
+            },
+            "title": {
+              ".validate": "newData.isString() && newData.val().length <= 80"
+            },
+            "text": {
+              ".validate": "newData.isString() && newData.val().length <= 600"
+            },
+            "emoji": {
+              ".validate": "newData.isString() && newData.val().length <= 16"
+            },
+            "music": {
+              ".validate": "newData.isBoolean()"
+            },
+            "at": {
+              ".validate": "newData.isNumber() && newData.val() <= now + 300000"
+            },
+            "by": {
+              ".validate": "newData.isString() && newData.val().length <= 120"
+            },
+            "broadcast": {
+              ".validate": "newData.isBoolean()"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
         },
-        "$other": { ".validate": false }
+        "$other": {
+          ".validate": false
+        }
       }
     },
     "history": {
-      ".read": "auth != null && ((auth.token.email_verified == true && (auth.token.email == '[yönetici e-postası]' || auth.token.email == '[yönetici e-postası]')) || root.child('admins').child(auth.uid).val() == true)",
+      ".read": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && root.child('admins').child(auth.uid).val() == true",
       "$uid": {
-        ".write": "auth != null && ((auth.token.email_verified == true && (auth.token.email == '[yönetici e-postası]' || auth.token.email == '[yönetici e-postası]')) || root.child('admins').child(auth.uid).val() == true)",
-        "$msg": { ".write": "auth != null && auth.uid == $uid && !data.exists()" }
+        ".write": "(auth != null && auth.token.firebase.sign_in_provider == 'google.com' && root.child('admins').child(auth.uid).val() == true) || (auth != null && auth.uid == $uid && !newData.exists())",
+        "$msg": {
+          ".write": "auth != null && auth.uid == $uid && !data.exists()",
+          "type": {
+            ".validate": "newData.isString() && newData.val().length <= 10 && newData.val().matches(/^(message|xp|level|reward)$/)"
+          },
+          "amount": {
+            ".validate": "newData.isNumber() && newData.val() >= -100000 && newData.val() <= 100000"
+          },
+          "cat": {
+            ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^[a-z]{2,6}$/)"
+          },
+          "catLevel": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+          },
+          "level": {
+            ".validate": "newData.isString() && newData.val().length <= 2 && newData.val().matches(/^(A1|A2|B1|B2|C1|C2)$/)"
+          },
+          "title": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "text": {
+            ".validate": "newData.isString() && newData.val().length <= 600"
+          },
+          "emoji": {
+            ".validate": "newData.isString() && newData.val().length <= 16"
+          },
+          "music": {
+            ".validate": "newData.isBoolean()"
+          },
+          "at": {
+            ".validate": "newData.isNumber() && newData.val() <= now + 300000"
+          },
+          "by": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "broadcast": {
+            ".validate": "newData.isBoolean()"
+          },
+          "$other": {
+            ".validate": false
+          },
+          "seenAt": {
+            ".validate": "newData.isNumber() && newData.val() <= now + 300000"
+          }
+        }
       }
     },
     "admin": {
-      ".read": "auth != null && ((auth.token.email_verified == true && (auth.token.email == '[yönetici e-postası]' || auth.token.email == '[yönetici e-postası]')) || root.child('admins').child(auth.uid).val() == true)",
-      ".write": "auth != null && ((auth.token.email_verified == true && (auth.token.email == '[yönetici e-postası]' || auth.token.email == '[yönetici e-postası]')) || root.child('admins').child(auth.uid).val() == true)"
+      ".read": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && root.child('admins').child(auth.uid).val() == true",
+      ".write": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && root.child('admins').child(auth.uid).val() == true",
+      "labels": {
+        "$uid": {
+          ".validate": "newData.isString() && newData.val().length <= 60"
+        }
+      }
     },
     "admins": {
-      ".read": "auth != null && ((auth.token.email_verified == true && (auth.token.email == '[yönetici e-postası]' || auth.token.email == '[yönetici e-postası]')) || root.child('admins').child(auth.uid).val() == true)",
-      ".write": false
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": false
+      }
     }
   }
 }

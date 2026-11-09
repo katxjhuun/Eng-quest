@@ -97,6 +97,13 @@ export function initQuiz(core) {
     q.items = q.items || {}; q.catXp = q.catXp || {}; q.cur = q.cur || {}; q.recent = q.recent || [];
     q.correct = q.correct || 0; q.wrong = q.wrong || 0; q.streak = q.streak || 0; q.rewardCount = q.rewardCount || 0;
     if (!app.cat || !CATS.some(c => c.id === app.cat)) app.cat = 'en';
+    // İçe aktarılan yedek dosyası güvenilmez olabilir: bozuk/yabancı soru durumlarını at.
+    for (const [k, c] of Object.entries(q.cur)) {
+      const ok = c && typeof c === 'object' && (c.legacy === true || (typeof c.id === 'string' && Array.isArray(c.order) && c.order.every(n => Number.isInteger(n) && n >= 0 && n <= 9) && MODES.some(m => m.id === c.style) && Array.isArray(c.hints) && c.hints.every(Number.isInteger) && (c.typed == null || typeof c.typed === 'string')));
+      if (!ok || !CATS.some(x => x.id === k)) delete q.cur[k];
+    }
+    for (const [k, v] of Object.entries(q.catXp)) if (!SUBJECTS[k] || !Number.isFinite(v)) delete q.catXp[k];
+    for (const k of ['correct', 'wrong', 'streak', 'rewardCount']) if (!Number.isFinite(q[k])) q[k] = 0;
     const legacyStyle = { logic: 'type', example: 'type', context: 'type', audio: 'listen' };
     if (!MODES.some(m => m.id === app.profile.mode)) app.profile.mode = legacyStyle[app.profile.style] || app.calibration?.mode || 'type';
     if (!DEPARTMENTS[app.profile.dept]) app.profile.dept = ({ biomedical: 'biyomedikal', prep: 'genel', general: 'genel' })[app.profile.goal] || 'genel';
@@ -321,7 +328,7 @@ export function initQuiz(core) {
         let cls = 'quiz-opt';
         if (c.done) { if (idx === 0) cls += ' right'; else if (c.choice === idx) cls += ' wrong'; else cls += ' dim'; }
         const speakBtn = (c.style === 'listen' || item.optLang === 'en') ? `<span class="opt-say" role="button" tabindex="0" data-say="${k}" aria-label="Seçeneği dinle">🔊</span>` : '';
-        return `<button class="${cls}" data-opt="${idx}" ${c.done ? 'aria-disabled="true"' : ''}><span class="opt-key">${'ABCD'[k]}</span><span class="opt-text" lang="${item.optLang}">${esc(text)}</span>${speakBtn}</button>`;
+        return `<button class="${cls}" data-opt="${Number(idx) | 0}" ${c.done ? 'aria-disabled="true"' : ''}><span class="opt-key">${'ABCD'[k]}</span><span class="opt-text" lang="${item.optLang}">${esc(text)}</span>${speakBtn}</button>`;
       }).join('');
     } else renderTyped(item, c);
     // açıklama

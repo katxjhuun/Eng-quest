@@ -1,3 +1,26 @@
+# dam-la 2.1.1 — Güvenlik ve gizlilik
+
+Uzaktan güncellemeyle gelir (yeniden kurulum gerekmez).
+
+| Bulunan risk | Önem | Düzeltme |
+|---|---|---|
+| Yönetici paneli, kullanıcı cihazından gelen bazı sayıları kaçışlamadan gösteriyordu; kötü niyetli biri sahte bir kayıtla panelde kod çalıştırıp yönetici oturumunu ele geçirebilirdi (XSS) | Yüksek | Paneldeki her değer kaçışlanıyor/sayıya zorlanıyor; veritabanı kuralları her alanın türünü ve uzunluğunu denetliyor; panelde içerik güvenlik politikası (CSP) ve çerçeveye gömme engeli var. Sahte verilerle test edildi |
+| Yöneticinin e-postası her mesajla birlikte kullanıcının telefonuna gidiyordu | Orta | Mesajlarda yalnızca “yönetici” yazıyor |
+| Yönetici e-postaları herkese açık depodaki kural dosyasındaydı; iki commit yazar e-postasıyla gönderilmişti | Orta | Yönetici yetkisi artık e-postayla değil Firebase kimliğiyle (`admins/<uid>`) veriliyor; e-postalar depo geçmişinden temizlendi, commit'ler GitHub'ın gizli noreply adresiyle |
+| Panel ile web uygulaması aynı adreste olduğundan oturumları karışabilirdi; panel oturumu tarayıcıda kalıcıydı | Orta | Panel ayrı Firebase oturumu kullanıyor ve yalnızca açık sekmede tutuluyor |
+| Kurallar her cihazın kendi kaydına istediği alanı/boyutu yazmasına izin veriyordu | Orta | Alan listesi, tür, uzunluk ve izinli değerler denetleniyor; kullanıcı kendine XP/ödül gönderemiyor, geçmişi değiştiremiyor; 36 senaryolu kural testi (`npm run test:rules`) |
+| Uygulamada CSP yoktu | Orta | Yalnızca uygulamanın kendi betikleri çalışabiliyor, ağ istekleri bilinen servislerle sınırlı. Enjekte edilen kodun engellendiği test edildi |
+| Güncelleme paketi herhangi bir https adresinden ve özetsiz kabul edilebiliyordu | Orta | Yalnızca bu deponun GitHub sürümlerinden ve SHA-256 özeti tutarsa kabul ediliyor |
+| Müzik servislerinden gelen bağlantılar denetlenmiyordu (`javascript:` adresi olasılığı) | Düşük | Yalnızca https bağlantılar kullanılıyor |
+| İçe aktarılan yedek dosyası türleri denetlenmeden yükleniyordu | Düşük | Sayılar, metinler ve soru durumları doğrulanıyor; zararlı yedekle test edildi |
+| Bağımlılıklarda bilinen açıklar (grpc-js, sharp; uygulamaya girmiyorlardı) | Düşük | Güvenli sürümlere sabitlendi; `npm audit` (üretim): 0 açık |
+
+Ayrıca **Ayarlar › Kimliğin › Hangi bilgiler paylaşılıyor?** bölümü kullanıcıya nelerin paylaşıldığını ve nelerin asla toplanmadığını açıklıyor.
+
+Zaten iyi olanlar: ilerleme ve ses tamamen cihazda; reklam/analiz SDK'sı yok; güncelleme eklentisinin istatistik gönderimi kapalı; Android imza anahtarı depoda yok; düz HTTP ve karışık içerik kapalı.
+
+---
+
 # dam-la 2.1.0 — Yenilikler
 
 > **Bu sürüm için telefona bir kez yeni APK/IPA kurulmalı** (ad, simge ve yeni yerel eklentiler değişti). Eskisinin üzerine kur; ilerleme silinmez. 2.0 kabuğundaki telefonlar 2.1 paketini indirmez, "yeniden kurulum gerekiyor" uyarısı gösterir.

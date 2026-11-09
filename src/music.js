@@ -12,7 +12,7 @@ function readJson(key, fallback) { try { return JSON.parse(localStorage.getItem(
 function writeJson(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch {} }
 export function seenIds() { return new Set(readJson(SEEN_KEY, [])); }
 function markSeen(id) { const arr = readJson(SEEN_KEY, []).filter(x => x !== id); arr.push(id); writeJson(SEEN_KEY, arr.slice(-160)); }
-export function likedSongs() { return readJson(LIKED_KEY, []); }
+export function likedSongs() { const v = readJson(LIKED_KEY, []); return Array.isArray(v) ? v.filter(t => t && typeof t === 'object').map(t => ({ ...t, link: httpsUrl(t.link) })) : []; }
 export function toggleLike(track) {
   const list = likedSongs(); const i = list.findIndex(t => t.id === track.id);
   if (i >= 0) list.splice(i, 1); else list.unshift({ id: track.id, title: track.title, artist: track.artist, link: track.link, at: Date.now() });
@@ -61,10 +61,14 @@ async function deezerList(kind) {
   });
 }
 
+// Dış servislerden gelen bağlantılar yalnızca https ise kullanılır (javascript:/data: gibi adresler engellenir).
+export function httpsUrl(v) { try { const u = new URL(String(v)); return u.protocol === 'https:' ? u.href : ''; } catch { return ''; } }
 function safe(t, blockRe) {
   if (!t || !t.title || !t.artist) return false;
   if (blockRe && blockRe.test(`${t.title} ${t.artist} ${t.album}`)) return false;
-  if (t.previewUrl) { try { const u = new URL(t.previewUrl); if (u.protocol !== 'https:') return false; } catch { return false; } }
+  if (t.previewUrl && !httpsUrl(t.previewUrl)) return false;
+  t.link = httpsUrl(t.link); t.artwork = httpsUrl(t.artwork);
+  t.title = String(t.title).slice(0, 200); t.artist = String(t.artist).slice(0, 200);
   return true;
 }
 

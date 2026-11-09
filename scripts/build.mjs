@@ -48,6 +48,26 @@ console.log(`  ${themed.count} renk değişkeni · temalar üretildi`);
 // Önbellek kırıcı: her sürüm kendi ?v= parametresiyle yüklenir.
 let html = await readFile(path.join(root, 'src/index.html'), 'utf8');
 html = html.replace('./assets/styles.css', `./assets/styles.css?v=${version}`).replace('./assets/themes.css', `./assets/themes.css?v=${version}`).replace('./assets/app.js', `./assets/app.js?v=${version}`);
+// İçerik Güvenlik Politikası: yalnızca uygulamanın kendi betikleri (+ satır içi tema betiğinin özeti) çalışabilir;
+// ağ istekleri bilinen servislerle sınırlıdır. Böylece olası bir HTML enjeksiyonu kod çalıştıramaz ve veri dışarı sızdıramaz.
+const { createHash } = await import('node:crypto');
+const inlineHashes = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => `'sha256-${createHash('sha256').update(m[1]).digest('base64')}'`);
+const FB = 'https://*.firebaseio.com https://*.firebasedatabase.app';
+const csp = [
+  "default-src 'self'",
+  `script-src 'self' ${inlineHashes.join(' ')} ${FB}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "media-src 'self' data: blob: https:",
+  `connect-src 'self' ${FB} wss://*.firebaseio.com wss://*.firebasedatabase.app https://*.googleapis.com https://itunes.apple.com https://api.deezer.com https://github.com https://*.githubusercontent.com https://huggingface.co https://*.huggingface.co https://*.hf.co https://cdn.jsdelivr.net`,
+  "worker-src 'self' blob:",
+  "font-src 'self' data:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'none'",
+].join('; ');
+if (!html.includes('<meta charset="utf-8">')) throw new Error('index.html: <meta charset> bulunamadı (CSP eklenemedi)');
+html = html.replace('<meta charset="utf-8">', `<meta charset="utf-8">\n<meta http-equiv="Content-Security-Policy" content="${csp}">\n<meta name="referrer" content="strict-origin-when-cross-origin">`);
 await writeFile(path.join(out, 'index.html'), html);
 
 await cp(path.join(root, 'public'), out, { recursive: true });
