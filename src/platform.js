@@ -7,6 +7,8 @@ import { Share } from '@capacitor/share';
 import { App } from '@capacitor/app';
 import { TextToSpeech } from '@capacitor-community/text-to-speech';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
+import { AppIcon } from '@capacitor-community/app-icon';
+import { kokoroSpeak, stopKokoro } from './kokoro.js';
 import { UPDATE_MANIFEST_URL, APP_VERSION, BUILD_TIME, UPDATE_CHECK_INTERVAL_MS } from './config.js';
 
 const isNative = Capacitor.isNativePlatform();
@@ -50,6 +52,7 @@ const storage = {
 
 // ---------------- Seslendirme ----------------
 // Android WebView tarayıcı sesini (speechSynthesis) desteklemez; uygulamada yerel TTS kullanılır.
+// İngilizce için isteğe bağlı Kokoro AI sesleri; Türkçe metinler her zaman cihazın Türkçe sesiyle okunur.
 let nativeVoices = null;
 const tts = {
   async voices() {
@@ -67,40 +70,59 @@ const tts = {
     return isNative || ('speechSynthesis' in window && 'SpeechSynthesisUtterance' in window);
   },
   async stop() {
+    stopKokoro();
     if (isNative) { try { await TextToSpeech.stop(); } catch {} return; }
     try { window.speechSynthesis?.cancel(); } catch {}
   },
-  async speak(text, { rate = 0.85, voiceId = 'default' } = {}) {
+  async speak(text, { rate = 0.85, voiceId = 'default', lang = 'en' } = {}) {
     text = String(text || '').trim();
     if (!text) return;
+    const wantTr = /^tr/i.test(lang);
+    if (!wantTr && String(voiceId).startsWith('kokoro:')) {
+      try { await tts.stop(); return await kokoroSpeak(text, voiceId, rate); }
+      catch (e) { console.warn('[kokoro] cihaz sesine geçiliyor', e); }
+    }
     const list = await tts.voices();
-    const english = list.filter(v => /^en([_-]|$)/i.test(v.lang));
-    const chosen = list.find(v => v.id === voiceId)
-      || english.find(v => /samantha|ava|serena|enhanced|natural|premium|aria|jenny|google us/i.test(v.name))
-      || english.find(v => /en[-_]US/i.test(v.lang))
-      || english[0];
+    const langRe = wantTr ? /^tr([_-]|$)/i : /^en([_-]|$)/i;
+    const pool = list.filter(v => langRe.test(v.lang));
+    const chosen = (!wantTr && list.find(v => v.id === voiceId))
+      || (wantTr && pool.find(v => /yelda|filiz|emel|natural|enhanced|premium|google/i.test(v.name)))
+      || (!wantTr && pool.find(v => /samantha|ava|serena|enhanced|natural|premium|aria|jenny|google us/i.test(v.name)))
+      || (!wantTr && pool.find(v => /en[-_]US/i.test(v.lang)))
+      || pool[0];
+    const fallbackLang = wantTr ? 'tr-TR' : 'en-US';
     if (isNative) {
       await tts.stop();
-      // QueueStrategy.Flush = 0: önceki okumayı keser.
-      await TextToSpeech.speak({ text, lang: chosen?.lang || 'en-US', rate: Math.max(0.5, Math.min(1.2, rate)), pitch: 1, volume: 1, voice: chosen ? chosen.index : undefined, category: 'playback', queueStrategy: 0 });
+      await TextToSpeech.speak({ text, lang: chosen?.lang || fallbackLang, rate: Math.max(0.5, Math.min(1.2, rate)), pitch: 1, volume: 1, voice: chosen ? chosen.index : undefined, category: 'playback', queueStrategy: 0 });
       return;
     }
     await new Promise(resolve => {
       try {
         window.speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text);
-        u.lang = chosen?.lang || 'en-US';
+        u.lang = chosen?.lang || fallbackLang;
         u.rate = rate;
         if (chosen?.raw) u.voice = chosen.raw;
         let done = false; const finish = () => { if (!done) { done = true; resolve(); } };
         u.onend = finish; u.onerror = finish;
         window.speechSynthesis.speak(u);
-        setTimeout(finish, Math.min(20000, text.length * 220 + 3000));
+        setTimeout(finish, Math.min(25000, text.length * 220 + 3000));
       } catch { resolve(); }
     });
   },
   onVoicesChanged(cb) {
     if (!isNative && 'speechSynthesis' in window) window.speechSynthesis.addEventListener?.('voiceschanged', cb);
+  }
+};
+
+// ---------------- Uygulama simgesi (doğum günü) ----------------
+const appIcon = {
+  supported: isNative,
+  async set(birthday) {
+    if (!isNative) return false;
+    if (birthday) await AppIcon.change({ name: 'birthday', suppressNotification: true, disable: [] });
+    else await AppIcon.reset({ suppressNotification: true, disable: ['birthday'] });
+    return true;
   }
 };
 
@@ -127,7 +149,7 @@ const backup = {
     if (isNative) {
       const written = await Filesystem.writeFile({ path: filename, data: jsonText, directory: Directory.Cache, encoding: Encoding.UTF8 });
       try {
-        await Share.share({ title: 'English Quest yedeği', text: 'English Quest ilerleme yedeği', files: [written.uri], dialogTitle: 'Yedeği kaydet veya gönder' });
+        await Share.share({ title: 'dam-la yedeği', text: 'dam-la ilerleme yedeği', files: [written.uri], dialogTitle: 'Yedeği kaydet veya gönder' });
         return 'shared';
       } catch (e) {
         if (/cancel/i.test(String(e?.message || e))) return 'cancelled';
@@ -139,7 +161,7 @@ const backup = {
     const blob = new Blob([jsonText], { type: 'application/json' });
     const file = typeof File === 'function' ? new File([blob], filename, { type: 'application/json' }) : null;
     if (file && navigator.canShare?.({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: 'English Quest yedeği' }); return 'shared'; } catch (e) { if (e?.name === 'AbortError') return 'cancelled'; }
+      try { await navigator.share({ files: [file], title: 'dam-la yedeği' }); return 'shared'; } catch (e) { if (e?.name === 'AbortError') return 'cancelled'; }
     }
     const url = URL.createObjectURL(blob);
     const a = Object.assign(document.createElement('a'), { href: url, download: filename });
@@ -237,4 +259,4 @@ const updates = {
   async resetToBuiltin() { return CapacitorUpdater.reset({ toLastSuccessful: false }); }
 };
 
-export const Platform = { isNative, platformName, storage, tts, getJson, backup, lifecycle, updates, appVersion: APP_VERSION };
+export const Platform = { isNative, platformName, storage, tts, getJson, backup, lifecycle, updates, appIcon, appVersion: APP_VERSION };

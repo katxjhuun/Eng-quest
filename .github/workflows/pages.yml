@@ -1,5 +1,6 @@
 # Tarayıcı/PWA sürümü: https://<kullanıcı>.github.io/<depo>/
 # iPhone'da kurulum yapmadan kullanmak için Safari > Paylaş > Ana Ekrana Ekle.
+# Yönetici paneli: https://<kullanıcı>.github.io/<depo>/admin/ (uygulamadan bağımsız).
 # İlk kez: GitHub > Settings > Pages > Source: "GitHub Actions" seç.
 name: Web (GitHub Pages)
 
@@ -29,10 +30,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci && npm run build
+      - run: npm ci && npm run build:site
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: www
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

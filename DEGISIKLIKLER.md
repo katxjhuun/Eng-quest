@@ -1,4 +1,35 @@
-# English Quest 2.0 — İnceleme, düzeltmeler ve yenilikler
+# dam-la 2.1.0 — Yenilikler
+
+> **Bu sürüm için telefona bir kez yeni APK/IPA kurulmalı** (ad, simge ve yeni yerel eklentiler değişti). Eskisinin üzerine kur; ilerleme silinmez. 2.0 kabuğundaki telefonlar 2.1 paketini indirmez, "yeniden kurulum gerekiyor" uyarısı gösterir.
+
+## İstenenler ve durumu
+| İstek | Durum |
+|---|---|
+| Adı **dam-la**, logosu gönderilen kedi görseli | ✅ Uygulama adı, ana ekran simgesi (Android/iPhone), açılış rengi, başlık |
+| Pop quiz teması (mevcut görseli bozmadan) | ✅ Seçenekli sorular aynı kart tasarımında; eski “yazarak” akışı korunuyor |
+| Profil açmadan kimlik + yönetici takibi | ✅ Her cihaz **DL-XXXXX** kimliği alır (Ayarlar'da, kopyalanabilir). Firebase ile canlı takip |
+| 24 Kasım doğum günü teması | ✅ Logoya şapka + konfeti, pembe-altın tema, “İyi ki doğdun Damla!” şeridi, ödül penceresinde “HAPPY BIRTHDAY! 🎂”; ana ekran simgesi de şapkalı olur. 25 Kasım'da kendiliğinden normale döner (gece yarısı denetlenir) |
+| Kalibrasyon genel kullanıma uygun + tüm bölümler | ✅ 20 seçenek: Genel kullanım + 19 bölüm (Tıp, Sağlık bilimleri, Eczacılık, Diş hekimliği, Biyomedikal, Bilgisayar, Elektrik-Elektronik, Makine, İnşaat, Mimarlık, Hukuk, İşletme/İktisat, Psikoloji, Eğitim, Uluslararası ilişkiler, Temel bilimler, Tasarım, Turizm, İletişim). Her bölüm kendi ileri seviye İngilizce terimlerini, anlamını, örnek cümlesini ve kullanım notunu öğretir |
+| Kalibrasyon her açılışta sorulmasın, ayarlarda olsun | ✅ Yalnızca ilk açılışta; **Ayarlar › Kalibrasyonu yeniden yap** aynı menüyü açar |
+| AI seslerinde çeşitlilik, güncel ve kaliteli | ✅ Telefonun tüm İngilizce sesleri + **Kokoro-82M** (2025, açık kaynak, cihazda çalışan sinirsel ses) 28 Amerikan/İngiliz kadın-erkek ses. İnternetsiz çalışır, üretilen sesler önbelleğe alınır |
+| Mevcut tema adlandırılsın + 10 yeni tema | ✅ “Klasik Krem” + Gece Moru, Okyanus, Orman, Gün Batımı, Pembe Şeker, Nane Kedi, Kahve, Gece Mavisi, Yüksek Kontrast, Neon. Ayarlar'da önizlemeli seçim. Tüm temalarda yazı kontrastı otomatik denetlendi |
+| Öğrenme biçimi ana ekranda tek düğme, her dokunuşta değişsin + Karışık | ✅ Yazarak → Pop Quiz → Dinleyerek → Karışık (her soru rastgele biçimde) |
+| Pop quiz seçenekli + doğru/yanlış her durumda ayrıntılı açıklama | ✅ Açıklama, seçtiğin yanlış seçeneğin neden yanlış olduğunu, doğru cevabı, aynı anlamın A1–C2 merdivenini ve kaynağı gösterir |
+| Matematik, fizik, kimya, biyoloji, coğrafya, tarih, ilk yardım, ehliyet, bilim, moda, sanat, hayat, felsefe sekmeleri; sıra Karışık → İngilizce → … | ✅ 13 konu × 12 soru; her soru resmî/kabul görmüş kaynağa dayanır (MEB müfredatı, BIPM SI Broşürü, IUPAC, DSÖ, ERC 2021 ve Sağlık Bakanlığı İlk Yardım Yönetmeliği, 2918 sayılı Karayolları Trafik Kanunu, NASA, NOAA, Resmî Gazete, Nobel Vakfı vb.). Açık kaynaklarda doğrudan kullanılabilir, Türkçe ve doğrulanmış bir soru bankası bulunamadığı için sorular kaynaklardan derlenerek yazıldı |
+| Ödülde AI sesinin tebrik/teşekkür/cevabı okuması kaldırılsın | ✅ Ödül penceresi açıldığında hiçbir konuşma yapılmaz |
+| Popüler müzik önerisi geliştirilsin | ✅ Türkiye/Dünya listesi seçimi, sıralamaya göre ağırlıklı seçim, yakın zamanda çıkanları tekrar etmeme, 30 sn önizleme, ♡ beğen, “Başka şarkı”, Spotify/YouTube Music'te aç, beğenilenler listesi |
+| Doğru/yanlış sonrası XP'nin uçarak bara girmesi, sonra ödül penceresi | ✅ Artı yeşil / eksi kırmızı XP cevap kutusundan bara uçar, bar sonra güncellenir; ödül penceresi animasyon bittikten sonra açılır |
+| Uygulamadan bağımsız yönetici paneli | ✅ `/admin/` — çevrimiçi/çevrimdışı, seviye, XP, o anki soru; XP/seviye artır-azalt, ödül, özel mesaj, toplu gönderim (KURULUM.md › 7) |
+
+## Ayrıca
+- Seçenekli İngilizce sorularda yanlış seçenekler artık aynı anlamın başka seviyelerinden gelir; soru gerçekten seviye farkını öğretir.
+- Konu sekmelerinin her biri kendi seviyesini (40 XP'de bir) ve tekrar planını tutar; yanlış bilinen soru birkaç dakika sonra yeniden sorulur.
+- Yönetici bir şey gönderdiğinde uygulamada bildirim şeridi çıkar; geçmiş mesajlar Ayarlar › Gelen kutusu'nda.
+- Yedek dosyası adı `dam-la-yedek-…`; 2.0 yedekleri içe aktarılabilir.
+
+---
+
+# 2.0.0 — İnceleme, düzeltmeler ve yenilikler
 
 Kaynak: GitHub `katxjhuun/Eng-quest` `main` (commit `977ba17`) + dışa aktarma paketindeki devir notu.
 

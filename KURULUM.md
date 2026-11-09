@@ -1,6 +1,7 @@
-# English Quest 2.0 — Kurulum rehberi (App Store / Play Store olmadan)
+# dam-la 2.1 — Kurulum rehberi (App Store / Play Store olmadan)
 
-Bu sürümde uygulama **telefonun içinde** çalışır. Sunucu, Render, Supabase, Google girişi veya açık bir bilgisayar gerekmez. İlerleme (XP, sorular, tekrar planı, ayarlar) telefonda kalıcı olarak kaydedilir. Yeni sürümler uygulamayı yeniden kurmadan internetten iner.
+Uygulama **telefonun içinde** çalışır. Sunucu veya açık bir bilgisayar gerekmez; ilerleme (XP, sorular, tekrar planı, ayarlar) telefonda kalıcı olarak kaydedilir. Yeni sürümler uygulamayı yeniden kurmadan internetten iner.
+Kullanıcı profil açmaz: ilk açılışta cihaza **DL-XXXXX** biçiminde bir kimlik verilir (Ayarlar'da görünür). İsteğe bağlı **yönetici paneli** (bölüm 7) bu kimliklerle kullanıcıları canlı takip eder.
 
 Derleme işini **GitHub Actions** yapar: senin bilgisayarına Android Studio, Xcode ya da Mac kurman gerekmez.
 
@@ -9,7 +10,7 @@ Derleme işini **GitHub Actions** yapar: senin bilgisayarına Android Studio, Xc
 ## 0) Bir kerelik hazırlık (10–15 dk, bilgisayardan)
 
 ### 0.1 Projeyi GitHub'a koy
-1. `katxjhuun/Eng-quest` deposundaki eski dosyaları sil (veya yeni bir depo aç) ve bu ZIP'teki `english-quest-app` klasörünün **içeriğini** deponun köküne yükle. `.github` klasörü dahil olmalı.
+1. (Yapıldı) Kod `katxjhuun/Eng-quest` deposunda. Yeni bir depoya taşırsan `.github` klasörü dahil tüm içeriği köke koy.
    - GitHub sitesinden: **Add file › Upload files** ile klasörleri sürükle-bırak. (`.github` gizli klasör olduğu için Windows'ta "gizli öğeleri göster" açık olsun.)
 2. Depo **herkese açık (Public)** olmalı: telefondaki uygulama güncellemeleri buradan herkese açık bağlantıyla indirir. Projede artık gizli anahtar yok. (Settings › General › Danger Zone › Change visibility)
 
@@ -23,8 +24,9 @@ ZIP'teki `GIZLI_android_imza/GITHUB_SECRETS.txt` dosyasını aç. GitHub'da **Se
 **Settings › Pages › Build and deployment › Source: GitHub Actions** seç. Her `main` güncellemesinde uygulama `https://katxjhuun.github.io/Eng-quest/` adresinde de yayınlanır (iPhone için en kolay yol, aşağıya bak).
 
 ### 0.4 İlk sürümü üret
-**Actions › "Release (APK + uzaktan güncelleme)" › Run workflow** düğmesine bas. 5–8 dakika sonra **Releases** sayfasında `English Quest 2.0.0` oluşur; içinde:
-- `EnglishQuest-2.0.0.apk` — Android kurulum dosyası
+**Actions › "Release (APK + uzaktan güncelleme)" › Run workflow** düğmesine bas. 5–8 dakika sonra **Releases** sayfasında `dam-la 2.1.0` oluşur; içinde:
+- `dam-la-2.1.0.apk` — Android kurulum dosyası
+- `dam-la-2.1.0-unsigned.ipa` — iPhone (Sideloadly) dosyası ("iOS IPA" iş akışı ekler)
 - `web-bundle.zip` + `update.json` — uzaktan güncelleme dosyaları (dokunma)
 
 ---
@@ -34,7 +36,7 @@ ZIP'teki `GIZLI_android_imza/GITHUB_SECRETS.txt` dosyasını aç. GitHub'da **Se
 1. Telefonda Chrome ile deponun **Releases** sayfasını aç → en üstteki sürümden `.apk` dosyasına dokun ve indir.
 2. İndirme bitince aç. "Bu kaynaktan uygulama yüklemeye izin ver" sorulursa **Ayarlar › İzin ver** (Chrome için bir kez).
 3. Play Protect "tanınmayan geliştirici" uyarısı gösterirse **Ayrıntılar › Yine de yükle**.
-4. Uygulamayı aç; ilk açılışta seviye/yöntem/hedef seçimini yap.
+4. Uygulamayı aç; ilk açılışta bir kez kalibrasyon (seviye, öğrenme biçimi, bölüm) sorulur. Sonradan **Ayarlar › Kalibrasyonu yeniden yap** ile değiştirilir.
 
 **Sonraki APK'lar** (nadiren gerekir): yeni APK'yı aynı şekilde indirip kur — eskisinin **üzerine** kurulur, ilerleme silinmez.
 
@@ -57,7 +59,7 @@ ZIP'teki `GIZLI_android_imza/GITHUB_SECRETS.txt` dosyasını aç. GitHub'da **Se
    - Fark: müzik ödülünde Deezer listesi yerine Apple iTunes önizlemeleri kullanılır; diğer her şey aynı.
 
 ### B. IPA'yı ücretsiz Apple hesabıyla yükleme (Sideloadly ile, Windows'ta)
-1. GitHub'da **Actions › "iOS IPA (imzasız)" › Run workflow**. Bittiğinde çalıştırmanın sayfasındaki **Artifacts** bölümünden `EnglishQuest-iOS-ipa` dosyasını indir ve ZIP'i aç → `EnglishQuest-x.y.z-unsigned.ipa`.
+1. **Releases** sayfasındaki `dam-la-x.y.z-unsigned.ipa` dosyasını indir. (Yoksa: **Actions › "iOS IPA (imzasız)" › Run workflow**; bitince **Artifacts** bölümünden `dam-la-iOS-ipa`.)
 2. Bilgisayara **Sideloadly** (sideloadly.io) ve Apple'ın **iTunes** uygulamasının web sitesindeki sürümünü kur (Microsoft Store sürümü sorun çıkarabilir).
 3. iPhone'u kabloyla bağla, "Bu bilgisayara güven" de. Sideloadly'de IPA'yı sürükle, Apple ID'ni yaz, **Start**. (İkinci bir Apple ID kullanmak daha güvenlidir.)
 4. iPhone'da: **Ayarlar › Genel › VPN ve Aygıt Yönetimi** › Apple ID'ne dokun › **Güven**.
@@ -81,7 +83,7 @@ ZIP'teki `GIZLI_android_imza/GITHUB_SECRETS.txt` dosyasını aç. GitHub'da **Se
 
 ### Yeni bir güncelleme yayınlama (sen yaparsın)
 1. `src/` içinde değişikliği yap (ör. `src/app.js` içindeki `questions` listesine soru ekle).
-2. `package.json` içindeki `"version"` değerini artır: `2.0.0` → `2.0.1`.
+2. `package.json` içindeki `"version"` değerini artır: `2.1.0` → `2.1.1`.
 3. Değişiklikleri GitHub'a gönder (commit/push veya web'den yükle).
 4. **Actions › Release › Run workflow**. Bitti — telefonlar bir sonraki açılışta indirir. PWA sürümü de kendiliğinden güncellenir.
 
@@ -94,7 +96,7 @@ Yalnızca **telefon tarafını** değiştiren durumlarda: yeni bir Capacitor ekl
 
 ## 4) İlerleme yedeği
 
-- **Ayarlar › İlerleme yedeği › Yedeği dışa aktar**: `english-quest-yedek-YYYY-AA-GG.json` oluşturur; Dosyalar'a, Drive'a ya da kendine mesajla gönder.
+- **Ayarlar › İlerleme yedeği › Yedeği dışa aktar**: `dam-la-yedek-YYYY-AA-GG.json` oluşturur; Dosyalar'a, Drive'a ya da kendine mesajla gönder.
 - **Yedeği içe aktar**: başka telefonda/yeniden kurulumda bu dosyayı seç.
 - Telefon değiştirmeden veya uygulamayı silmeden önce mutlaka yedek al (Android'de uygulamayı silmek kayıtları da siler).
 
@@ -117,3 +119,25 @@ Android Studio'n varsa: `npm run android` (projeyi açar, ▶ ile telefona kurar
 - **Ses çıkmıyor:** Android: Ayarlar › Sistem › Diller › Metin okuma çıkışı › Google'ın İngilizce sesini indir. iPhone: Ayarlar › Erişilebilirlik › Seslendirilen İçerik › Sesler › English. Sessiz anahtarını kontrol et.
 - **Güncelleme denetlenemedi:** depo Public mi? Releases'te en son sürümde `update.json` var mı? `src/config.js` içindeki adres deponla aynı mı?
 - **iPhone uygulaması açılmıyor:** 7 gün dolmuştur; Sideloadly ile yeniden yükle (uygulamayı silme).
+
+- **AI sesi (Kokoro) yavaş:** ilk kullanımda ~90 MB model iner; telefonda bir cümle birkaç saniyede üretilir. Üretilen sesler önbelleğe alınır, aynı cümle ikinci kez anında çalar. Hız önemliyse telefon sesini seç.
+- **24 Kasım'da simge değişmedi:** iPhone simgeyi hemen değiştirir (kısa bir bildirim gösterir). Android uygulama arka plana alınınca değiştirir; bazı başlatıcılar bu sırada ana ekrandaki kısayolu kaldırabilir — uygulama çekmecesinden yeniden ekle. 25 Kasım'da normal simgeye döner.
+
+---
+
+## 7) Yönetici paneli (uygulamadan bağımsız)
+
+Adres: **https://katxjhuun.github.io/Eng-quest/admin/** — telefonda da bilgisayarda da açılır, uygulamanın içinde yer almaz.
+
+Gösterdikleri: her kullanıcının çevrimiçi/çevrimdışı durumu ve son görülmesi, İngilizce seviyesi, toplam ve konu bazında XP, doğru/yanlış/seri, öğrenme biçimi, bölüm, tema; çevrimiçiyse **o anda çözdüğü soru** (seçenekler ve doğru cevapla).
+Yapabildiklerin: XP artır/azalt (konu seçerek), seviye ayarla (İngilizce A1–C2 ya da konu seviyesi), ödül gönder (simge, başlık, mesaj, XP, müzik önerili ödül penceresi), bildirim gibi görünen özel mesaj gönder, herkese toplu gönder, kullanıcıya yalnızca senin gördüğün bir isim ver. Çevrimdışı kullanıcıya gönderilenler uygulama açılınca teslim edilir; bekleyenler iptal edilebilir.
+
+### Bir kerelik Firebase kurulumu (ücretsiz Spark planı)
+1. https://console.firebase.google.com — Google hesabında **2 adımlı doğrulama açık olmalı** (Firebase artık şart koşuyor).
+2. **Proje ekle** › ad: `dam-la` › Google Analytics: kapalı.
+3. **Build › Authentication › Get started** › Sign-in method: **Anonymous** ve **Google**'ı aç. **Settings › Authorized domains**'e `katxjhuun.github.io` ekle.
+4. **Build › Realtime Database › Create database** › konum `europe-west1` › kilitli modda başlat › **Rules** sekmesine depodaki `database.rules.json` içeriğini yapıştır › Publish. Kurallardaki e-posta, panele girebilecek yönetici hesabıdır; başka yönetici eklemek için veritabanında `admins/<uid>: true` kaydı oluştur.
+5. **Project settings › General › Your apps › Web (</>)** › ad `dam-la` › çıkan `firebaseConfig` değerlerini `src/config.js` içindeki `FIREBASE_CONFIG`'e yaz (`apiKey`, `authDomain`, `databaseURL`, `projectId`, `appId`). Bu değerler gizli değildir; erişimi kurallar korur.
+6. Değişikliği `main`'e gönder ve **Release**'i çalıştır: Pages paneli yayınlar, telefonlar yeni ayarı OTA ile alır.
+
+Gizlilik: buluta yalnızca kimlik (DL-XXXXX), platform, uygulama sürümü, seviye/XP istatistikleri ve o an ekrandaki soru gider. Ad, e-posta, konum veya cihaz bilgisi toplanmaz. Firebase ayarı boşsa uygulama hiçbir şey göndermez.

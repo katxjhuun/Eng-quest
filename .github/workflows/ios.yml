@@ -43,12 +43,12 @@ jobs:
           mkdir -p Payload
           cp -R build/Build/Products/Release-iphoneos/App.app Payload/
           VERSION=$(node -p "require('./package.json').version")
-          zip -qr "EnglishQuest-$VERSION-unsigned.ipa" Payload
-          echo "IPA=EnglishQuest-$VERSION-unsigned.ipa" >> "$GITHUB_ENV"
+          zip -qr "dam-la-$VERSION-unsigned.ipa" Payload
+          echo "IPA=dam-la-$VERSION-unsigned.ipa" >> "$GITHUB_ENV"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: EnglishQuest-iOS-ipa
+          name: dam-la-iOS-ipa
           path: ${{ env.IPA }}
 
       - name: Sürüme ekle (isteğe bağlı)

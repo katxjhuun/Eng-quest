@@ -1,14 +1,14 @@
 {
-  "name": "English Quest",
-  "short_name": "English Quest",
-  "description": "İngilizceyi soru oyunu ve müzik ödülleriyle öğren",
+  "name": "dam-la",
+  "short_name": "dam-la",
+  "description": "İngilizce ve genel kültür pop quiz’i",
   "lang": "tr-TR",
   "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#f4f0e8",
+  "background_color": "#eda1bf",
   "theme_color": "#f4f0e8",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
