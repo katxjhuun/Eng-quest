@@ -74,7 +74,14 @@ $('#signIn').addEventListener('click', async () => {
   $('#loginNote').textContent = '';
   try { await signInWithPopup(auth, provider); }
   catch (e) {
-    if (['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment', 'auth/cancelled-popup-request'].includes(e.code)) return signInWithRedirect(auth, provider);
+    if (['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment'].includes(e.code)) {
+      // Yönlendirmeli giriş, panel ile giriş alanı farklı sitelerde olduğundan bazı tarayıcılarda sessizce başarısız olur;
+      // bu yüzden kendiliğinden yönlendirmek yerine kullanıcıya seçenek sunulur.
+      $('#loginNote').innerHTML = 'Tarayıcı Google giriş penceresini engelledi. Bu site için <b>açılır pencerelere izin ver</b> ve tekrar dene; ya da paneli Chrome/Safari’de aç. <button class="ghost small" id="redirectSignIn" type="button">Yönlendirmeyle dene</button>';
+      $('#redirectSignIn').onclick = () => signInWithRedirect(auth, provider);
+      return;
+    }
+    if (e.code === 'auth/cancelled-popup-request') return;
     showLoginError(e);
   }
 });
