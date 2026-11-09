@@ -131,11 +131,86 @@
             ".validate": false
           }
         },
+        "pet": {
+          ".write": "auth != null && auth.uid == $uid",
+          "species": {
+            ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^(plant|chick|cat|dog)$/)"
+          },
+          "stage": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5"
+          },
+          "stars": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999"
+          },
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 16"
+          },
+          "alive": {
+            ".validate": "newData.isBoolean()"
+          },
+          "hp": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000"
+          },
+          "hpMax": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000"
+          },
+          "food": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000"
+          },
+          "foodMax": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000"
+          },
+          "energy": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000"
+          },
+          "energyMax": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000"
+          },
+          "stuffed": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+          },
+          "flow": {
+            ".validate": "newData.isBoolean()"
+          },
+          "roam": {
+            ".validate": "newData.isBoolean()"
+          },
+          "mood": {
+            ".validate": "newData.isString() && newData.val().length <= 12 && newData.val().matches(/^[a-z]{2,12}$/)"
+          },
+          "streak": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+          },
+          "correct": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+          },
+          "answers": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+          },
+          "revives": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000"
+          },
+          "memorial": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+          },
+          "deathCat": {
+            ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^[a-z]{2,6}$/)"
+          },
+          "catchUp": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 20"
+          },
+          "updatedAt": {
+            ".validate": "newData.isNumber() && newData.val() <= now + 300000"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
         "inbox": {
           "$msg": {
             ".write": "auth != null && auth.uid == $uid && !newData.exists()",
             "type": {
-              ".validate": "newData.isString() && newData.val().length <= 10 && newData.val().matches(/^(message|xp|level|reward)$/)"
+              ".validate": "newData.isString() && newData.val().length <= 10 && newData.val().matches(/^(message|xp|level|reward|pet)$/)"
             },
             "amount": {
               ".validate": "newData.isNumber() && newData.val() >= -100000 && newData.val() <= 100000"
@@ -170,6 +245,36 @@
             "broadcast": {
               ".validate": "newData.isBoolean()"
             },
+            "action": {
+              ".validate": "newData.isString() && newData.val().length <= 12 && newData.val().matches(/^(heal|feed|energy|restore|revive|set|stage|name|species|flow|roam|say|react|reset)$/)"
+            },
+            "species": {
+              ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^(plant|chick|cat|dog)$/)"
+            },
+            "stage": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5"
+            },
+            "stars": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 999"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length <= 16"
+            },
+            "hp": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "food": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "energy": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "emote": {
+              ".validate": "newData.isString() && newData.val().length <= 8 && newData.val().matches(/^[a-z]{2,8}$/)"
+            },
+            "on": {
+              ".validate": "newData.isBoolean()"
+            },
             "$other": {
               ".validate": false
             }
@@ -187,7 +292,7 @@
         "$msg": {
           ".write": "auth != null && auth.uid == $uid && !data.exists()",
           "type": {
-            ".validate": "newData.isString() && newData.val().length <= 10 && newData.val().matches(/^(message|xp|level|reward)$/)"
+            ".validate": "newData.isString() && newData.val().length <= 10 && newData.val().matches(/^(message|xp|level|reward|pet)$/)"
           },
           "amount": {
             ".validate": "newData.isNumber() && newData.val() >= -100000 && newData.val() <= 100000"
@@ -220,6 +325,36 @@
             ".validate": "newData.isString() && newData.val().length <= 120"
           },
           "broadcast": {
+            ".validate": "newData.isBoolean()"
+          },
+          "action": {
+            ".validate": "newData.isString() && newData.val().length <= 12 && newData.val().matches(/^(heal|feed|energy|restore|revive|set|stage|name|species|flow|roam|say|react|reset)$/)"
+          },
+          "species": {
+            ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^(plant|chick|cat|dog)$/)"
+          },
+          "stage": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5"
+          },
+          "stars": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 999"
+          },
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 16"
+          },
+          "hp": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+          },
+          "food": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+          },
+          "energy": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+          },
+          "emote": {
+            ".validate": "newData.isString() && newData.val().length <= 8 && newData.val().matches(/^[a-z]{2,8}$/)"
+          },
+          "on": {
             ".validate": "newData.isBoolean()"
           },
           "$other": {

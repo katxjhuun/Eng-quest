@@ -111,7 +111,7 @@ export function initPet(core, quiz) {
     if (!app.petCatchUp || typeof app.petCatchUp !== 'object') app.petCatchUp = {};
     if (!app.petLevels || typeof app.petLevels !== 'object') app.petLevels = null;
     if (!Array.isArray(app.petMemorial)) app.petMemorial = [];
-    if (!p || typeof p !== 'object' || !PET_SPECS[p.species]) { app.pet = null; return null; }
+    if (!p || typeof p !== 'object' || !Object.prototype.hasOwnProperty.call(PET_SPECS, p.species)) { app.pet = null; return null; }
     const n = (v, d) => (Number.isFinite(+v) ? +v : d);
     p.stage = clamp(Math.floor(n(p.stage, 0)), 0, 5); p.stars = clamp(Math.floor(n(p.stars, 0)), 0, 999);
     const mx = maxes(p);
@@ -124,7 +124,7 @@ export function initPet(core, quiz) {
     if (p.death && typeof p.death !== 'object') p.death = null;
     return p;
   }
-  function save(touch = false) { core.saveLocal(touch); }
+  function save(touch = false) { core.saveLocal(touch); if (touch) core.cloudSync?.(); }
 
   function tick() {
     const p = P(); if (!p) return;
@@ -874,8 +874,136 @@ export function initPet(core, quiz) {
   setInterval(() => { if (P() && !evolving) checkLevels(); }, 5000);
   window.addEventListener('resize', () => { if (mode !== 'home') walkTo(freeSpot(), baseSpeed()); });
 
+  // ---------- yönetici paneli ----------
+  // Panele giden özet: yalnızca pet durumu (kişisel bilgi yok).
+  function snapshot() {
+    const p = P(); if (!p) return null;
+    const mx = maxes(p), r = v => Math.max(0, Math.round(Number(v) || 0));
+    const o = {
+      species: p.species, stage: p.stage, stars: r(p.stars), name: String(p.name || '').slice(0, 16), alive: !!p.alive,
+      hp: r(p.hp), hpMax: mx.hp, food: r(p.food), foodMax: mx.food, energy: r(p.energy), energyMax: mx.energy,
+      stuffed: Math.min(100, r(p.stuffed)), flow: !!p.flow, roam: !!p.roam, mood: currentMood(), streak: r(p.streak), correct: r(p.correct), answers: r(p.answers),
+      revives: r(p.revives), memorial: Math.min(100, (A().petMemorial || []).length), catchUp: Math.min(20, Object.keys(A().petCatchUp || {}).length),
+    };
+    if (!p.alive && /^[a-z]{2,6}$/.test(p.death?.cat || '')) o.deathCat = p.death.cat;
+    return o;
+  }
+  function adminRevive() {
+    const p = P(); if (!p || p.alive) return false;
+    const mx = maxes(p);
+    p.alive = true; p.hp = mx.hp; p.food = Math.max(p.food, mx.food * 0.6); p.energy = Math.max(p.energy, mx.energy * 0.6); p.death = null;
+    deathPending = false; deathEl.classList.remove('show');
+    tempMood = null; animCls = ''; sprite.className = 'pet-sprite a-idle'; drawSprite(true);
+    core.renderProgress(); quiz.renderAll();
+    if (evoQueue.length) setTimeout(runEvoQueue, 1200);
+    return true;
+  }
+  // görünür olana kadar bekleyip konuşur (ayarlar penceresi açıkken vb.)
+  function sayWhenVisible(text, em, ms = 5200, n = 0) {
+    if (!P()) return;
+    if (actorEl.classList.contains('hidden')) { if (n < 40) setTimeout(() => sayWhenVisible(text, em, ms, n + 1), 1500); return; }
+    if (em) emote(em, Math.min(ms, 3200));
+    if (text) say(text, ms);
+  }
+  const REACTS = { love: ['love', 2200, 'love', 'love'], joy: ['happy', 1100, 'joy', 'star'], dance: ['happy', 1500, 'dance', 'note'], shock: ['surprised', 1300, 'shock', 'excl'], sad: ['sad', 1800, 'sad', 'tear'], sleep: ['sleep', 2600, 'doze', 'zz'] };
+  function admin(msg = {}) {
+    const a = String(msg.action || ''), app = A();
+    const pctOf = (v, m) => clamp(Math.round(Number(v)), 0, 100) / 100 * m;
+    const has = k => msg[k] !== undefined && msg[k] !== null && Number.isFinite(Number(msg[k]));
+    if (a === 'reset') {
+      const p = P(); if (!p) return null;
+      app.petMemorial = [...(app.petMemorial || []), { name: p.name, species: p.species, stage: p.stage, stars: p.stars, at: Date.now() }].slice(-12);
+      app.pet = null; deathPending = false; deathEl.classList.remove('show'); evoQueue.length = 0;
+      save(true); renderPanel(); openChooser(true);
+      return { icon: '🐾', title: 'Yeni pet zamanı', text: `${p.name} anı köşesine uğurlandı; yeni bir pet seçebilirsin.` };
+    }
+    const p = P(); if (!p) return null;
+    const mx = maxes(p), sp = PET_SPECS[p.species];
+    let out = null;
+    switch (a) {
+      case 'heal':
+        if (!p.alive) { adminRevive(); out = { icon: '💫', title: `${p.name} canlandı`, text: 'Yöneticin petini canlandırdı; seviyen düşmedi.' }; }
+        else { p.hp = mx.hp; out = { icon: '❤️', title: `${p.name} iyileşti`, text: 'Yöneticin petinin canını doldurdu.' }; }
+        setTimeout(() => react('love', 1800, 'love', 'love'), 300); break;
+      case 'feed':
+        p.food = mx.food; out = { icon: sp.foodIcon, title: p.species === 'plant' ? `${p.name} sulandı` : `${p.name} doydu`, text: `Yöneticin ${sp.foodLabel.toLocaleLowerCase('tr')} çubuğunu doldurdu.` };
+        if (p.alive) setTimeout(() => { react('eat', 1000, 'eat', 'food'); setTimeout(() => react('happy', 1100, 'joy', 'note'), 1050); }, 300); break;
+      case 'energy':
+        p.energy = mx.energy; out = { icon: '⚡', title: `${p.name} dinç`, text: 'Yöneticin petinin enerjisini doldurdu.' };
+        if (p.alive) { awakeUntil = Date.now() + 10 * 60000; setTimeout(() => react('happy', 1100, 'joy', 'star'), 300); } break;
+      case 'restore': case 'revive': {
+        const wasDead = !p.alive; adminRevive();
+        if (a === 'restore' || wasDead) { p.hp = mx.hp; p.food = mx.food; p.energy = mx.energy; p.stuffed = 0; }
+        out = wasDead ? { icon: '💫', title: `${p.name} canlandı`, text: 'Yöneticin petini canlandırdı; seviyen düşmedi, telafi gerekmiyor.' } : { icon: '✨', title: `${p.name} tazelendi`, text: 'Yöneticin can, ' + sp.foodLabel.toLocaleLowerCase('tr') + ' ve enerjiyi doldurdu.' };
+        setTimeout(() => react('happy', 1500, 'dance', wasDead ? 'love' : 'star'), 400); break;
+      }
+      case 'set':
+        if (has('hp')) p.hp = p.alive ? Math.max(1, pctOf(msg.hp, mx.hp)) : p.hp;
+        if (has('food')) p.food = pctOf(msg.food, mx.food);
+        if (has('energy')) p.energy = pctOf(msg.energy, mx.energy);
+        out = { icon: '🛠️', title: `${p.name} ayarlandı`, text: 'Yöneticin petinin değerlerini değiştirdi.' };
+        if (p.alive) setTimeout(() => react('surprised', 1100, 'shock', 'ask'), 300); break;
+      case 'stage': {
+        const target = has('stage') ? clamp(Math.floor(Number(msg.stage)), 0, 5) : p.stage;
+        if (has('stars')) p.stars = clamp(Math.floor(Number(msg.stars)), 0, 999);
+        if (target > p.stage && p.alive) {
+          // panelden atlama: tek bir evrim gösterisi (ara formlar tek tek onaylatılmaz)
+          const from = p.stage; p.stage = target; const m2 = maxes(p);
+          p.hp = Math.min(m2.hp, p.hp + m2.hp * 0.25); p.energy = Math.min(m2.energy, p.energy + 20); p.evolvedAt = Date.now();
+          evoQueue.push({ type: 'evo', from, to: target }); setTimeout(runEvoQueue, 900);
+        }
+        else if (target !== p.stage) { p.stage = target; const m2 = maxes(p); p.hp = Math.min(p.hp, m2.hp); p.food = Math.min(p.food, m2.food); p.energy = Math.min(p.energy, m2.energy); artKey = ''; }
+        out = { icon: '🧬', title: `${p.name}: ${stageName(p.species, target)}`, text: `Yöneticin petinin formunu ayarladı${has('stars') ? ` · ${p.stars} ⭐` : ''}.` };
+        break;
+      }
+      case 'name': {
+        const n = String(msg.name || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 16);
+        if (!n) return null;
+        const old = p.name; p.name = n;
+        out = { icon: '🏷️', title: `Yeni adı: ${n}`, text: `Yöneticin ${old} adını ${n} olarak değiştirdi.` };
+        setTimeout(() => sayWhenVisible(`Artık adım ${n}! 🏷️`, 'note', 3200), 400); break;
+      }
+      case 'species': {
+        const s2 = String(msg.species || '');
+        if (!Object.prototype.hasOwnProperty.call(PET_SPECS, s2) || s2 === p.species) return null;
+        p.species = s2; const m2 = maxes(p);
+        p.hp = Math.min(p.hp, m2.hp); p.food = Math.min(p.food, m2.food); p.energy = Math.min(p.energy, m2.energy); artKey = '';
+        out = { icon: '🔄', title: `${p.name} dönüştü!`, text: `Yöneticin petini ${PET_SPECIES[s2].label.toLocaleLowerCase('tr')} yaptı (${stageName(s2, p.stage)}).` };
+        if (p.alive) setTimeout(() => react('surprised', 1300, 'shock', 'excl'), 300); break;
+      }
+      case 'flow':
+        p.flow = !!msg.on; p.flowCount = 0;
+        out = { icon: '🌊', title: `Flow ${p.flow ? 'açıldı' : 'kapandı'}`, text: p.flow ? 'Yöneticin flow modunu açtı: ödül pencereleri kapalı, enerji 10 soruda bir azalır.' : 'Yöneticin flow modunu kapattı.' };
+        if (p.alive) setTimeout(() => react(p.flow ? 'focus' : 'happy', 1300, p.flow ? 'focus' : 'joy', p.flow ? 'spark' : 'note'), 300); break;
+      case 'roam':
+        p.roam = !!msg.on; if (!p.roam) goHome();
+        out = { icon: '🐾', title: p.roam ? 'Pet dolaşabilir' : 'Pet yuvasında', text: p.roam ? 'Yöneticin petinin ekranda dolaşmasını açtı.' : 'Yöneticin petinin dolaşmasını kapattı; yuvasında kalacak.' };
+        break;
+      case 'say': {
+        const text = String(msg.text || '').slice(0, 200).trim();
+        const em = EM[msg.emote] || msg.emote === 'food' ? msg.emote : '';
+        if (!text && !em) return null;
+        if (p.alive && isSleeping()) awakeUntil = Date.now() + 60000;
+        if (p.alive && REACTS[msg.emote]) { const [m, ms, an] = REACTS[msg.emote]; setTimeout(() => react(m, ms, an), 300); }
+        sayWhenVisible(text, em || REACTS[msg.emote]?.[3] || '', Math.max(3600, Math.min(9000, text.length * 90)));
+        return { silent: true };
+      }
+      case 'react': {
+        const r = REACTS[msg.emote] || REACTS.joy;
+        if (!p.alive) return { silent: true };
+        if (isSleeping() && msg.emote !== 'sleep') awakeUntil = Date.now() + 60000;
+        const go = (n = 0) => { if (actorEl.classList.contains('hidden') && n < 40) return setTimeout(() => go(n + 1), 1500); react(r[0], r[1], r[2], r[3]); if (msg.emote === 'love') spawn('♥', 'heart', 3); };
+        setTimeout(go, 300);
+        return { silent: true };
+      }
+      default: return null;
+    }
+    save(true); renderPanel(); drawSprite(true);
+    return out;
+  }
+
   return {
-    ensure, reload, render: renderPanel, openChooser, openInfo, xpMod,
+    ensure, reload, render: renderPanel, openChooser, openInfo, xpMod, snapshot, admin,
     onPause() { const p = P(); if (p) { tick(); p.lastSeen = Date.now(); save(); schedule(); } },
     onResume() { cancelNotes(); tick(); greetIfAway(); renderPanel(); },
     debug: { die: () => { const p = P(); if (p) { p.hp = 1; } }, evolve: n => evolveBy(n || 1), phase, react, say, tick, emote, setAnim, poseNow },

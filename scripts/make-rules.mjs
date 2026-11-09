@@ -9,9 +9,14 @@ const ts = () => ({ '.validate': 'newData.isNumber() && newData.val() <= now + 3
 const bool = () => ({ '.validate': 'newData.isBoolean()' });
 const NO = { '.validate': false };
 const msgFields = {
-  type: str(10, '/^(message|xp|level|reward)$/'), amount: { '.validate': 'newData.isNumber() && newData.val() >= -100000 && newData.val() <= 100000' },
+  type: str(10, '/^(message|xp|level|reward|pet)$/'), amount: { '.validate': 'newData.isNumber() && newData.val() >= -100000 && newData.val() <= 100000' },
   cat: str(6, '/^[a-z]{2,6}$/'), catLevel: num(100), level: str(2, '/^(A1|A2|B1|B2|C1|C2)$/'),
-  title: str(80), text: str(600), emoji: str(16), music: bool(), at: ts(), by: str(120), broadcast: bool(), $other: NO,
+  title: str(80), text: str(600), emoji: str(16), music: bool(), at: ts(), by: str(120), broadcast: bool(),
+  // pet komutları (yalnızca yönetici gönderebilir; uygulama ayrıca doğrular)
+  action: str(12, '/^(heal|feed|energy|restore|revive|set|stage|name|species|flow|roam|say|react|reset)$/'),
+  species: str(6, '/^(plant|chick|cat|dog)$/'), stage: num(5), stars: num(999), name: str(16),
+  hp: num(100), food: num(100), energy: num(100), emote: str(8, '/^[a-z]{2,8}$/'), on: bool(),
+  $other: NO,
 };
 const rules = {
   rules: {
@@ -43,6 +48,14 @@ const rules = {
           at: ts(), $other: NO,
         },
         status: { '.write': OWN, state: str(7, '/^(online|offline)$/'), last: ts(), $other: NO },
+        // petin durumu (uygulama yazar, panel okur); kişisel bilgi içermez
+        pet: {
+          '.write': OWN,
+          species: str(6, '/^(plant|chick|cat|dog)$/'), stage: num(5), stars: num(9999), name: str(16), alive: bool(),
+          hp: num(10000), hpMax: num(10000), food: num(10000), foodMax: num(10000), energy: num(10000), energyMax: num(10000),
+          stuffed: num(100), flow: bool(), roam: bool(), mood: str(12, '/^[a-z]{2,12}$/'), streak: num(), correct: num(), answers: num(),
+          revives: num(10000), memorial: num(100), deathCat: str(6, '/^[a-z]{2,6}$/'), catchUp: num(20), updatedAt: ts(), $other: NO,
+        },
         inbox: { $msg: { '.write': `${OWN} && !newData.exists()`, ...msgFields } },
         $other: NO,
       },

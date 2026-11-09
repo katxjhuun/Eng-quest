@@ -9,6 +9,7 @@ import { FIREBASE_CONFIG } from '../src/config.js';
 import { SUBJECTS, SUBJECT_ORDER } from '../src/data/subjects.js';
 import { DEPARTMENTS } from '../src/data/departments.js';
 import { THEMES } from '../src/themes.js';
+import { petSVG, stageName, PET_SPECIES } from '../src/pet-art.js';
 
 // Başka bir sitenin paneli görünmez çerçeve içinde açıp tıklatmasını engelle (clickjacking).
 if (window.top !== window.self) { document.documentElement.style.display = 'none'; try { window.top.location = window.self.location.href; } catch {} }
@@ -25,7 +26,26 @@ const CAT_XP_STEP = 40;
 const CATS = [{ id: 'en', icon: '🇬🇧', label: 'İngilizce' }, ...SUBJECT_ORDER.map(id => ({ id, icon: SUBJECTS[id].icon, label: SUBJECTS[id].label }))];
 const catInfo = id => CATS.find(c => c.id === id) || (id === 'mix' ? { id, icon: '🔀', label: 'Karışık' } : { id, icon: '•', label: id || '—' });
 const MODE_LABEL = { type: 'Yazarak', quiz: 'Pop Quiz', listen: 'Dinleyerek', mix: 'Karışık' };
-const TYPE_ICON = { message: '✉️', xp: '⭐', level: '🎓', reward: '🎁' };
+const TYPE_ICON = { message: '✉️', xp: '⭐', level: '🎓', reward: '🎁', pet: '🐾' };
+// ---- pet ----
+const PET_KINDS = { plant: { label: 'Bitki', food: '💧', foodLabel: 'Su' }, chick: { label: 'Civciv', food: '🌾', foodLabel: 'Yem' }, cat: { label: 'Kedi', food: '🐟', foodLabel: 'Mama' }, dog: { label: 'Köpek', food: '🦴', foodLabel: 'Mama' } };
+const PET_MOODS = ['idle', 'happy', 'love', 'sad', 'sleep', 'groggy', 'sleepy', 'poked', 'surprised', 'hungry', 'focus', 'full', 'eat', 'dead'];
+const MOOD_TR = { idle: 'keyifli', happy: 'mutlu', love: 'sevgi dolu', sad: 'üzgün', sleep: 'uyuyor', groggy: 'mahmur', sleepy: 'uykulu', poked: 'dürtülmüş', surprised: 'şaşkın', hungry: 'aç', focus: 'odaklanmış', full: 'mayışmış', eat: 'yiyor', dead: 'öldü' };
+const PET_ACT = { heal: '❤️ Can dolduruldu', feed: '🍖 Beslendi', energy: '⚡ Enerji dolduruldu', restore: '✨ Hepsi dolduruldu', revive: '💫 Canlandırıldı', set: '🛠️ Değerler ayarlandı', stage: '🧬 Form', name: '🏷️ Ad', species: '🔄 Tür', flow: '🌊 Flow', roam: '🐾 Dolaşma', say: '💬 Konuştu', react: '🎭 Tepki', reset: '🐾 Pet sıfırlandı' };
+const REACT_TR = { love: 'sevgi', joy: 'sevinç', dance: 'dans', shock: 'irkilme', sad: 'hüzün', sleep: 'uyuklama' };
+// Cihazdan gelen pet kaydı güvenilmez: her alan doğrulanır.
+function validPet(p) {
+  if (!p || typeof p !== 'object' || typeof p.species !== 'string' || !Object.prototype.hasOwnProperty.call(PET_KINDS, p.species)) return null;
+  const n = (v, max = 100000) => Math.max(0, Math.min(max, num(v)));
+  return {
+    species: p.species, stage: n(p.stage, 5), stars: n(p.stars, 9999), name: String(p.name || 'Pet').slice(0, 16), alive: p.alive !== false,
+    hp: n(p.hp), hpMax: Math.max(1, n(p.hpMax)), food: n(p.food), foodMax: Math.max(1, n(p.foodMax)), energy: n(p.energy), energyMax: Math.max(1, n(p.energyMax)),
+    stuffed: n(p.stuffed, 100), flow: p.flow === true, roam: p.roam !== false, mood: PET_MOODS.includes(p.mood) ? p.mood : 'idle',
+    streak: n(p.streak), correct: n(p.correct), answers: n(p.answers), revives: n(p.revives), memorial: n(p.memorial, 100), catchUp: n(p.catchUp, 20),
+    deathCat: /^[a-z]{2,6}$/.test(p.deathCat || '') ? p.deathCat : '', updatedAt: n(p.updatedAt, 1e13),
+  };
+}
+const pct = (v, m) => Math.round(Math.max(0, Math.min(1, v / m)) * 100);
 const icon = t => Object.prototype.hasOwnProperty.call(TYPE_ICON, t) ? TYPE_ICON[t] : '•';
 
 let db, auth, me = null, serverOffset = 0;
@@ -127,6 +147,13 @@ function liveLine(u) {
   const st = l.state ? ` <i>(${esc(l.state)})</i>` : '';
   return `<div class="u-live">${isOnline(u) ? '<b>Şu an:</b>' : '<b>Son soru:</b>'} ${c.icon} ${esc(c.label)} · ${esc(l.mode || '')} — “${esc(String(l.question).slice(0, 140))}”${st}</div>`;
 }
+function petLine(u) {
+  const p = validPet(u.pet); if (!p) return '';
+  const k = PET_KINDS[p.species];
+  if (!p.alive) return `<div class="u-pet dead">🕊️ ${esc(p.name)} öldü · ${esc(stageName(p.species, p.stage))}</div>`;
+  const m = (ic, v, mx) => { const x = pct(v, mx); return `<span class="pm ${x < 25 ? 'low' : ''}">${ic} ${x}%</span>`; };
+  return `<div class="u-pet">🐾 <b>${esc(p.name)}</b> · ${esc(stageName(p.species, p.stage))}${p.stars ? ` · ${p.stars}⭐` : ''} ${m('❤️', p.hp, p.hpMax)} ${m(k.food, p.food, p.foodMax)} ${m('⚡', p.energy, p.energyMax)}</div>`;
+}
 function renderList() {
   const q = $('#search').value.trim().toLocaleLowerCase('tr');
   const entries = Object.entries(users).map(([uid, u]) => ({ uid, u, on: isOnline(u), seen: lastSeen(u) }));
@@ -144,7 +171,7 @@ function renderList() {
       <div class="u-top"><span class="dot ${on ? 'on' : ''}"></span><span class="u-id">${esc(shortId(u, uid))}</span><span class="u-name">${esc(labels[uid] || '')}</span>
       <span class="u-lvl">${esc(s.level || 'A1')} · ${num(s.total ?? s.xp)} XP</span></div>
       <div class="u-meta">${on ? 'Çevrimiçi' : 'Çevrimdışı · ' + ago(seen)} · ${esc(p.platform || '?')} · v${esc(p.appVersion || '?')}${s.correct != null ? ` · ✓${num(s.correct)} ✗${num(s.wrong)} 🔥${num(s.streak)}` : ''}</div>
-      ${liveLine(u)}
+      ${petLine(u)}${liveLine(u)}
     </button>`;
   }).join('');
 }
@@ -161,7 +188,7 @@ function openSheet(uid) {
     history = Object.entries(v).filter(([id, m]) => safeKey(id) && m && typeof m === 'object').map(([id, m]) => ({ ...m, id })).sort((a, b) => (b.seenAt || 0) - (a.seenAt || 0));
     renderMsgs();
   }, () => { history = []; renderMsgs(); });
-  renderSheet(); updateLevelForm();
+  renderSheet(); updateLevelForm(); fillPetForm();
 }
 function closeSheet() { selected = null; histUnsub?.(); histUnsub = null; $('#sheet').classList.remove('show'); $('#sheet').setAttribute('aria-hidden', 'true'); }
 $('#sheetClose').addEventListener('click', closeSheet);
@@ -205,11 +232,70 @@ function renderSheet() {
     const xp = num(cx[id]);
     return `<span>${SUBJECTS[id].icon} ${esc(SUBJECTS[id].label)} · <b>Sv ${Math.floor(xp / CAT_XP_STEP) + 1}</b> · ${xp} XP</span>`;
   }).join('');
+  renderPet();
   renderMsgs(); updateLevelForm();
+}
+function renderPet() {
+  const u = users[selected]; if (!u) return;
+  const p = validPet(u.pet), box = $('#dPet');
+  $('#petNone').classList.toggle('hidden', !!p);
+  if (!p) {
+    box.className = 'petcard empty';
+    box.textContent = 'Pet bilgisi yok. Kullanıcı henüz pet seçmemiş ya da uygulaması 2.2.3’ten eski (güncellenince burada görünür).';
+  } else {
+    const k = PET_KINDS[p.species];
+    const bar = (cls, ic, v, mx) => `<div class="pbar ${cls}"><span>${ic}</span><div class="t"><i style="width:${pct(v, mx)}%"></i></div><b>${v}/${mx}</b></div>`;
+    const chips = [
+      p.alive ? `<span>${esc(MOOD_TR[p.mood] || p.mood)}</span>` : `<span class="bad">🕊️ öldü${p.deathCat ? ' · ' + esc(catInfo(p.deathCat).label) : ''}</span>`,
+      p.flow ? '<span class="on">🌊 flow</span>' : '', !p.roam ? '<span>🏠 yuvada</span>' : '', p.stuffed >= 30 ? '<span>😌 tok</span>' : '',
+      p.streak ? `<span>🔥 ${p.streak} seri</span>` : '', `<span>✅ ${p.correct} doğru</span>`, p.revives ? `<span>💫 ${p.revives} canlanma</span>` : '',
+      p.catchUp ? `<span class="on">🔁 ${p.catchUp} telafi</span>` : '', p.memorial ? `<span>🕊️ ${p.memorial} anı</span>` : '',
+    ].join('');
+    box.className = 'petcard' + (p.alive ? '' : ' isdead');
+    // çizim yalnızca doğrulanmış tür/aşama/ruh hali ile üretilir
+    box.innerHTML = `<div class="pa">${petSVG(p.species, p.stage, { mood: p.alive ? p.mood : 'dead', pose: p.alive ? (p.mood === 'sleep' ? 'loaf' : 'sit') : 'flat', belly: p.stuffed / 100 })}</div>
+      <div><div class="pn">${esc(p.name)}${p.stars ? ` <small>${p.stars}⭐</small>` : ''}</div><div class="pf">${esc(stageName(p.species, p.stage))} · ${esc(k.label)} · Form ${p.stage + 1}/6</div>
+      <div class="chips">${chips}</div>
+      ${bar('hp', '❤️', p.hp, p.hpMax)}${bar(p.species === 'plant' ? 'water' : 'food', k.food, p.food, p.foodMax)}${bar('en', '⚡', p.energy, p.energyMax)}
+      <small class="upd">Güncellendi: ${ago(p.updatedAt)}</small></div>`;
+  }
+  // işlem formundaki durum yazıları
+  const f = $('#fPet'), kind = PET_KINDS[p?.species] || PET_KINDS.cat;
+  $('#paFeed').textContent = p?.species === 'plant' ? '💧 Sula' : `${kind.food} Besle`;
+  $('#pFoodLbl').textContent = `${kind.food} ${kind.foodLabel}`;
+  $('#paRevive').disabled = !!p && p.alive;
+  $('#paFlow').textContent = p?.flow ? '🌊 Flow’u kapat' : '🌊 Flow’u aç';
+  $('#paRoam').textContent = p && !p.roam ? '🐾 Dolaşmayı aç' : '🐾 Dolaşmayı kapat';
+  const sp = p?.species || f.species.value || 'cat';
+  if (f.dataset.sp !== sp || !f.stage.options.length) {
+    f.stage.innerHTML = [0, 1, 2, 3, 4, 5].map(i => `<option value="${i}">${i + 1} · ${esc(stageName(sp, i))}</option>`).join('');
+    f.dataset.sp = sp;
+  }
+  if (!f.species.options.length) f.species.innerHTML = Object.entries(PET_KINDS).map(([id, k2]) => `<option value="${id}">${esc(k2.label)}</option>`).join('');
+}
+// form alanlarını kullanıcının petiyle doldur (yalnızca kişi değişince ya da sekme açılınca)
+function fillPetForm() {
+  const u = users[selected], p = validPet(u?.pet), f = $('#fPet'); if (!f) return;
+  renderPet();
+  const set = (name, v) => { const el = f[name]; el.value = v; const o = el.parentElement.querySelector('output'); if (o) o.textContent = v + '%'; };
+  set('hp', p ? Math.max(1, pct(p.hp, p.hpMax)) : 100); set('food', p ? pct(p.food, p.foodMax) : 100); set('energy', p ? pct(p.energy, p.energyMax) : 100);
+  f.stage.value = String(p ? p.stage : 0); f.stars.value = p ? p.stars : 0;
+  f.name.value = p ? p.name : ''; f.species.value = p ? p.species : 'cat';
 }
 function msgLine(m) {
   if (m.type === 'xp') return `${num(m.amount) > 0 ? '+' : ''}${num(m.amount)} XP · ${catInfo(m.cat).label}${m.text ? ' — ' + m.text : ''}`;
   if (m.type === 'level') return `Seviye → ${m.cat && m.cat !== 'en' ? catInfo(m.cat).label + ' ' : ''}${m.level || m.catLevel}${m.text ? ' — ' + m.text : ''}`;
+  if (m.type === 'pet') {
+    const a = PET_ACT[m.action] || '🐾 Pet komutu';
+    if (m.action === 'set') return `${a}: ❤️ ${num(m.hp)}% · yemek ${num(m.food)}% · ⚡ ${num(m.energy)}%`;
+    if (m.action === 'stage') return `${a} → ${num(m.stage) + 1}${m.stars != null ? ` · ${num(m.stars)}⭐` : ''}`;
+    if (m.action === 'name') return `${a} → ${m.name || ''}`;
+    if (m.action === 'species') return `${a} → ${PET_KINDS[m.species]?.label || ''}`;
+    if (m.action === 'flow' || m.action === 'roam') return `${a} ${m.on ? 'açıldı' : 'kapandı'}`;
+    if (m.action === 'say') return `${a}: “${m.text || ''}”${m.emote ? ' + emote' : ''}`;
+    if (m.action === 'react') return `${a}: ${REACT_TR[m.emote] || m.emote || ''}`;
+    return a + (m.broadcast ? ' (herkese)' : '');
+  }
   if (m.type === 'reward') return `${m.emoji || '🎁'} ${m.title || 'Ödül'}${num(m.amount) ? ` · ${num(m.amount) > 0 ? '+' : ''}${num(m.amount)} XP` : ''}${m.text ? ' — ' + m.text : ''}`;
   return `${m.title ? m.title + ': ' : ''}${m.text || ''}`;
 }
@@ -244,6 +330,7 @@ $('#actTabs').addEventListener('click', e => {
   const b = e.target.closest('[data-t]'); if (!b) return;
   [...$('#actTabs').children].forEach(x => x.classList.toggle('on', x === b));
   document.querySelectorAll('form.act').forEach(f => f.classList.toggle('hidden', f.dataset.t !== b.dataset.t));
+  if (b.dataset.t === 'pet') fillPetForm();
 });
 document.querySelector('#fXp .quick').addEventListener('click', e => { const b = e.target.closest('[data-q]'); if (b) $('#fXp').amount.value = b.dataset.q; });
 
@@ -297,6 +384,53 @@ $('#fMessage').addEventListener('submit', e => {
   f.text.value = '';
 });
 
+// ---------------- pet işlemleri ----------------
+$('#fPet').addEventListener('submit', e => e.preventDefault());
+$('#fPet').addEventListener('input', e => { if (e.target.type === 'range') { const o = e.target.parentElement.querySelector('output'); if (o) o.textContent = e.target.value + '%'; } });
+$('#fPet').addEventListener('change', e => { if (e.target.name === 'species') renderPet(); });
+$('#fPet').addEventListener('click', e => {
+  const b = e.target.closest('[data-pa],[data-pr]'); if (!b || !selected) return;
+  const f = $('#fPet'), p = validPet(users[selected]?.pet), name = p ? p.name : 'Pet';
+  const pet = (o, ok) => sendSelected({ type: 'pet', ...o }, ok);
+  if (b.dataset.pr) return pet({ action: 'react', emote: b.dataset.pr }, `${name}: ${REACT_TR[b.dataset.pr]} tepkisi`);
+  const a = b.dataset.pa;
+  switch (a) {
+    case 'heal': return pet({ action: a }, p && !p.alive ? `${name} canlandırılıyor` : `${name} canı dolduruluyor`);
+    case 'feed': return pet({ action: a }, p?.species === 'plant' ? `${name} sulanıyor` : `${name} besleniyor`);
+    case 'energy': return pet({ action: a }, `${name} enerjisi dolduruluyor`);
+    case 'restore': return pet({ action: a }, `${name} tamamen tazeleniyor`);
+    case 'revive': return pet({ action: a }, `${name} canlandırılıyor`);
+    case 'set': return pet({ action: a, hp: Math.max(1, num(f.hp.value)), food: num(f.food.value), energy: num(f.energy.value) }, 'Değerler gönderildi');
+    case 'stage': {
+      const stage = Math.max(0, Math.min(5, num(f.stage.value))), stars = Math.max(0, Math.min(999, num(f.stars.value)));
+      return pet({ action: a, stage, stars }, `Form ${stage + 1} · ${stars}⭐ gönderildi`);
+    }
+    case 'name': {
+      const n = f.name.value.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 16);
+      if (!n) return toast('Ad boş olamaz');
+      return pet({ action: a, name: n }, `Ad → ${n}`);
+    }
+    case 'species': {
+      const s2 = f.species.value; if (!Object.prototype.hasOwnProperty.call(PET_KINDS, s2)) return;
+      if (p && p.species === s2) return toast('Zaten bu tür');
+      if (!confirm(`${name} ${PET_KINDS[s2].label.toLocaleLowerCase('tr')} olsun mu? Form numarası korunur.`)) return;
+      return pet({ action: a, species: s2 }, `Tür → ${PET_KINDS[s2].label}`);
+    }
+    case 'flow': { const on = !(p?.flow); return pet({ action: a, on }, `Flow ${on ? 'açılıyor' : 'kapanıyor'}`); }
+    case 'roam': { const on = p ? !p.roam : false; return pet({ action: a, on }, `Dolaşma ${on ? 'açılıyor' : 'kapanıyor'}`); }
+    case 'say': {
+      const text = f.say.value.trim().slice(0, 200), emote = f.emote.value;
+      if (!text && !emote) return toast('Bir şey yaz ya da emote seç');
+      const msg = { action: a }; if (text) msg.text = text; if (emote) msg.emote = emote;
+      f.say.value = '';
+      return pet(msg, `${name} konuşacak`);
+    }
+    case 'reset':
+      if (!confirm(`${name} anı köşesine uğurlansın ve kullanıcıya yeni pet seçtirilsin mi? Seviyeler etkilenmez.`)) return;
+      return pet({ action: a }, 'Pet sıfırlama gönderildi');
+  }
+});
+
 // ---------------- herkese gönder ----------------
 let bcType = 'message';
 $('#broadcastBtn').addEventListener('click', () => $('#bcModal').classList.remove('hidden'));
@@ -305,13 +439,16 @@ $('#bcType').addEventListener('click', e => {
   const b = e.target.closest('[data-t]'); if (!b) return; bcType = b.dataset.t;
   [...$('#bcType').children].forEach(x => x.classList.toggle('on', x === b));
   document.querySelectorAll('.bc-reward').forEach(x => x.classList.toggle('hidden', bcType !== 'reward'));
+  document.querySelectorAll('.bc-text').forEach(x => x.classList.toggle('hidden', bcType === 'pet'));
+  document.querySelectorAll('.bc-pet').forEach(x => x.classList.toggle('hidden', bcType !== 'pet'));
+  ['title', 'text'].forEach(n => { $('#fBroadcast')[n].required = bcType !== 'pet'; });
 });
 $('#fBroadcast').addEventListener('submit', async e => {
   e.preventDefault(); const f = e.target;
-  const targets = Object.keys(users).filter(uid => !f.onlineOnly.checked || isOnline(users[uid]));
+  const targets = Object.keys(users).filter(uid => (!f.onlineOnly.checked || isOnline(users[uid])) && (bcType !== 'pet' || validPet(users[uid].pet)));
   if (!targets.length) return toast('Gönderilecek kullanıcı yok');
   if (!confirm(`${targets.length} kullanıcıya gönderilsin mi?`)) return;
-  const msg = bcType === 'reward'
+  const msg = bcType === 'pet' ? { type: 'pet', action: 'restore' } : bcType === 'reward'
     ? { type: 'reward', emoji: f.emoji.value.trim() || '🎉', title: f.title.value.trim(), text: f.text.value.trim(), amount: Math.round(Number(f.amount.value) || 0), cat: f.cat.value, music: true }
     : { type: 'message', title: f.title.value.trim(), text: f.text.value.trim() };
   const patch = {};

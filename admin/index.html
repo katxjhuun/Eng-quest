@@ -20,7 +20,7 @@
   <main>
     <section class="card login" id="loginCard">
       <h1>Kullanıcıları takip et</h1>
-      <p>Bu panel uygulamadan ayrıdır. Uygulamayı kullananların çevrimiçi durumunu, seviyesini, XP’sini ve o anda çözdüğü soruyu canlı gösterir; XP/seviye değiştirmeni, ödül ve mesaj göndermeni sağlar.</p>
+      <p>Bu panel uygulamadan ayrıdır. Uygulamayı kullananların çevrimiçi durumunu, seviyesini, XP’sini, petini ve o anda çözdüğü soruyu canlı gösterir; XP/seviye değiştirmeni, ödül ve mesaj göndermeni, petlerine bakmanı sağlar.</p>
       <button class="primary" id="signIn">Google ile giriş yap</button>
       <p class="note" id="loginNote"></p>
     </section>
@@ -66,9 +66,12 @@
       <h3>Konu XP’leri</h3>
       <div class="cats" id="dCats"></div>
 
+      <h3>🐾 Pet</h3>
+      <div class="petcard" id="dPet"></div>
+
       <h3>İşlem</h3>
       <div class="seg tabs" id="actTabs">
-        <button data-t="xp" class="on">± XP</button><button data-t="level">Seviye</button><button data-t="reward">🎁 Ödül</button><button data-t="message">✉️ Mesaj</button>
+        <button data-t="xp" class="on">± XP</button><button data-t="level">Seviye</button><button data-t="reward">🎁 Ödül</button><button data-t="message">✉️ Mesaj</button><button data-t="pet">🐾 Pet</button>
       </div>
       <form class="act" data-t="xp" id="fXp">
         <div class="row">
@@ -104,6 +107,51 @@
         <label>Mesaj<textarea name="text" rows="3" maxlength="500" required placeholder="Uygulamada bildirim olarak görünür."></textarea></label>
         <button class="primary">Mesajı gönder</button>
       </form>
+      <form class="act hidden" data-t="pet" id="fPet">
+        <p class="note warn hidden" id="petNone">Bu kullanıcının pet bilgisi henüz gelmedi (uygulama 2.2.3 öncesi olabilir ya da pet seçilmemiş). Komutlar bekleyen gönderi olarak kalır, uygulama güncellenince uygulanır.</p>
+        <div class="pgroup"><span class="plabel">Bakım</span>
+          <div class="pbtns">
+            <button type="button" data-pa="heal">❤️ Canı doldur</button>
+            <button type="button" data-pa="feed" id="paFeed">🍖 Besle</button>
+            <button type="button" data-pa="energy">⚡ Enerji ver</button>
+            <button type="button" data-pa="restore">✨ Hepsini doldur</button>
+            <button type="button" data-pa="revive" id="paRevive">💫 Canlandır</button>
+          </div>
+          <p class="note">Canlandırma seviye düşürmez, telafi istemez. Ölü pete “Canı doldur” da onu canlandırır.</p>
+        </div>
+        <div class="pgroup"><span class="plabel">Değerleri ayarla</span>
+          <label class="rng"><span>❤️ Can</span><input type="range" name="hp" min="1" max="100" value="100"><output>100%</output></label>
+          <label class="rng"><span id="pFoodLbl">🍖 Mama</span><input type="range" name="food" min="0" max="100" value="100"><output>100%</output></label>
+          <label class="rng"><span>⚡ Enerji</span><input type="range" name="energy" min="0" max="100" value="100"><output>100%</output></label>
+          <button type="button" class="primary small" data-pa="set">Değerleri uygula</button>
+        </div>
+        <div class="pgroup"><span class="plabel">Form ve yıldız</span>
+          <div class="row"><label>Form<select name="stage" id="pStage"></select></label><label class="narrow">⭐ Yıldız<input name="stars" type="number" min="0" max="999" step="1" value="0"></label></div>
+          <button type="button" class="primary small" data-pa="stage">Formu ayarla</button>
+          <p class="note">Üst forma geçişte uygulamada evrim gösterisi oynar; alt forma iniş sessizce olur.</p>
+        </div>
+        <div class="pgroup"><span class="plabel">Kimlik</span>
+          <div class="row bottom"><label>Ad<input name="name" maxlength="16" autocomplete="off"></label><button type="button" class="ghost" data-pa="name">Adını değiştir</button></div>
+          <div class="row bottom"><label>Tür<select name="species" id="pSpecies"></select></label><button type="button" class="ghost" data-pa="species">Türü değiştir</button></div>
+          <p class="note">Tür değişince form numarası korunur (örn. Form 4 kedi → Form 4 köpek).</p>
+        </div>
+        <div class="pgroup"><span class="plabel">Modlar</span>
+          <div class="pbtns"><button type="button" data-pa="flow" id="paFlow">🌊 Flow’u aç</button><button type="button" data-pa="roam" id="paRoam">🐾 Dolaşmayı kapat</button></div>
+        </div>
+        <div class="pgroup"><span class="plabel">Konuştur</span>
+          <label>Pet ne desin?<textarea name="say" rows="2" maxlength="200" placeholder="Örn. Bugün harikasın! Bir soru daha çözelim mi?"></textarea></label>
+          <div class="row bottom"><label>Emote<select name="emote">
+            <option value="">— yok —</option><option value="love">❤️ Kalp</option><option value="note">🎵 Nota</option><option value="star">⭐ Yıldız</option><option value="fire">🔥 Alev</option>
+            <option value="idea">💡 Ampul</option><option value="spark">✨ Işıltı</option><option value="excl">❗ Ünlem</option><option value="ask">❓ Soru</option>
+            <option value="food">🍖 Yemek</option><option value="zz">💤 Uyku</option><option value="tear">💧 Gözyaşı</option><option value="anger">💢 Öfke</option>
+          </select></label><button type="button" class="primary small" data-pa="say">Pete söylet</button></div>
+          <p class="note">Konuşma balonunda görünür; kaydedilmez, bildirim çıkmaz.</p>
+        </div>
+        <div class="pgroup"><span class="plabel">Tepki oynat</span>
+          <div class="pbtns"><button type="button" data-pr="love">❤️ Sevgi</button><button type="button" data-pr="joy">⭐ Sevinç</button><button type="button" data-pr="dance">🎵 Dans</button><button type="button" data-pr="shock">❗ İrkilme</button><button type="button" data-pr="sad">💧 Hüzün</button><button type="button" data-pr="sleep">💤 Uyukla</button></div>
+        </div>
+        <div class="pgroup zone"><button type="button" class="ghost small" data-pa="reset">Peti sıfırla · yeni pet seçtir</button></div>
+      </form>
 
       <h3>Bekleyen gönderiler <small>(uygulama açılınca teslim edilir)</small></h3>
       <div class="msgs" id="dPending"></div>
@@ -117,12 +165,13 @@
   <div class="modal hidden" id="bcModal">
     <form class="card" id="fBroadcast">
       <h2>📣 Herkese gönder</h2>
-      <div class="seg" id="bcType"><button type="button" data-t="message" class="on">Mesaj</button><button type="button" data-t="reward">Ödül</button></div>
-      <div class="row">
+      <div class="seg" id="bcType"><button type="button" data-t="message" class="on">Mesaj</button><button type="button" data-t="reward">Ödül</button><button type="button" data-t="pet">🐾 Pet bakımı</button></div>
+      <div class="row bc-text">
         <label class="emoji bc-reward hidden">Simge<input name="emoji" value="🎉" maxlength="4"></label>
         <label>Başlık<input name="title" value="dam-la’dan duyuru" maxlength="60" required></label>
       </div>
-      <label>Mesaj<textarea name="text" rows="3" maxlength="500" required></textarea></label>
+      <label class="bc-text">Mesaj<textarea name="text" rows="3" maxlength="500" required></textarea></label>
+      <p class="note bc-pet hidden">Herkesin petinin canı, yemeği ve enerjisi dolar; ölmüş petler seviye düşmeden canlanır. Kullanıcıya küçük bir bildirim gösterilir.</p>
       <div class="row bc-reward hidden">
         <label>XP<input name="amount" type="number" value="10"></label>
         <label>Konu<select name="cat" class="catSel"></select></label>

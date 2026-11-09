@@ -272,7 +272,8 @@ function decor(mood, f, opts) {
 // Dışarıya açılan çizim fonksiyonu.
 // opts: { mood, belly (0..1), look (-1..1), size }
 export function petSVG(species, stage, opts = {}) {
-  const sp = SPECIES[species] || SPECIES.chick;
+  if (!Object.prototype.hasOwnProperty.call(SPECIES, species)) species = 'chick';
+  const sp = SPECIES[species];
   stage = Math.max(0, Math.min(5, stage | 0));
   const mood = opts.mood || 'idle';
   const u = `${species[0]}${stage}${++uidSeq}`;
@@ -297,7 +298,7 @@ export function petSVG(species, stage, opts = {}) {
 
 export const PET_SPECIES = SPECIES;
 export function speciesList() { return Object.keys(SPECIES); }
-export function stageName(species, stage) { return (SPECIES[species] || SPECIES.chick).stages[Math.max(0, Math.min(5, stage | 0))]; }
+export function stageName(species, stage) { return (Object.prototype.hasOwnProperty.call(SPECIES, species) ? SPECIES[species] : SPECIES.chick).stages[Math.max(0, Math.min(5, stage | 0))]; }
 
 // Yaşam alanı süsleri (pet evdeyken arkasında görünür)
 export function homeSVG(species) {

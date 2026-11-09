@@ -60,7 +60,7 @@ export function initCloud(core) {
           state.status = 'online'; emit();
         });
         api.pushStats(true);
-        // yöneticiden gelen kutu (ödül, mesaj, XP, seviye)
+        // yöneticiden gelen kutu (ödül, mesaj, XP, seviye, pet komutu)
         onChildAdded(ref(db, base + '/inbox'), async snap => {
           const msg = { id: snap.key, ...(snap.val() || {}) };
           try { await core.handleAdminMessage(msg); } catch (e) { console.warn('[cloud] mesaj işlenemedi', e); }
@@ -90,6 +90,9 @@ export function initCloud(core) {
     statsTimer = setTimeout(() => {
       const s = core.statsSnapshot();
       update(ref(state.db, `users/${state.uid}/stats`), { ...s, updatedAt: serverTimestamp() }).catch(() => {});
+      // pet durumu (panelde gösterilir; pet yoksa kayıt silinir)
+      let pet = null; try { pet = core.petSnapshot?.() ?? null; } catch {}
+      set(ref(state.db, `users/${state.uid}/pet`), pet ? { ...pet, updatedAt: serverTimestamp() } : null).catch(() => {});
     }, now ? 50 : 2500);
   };
   api.event = ev => { if (ev?.type === 'answer') api.pushStats(); };

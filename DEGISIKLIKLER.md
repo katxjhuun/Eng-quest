@@ -1,3 +1,22 @@
+# dam-la 2.2.3 — Yönetici panelinden pet yönetimi
+
+Uzaktan güncellemeyle gelir. Veritabanı kuralları da güncellendi (Firebase'de yayınlandı).
+- **Panelde pet görünür:** Kullanıcı listesinde petin adı, formu ve can/yemek/enerji yüzdeleri; ayrıntıda petin çizimi, ruh hali, flow, seri, canlanma sayısı ve çubuklar.
+- **🐾 Pet sekmesi (yönetici):**
+  - Bakım: canı doldur, besle/sula, enerji ver, hepsini doldur.
+  - Canlandır: seviye düşmez, telafi istenmez.
+  - Ayarlar: değerleri yüzde olarak ayarla; formu ve yıldızı ayarla (birkaç basamak atlansa da tek evrim gösterisi oynar).
+  - Kimlik: adını ve türünü değiştir.
+  - Modlar: flow ve dolaşmayı aç/kapat.
+  - Konuştur: pete emote'lu bir cümle söylet.
+  - Tepki oynat: sevgi, sevinç, dans, irkilme, hüzün, uyuklama.
+  - Sıfırla: peti anı köşesine uğurla, yeni pet seçtir.
+- **Herkese gönder › Pet bakımı:** Bütün petleri doldurur, ölüleri canlandırır.
+- Kullanıcı her müdahaleyi petin tepkisi ve küçük bir bildirimle görür; konuşma ve tepki komutları sessizdir.
+- Kurallar: pet kaydının ve pet komutlarının her alanı doğrulanır; kullanıcı kendine pet komutu gönderemez (49 kural testi).
+
+---
+
 # dam-la 2.2.2 — Hareketli emote'lar, yeni kedi-köpek tasarımı
 
 Uzaktan güncellemeyle gelir, yeniden kurulum gerekmez.
