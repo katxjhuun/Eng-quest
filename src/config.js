@@ -21,9 +21,9 @@ export const BIRTHDAY = { month: 11, day: 24, name: 'Damla' };
 // Yönetici paneli için Firebase (Realtime Database + Anonim giriş). Boşsa takip kapalıdır, uygulama yine çalışır.
 // Bu değerler gizli değildir; erişim, veritabanı kurallarıyla (database.rules.json) korunur.
 export const FIREBASE_CONFIG = {
-  apiKey: '',
-  authDomain: '',
-  databaseURL: '',
-  projectId: '',
-  appId: ''
+  apiKey: 'AIzaSyCGkxxlSm82MnWMjuZCWfFVCUPn2CQyVg0',
+  authDomain: 'dam-la.firebaseapp.com',
+  databaseURL: 'https://dam-la-default-rtdb.europe-west1.firebasedatabase.app',
+  projectId: 'dam-la',
+  appId: '1:341472859383:web:ed97e893af185fb0c76ff2'
 };

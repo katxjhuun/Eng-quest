@@ -1,3 +1,9 @@
+# dam-la 2.1.2 — Yönetici paneli bağlandı
+
+Firebase projesi (`dam-la`, Avrupa sunucusu, ücretsiz Spark planı) kuruldu: anonim giriş + Google girişi, güvenlik kuralları yayında, uygulama ve panel bağlı. Uzaktan güncellemeyle gelir.
+
+---
+
 # dam-la 2.1.1 — Güvenlik ve gizlilik
 
 Uzaktan güncellemeyle gelir (yeniden kurulum gerekmez).
