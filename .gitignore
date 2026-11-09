@@ -1,8 +1,12 @@
 node_modules/
+www/
+dist-ota/
+build/
+*.jks
+*.keystore
+*.base64.txt
+GITHUB_SECRETS.txt
 .env
-.env.*
-!.env.example
-.data/
-data/
-*.log
 .DS_Store
+android/app/src/main/assets/public
+ios/App/App/public
