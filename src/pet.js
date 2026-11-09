@@ -342,7 +342,7 @@ export function initPet(core, quiz) {
     box.classList.toggle('hidden', !cu.length);
     box.innerHTML = cu.map(([cat, i]) => `<span>🔁 ${esc(catLabel(cat))}: 2× XP · ${Math.max(0, Math.round(i.target - catXpOf(cat)))} XP kaldı</span>`).join('');
     $('#petHabBg').innerHTML = homeSVG(p.species);
-    $('#petAway').classList.toggle('show', mode !== 'home' && !actorEl.classList.contains('hidden'));
+    awayShown = mode !== 'home' && !actorEl.classList.contains('hidden'); $('#petAway').classList.toggle('show', awayShown);
     drawSprite();
   }
 
@@ -395,6 +395,7 @@ export function initPet(core, quiz) {
   // ---------- hareket motoru ----------
   const W = 76, H = 76;
   const pos = { x: -200, y: -200 }, target = { x: 0, y: 0 };
+  let awayShown = false;
   let mode = 'home', moving = false, speed = 70, facing = 1, nextThink = 0, lastTs = 0, onArrive = null, visible = false;
   function homeAnchor() {
     const r = $('#petHab')?.getBoundingClientRect();
@@ -527,6 +528,8 @@ export function initPet(core, quiz) {
     else if (animCls && now > animUntil) { animCls = ''; sprite.className = 'pet-sprite ' + (isSleeping() ? 'a-sleep' : 'a-idle'); }
     else if (!animCls && !/a-(idle|sleep)/.test(sprite.className)) sprite.className = 'pet-sprite ' + (isSleeping() ? 'a-sleep' : 'a-idle');
     actorEl.classList.toggle('at-home', mode === 'home');
+    const away = mode !== 'home';
+    if (away !== awayShown) { awayShown = away; $('#petAway').classList.toggle('show', away); }
     drawSprite();
     if (now > nextThink && !moving && p) think(now);
   }

@@ -160,13 +160,13 @@ body.pet-flow .quiz-card,body.pet-flow #legacyBlock .challenge{box-shadow:0 0 0 
 .pet-sprite[data-mood="focus"] svg{filter:drop-shadow(0 0 5px rgba(143,124,255,.45))}
 
 /* ---- emote balonu ---- */
-.pet-emote{position:absolute;left:50%;top:-30px;width:34px;height:34px;margin-left:-17px;display:grid;place-items:center;background:#fff;border:2px solid #2b2230;border-radius:50%;box-shadow:0 3px 0 rgba(31,28,34,.16);opacity:0;pointer-events:none;z-index:3;transform:translateX(calc(var(--face,1)*15px)) scale(.2);transform-origin:50% 120%}
+.pet-emote{position:absolute;left:50%;top:-42px;width:34px;height:34px;margin-left:-17px;display:grid;place-items:center;background:#fff;border:2px solid #2b2230;border-radius:50%;box-shadow:0 3px 0 rgba(31,28,34,.16);opacity:0;pointer-events:none;z-index:3;transform:translateX(calc(var(--face,1)*10px)) scale(.2);transform-origin:50% 120%}
 .pet-emote:after{content:"";position:absolute;bottom:-6px;left:50%;margin-left:calc(var(--face,1)*-9px - 4px);width:8px;height:8px;background:#fff;border:2px solid #2b2230;border-top:0;border-left:0;transform:rotate(45deg);border-radius:0 0 3px 0}
 .pet-emote svg{width:23px;height:23px;display:block;overflow:visible}
 .pet-emote.show{animation:emPop .5s cubic-bezier(.2,1.6,.4,1) forwards}
 .pet-emote.show.out{animation:emOut .26s ease-in forwards}
-@keyframes emPop{0%{opacity:0;transform:translateX(calc(var(--face,1)*15px)) translateY(8px) scale(.2) rotate(-25deg)}60%{opacity:1;transform:translateX(calc(var(--face,1)*15px)) translateY(-3px) scale(1.18) rotate(8deg)}100%{opacity:1;transform:translateX(calc(var(--face,1)*15px)) scale(1) rotate(0)}}
-@keyframes emOut{0%{opacity:1;transform:translateX(calc(var(--face,1)*15px)) scale(1)}100%{opacity:0;transform:translateX(calc(var(--face,1)*15px)) translateY(-10px) scale(.6)}}
+@keyframes emPop{0%{opacity:0;transform:translateX(calc(var(--face,1)*10px)) translateY(8px) scale(.2) rotate(-25deg)}60%{opacity:1;transform:translateX(calc(var(--face,1)*10px)) translateY(-3px) scale(1.18) rotate(8deg)}100%{opacity:1;transform:translateX(calc(var(--face,1)*10px)) scale(1) rotate(0)}}
+@keyframes emOut{0%{opacity:1;transform:translateX(calc(var(--face,1)*10px)) scale(1)}100%{opacity:0;transform:translateX(calc(var(--face,1)*10px)) translateY(-10px) scale(.6)}}
 .e-love svg{animation:emBeat .55s ease-in-out infinite}
 .e-excl svg{animation:emJolt .22s ease-in-out 4}
 .e-ask svg{animation:emTilt 1s ease-in-out infinite}
@@ -194,8 +194,8 @@ body.pet-flow .quiz-card,body.pet-flow #legacyBlock .challenge{box-shadow:0 0 0 
 @keyframes emGlow{0%,100%{filter:none}50%{filter:drop-shadow(0 0 4px #FFD84A)}}
 @keyframes emDot{0%,100%{transform:translateY(0)}40%{transform:translateY(-3px)}}
 @keyframes emWiggle{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(10deg)}}
-.pet-actor.emoting .pet-bubble{bottom:calc(100% + 40px)}
-.pet-actor.at-home .pet-emote{top:-22px}
+.pet-actor.emoting .pet-bubble{bottom:calc(100% + 52px)}
+.pet-actor.at-home .pet-emote{top:-34px}
 
 .pet-fx{position:absolute;left:-10px;right:-10px;top:-20px;bottom:0;pointer-events:none}
 .pfx{position:absolute;bottom:40%;font-size:16px;font-weight:900;line-height:1;animation:fxUp 1.8s ease-out forwards;opacity:0}
@@ -289,4 +289,4 @@ body.pet-flow .quiz-card,body.pet-flow #legacyBlock .challenge{box-shadow:0 0 0 
 .pi-stats span{font-size:11px;font-weight:800;background:#ece6dc;border-radius:99px;padding:4px 9px}
 .quiz-opt.elim{opacity:.38;text-decoration:line-through;pointer-events:none;filter:grayscale(1)}
 .quiz-opt.elim .opt-key:after{content:" ✂"}
-@media(prefers-reduced-motion:reduce){.pet-sprite,.pet-sprite *{animation:none!important}.pfx{animation-duration:.01s!important}.pet-emote.show{animation:none;opacity:1;transform:translateX(calc(var(--face,1)*15px))}.pet-emote svg{animation:none!important}}
+@media(prefers-reduced-motion:reduce){.pet-sprite,.pet-sprite *{animation:none!important}.pfx{animation-duration:.01s!important}.pet-emote.show{animation:none;opacity:1;transform:translateX(calc(var(--face,1)*10px))}.pet-emote svg{animation:none!important}}
