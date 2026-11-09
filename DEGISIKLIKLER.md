@@ -1,3 +1,23 @@
+# dam-la 2.2.2 — Hareketli emote'lar, yeni kedi-köpek tasarımı
+
+Uzaktan güncellemeyle gelir, yeniden kurulum gerekmez.
+- **Emote balonları:** Petin başının üstünde büyük, okunaklı simgeler belirir ve kendi içinde oynar:
+  - ❤️ sevilince, 💢 dürtülünce, ❗ irkilince/uyandırılınca, ❓ etrafa bakınca, ♪ keyifliyken
+  - 💧 yanlış cevapta, 🌧️ canı azken, 🐟/🦴/💧/🌾 doğru cevapta yemek yerken, ⭐ ve 🔥 seride
+  - 💡 yetenek kullanınca, 🛡️ korurken, zZ uyurken, … yorgunken
+- **Daha belirgin tepkiler:**
+  - Doğru cevapta yemek yer, sonra hazırlanıp havaya sıçrar; seride sağa sola dans eder.
+  - Yanlışta geri sarsılır, sonra boynu bükük oturur.
+  - Dürtülünce büzülüp titrer, uyandırılınca havaya sıçrar.
+  - Bir tepki sürerken boşta hareketleri onu yarıda kesmez.
+- **Kedi ve köpek yeniden tasarlandı:** Örnek GIF'lerdeki gibi yandan görünen, ince bacaklı, büyük "O" gözlü sade karakterler. Renkleri ve evrim hatları aynı.
+  - **Pozlar:** ayakta, yürürken çapraz bacak adımı, dörtnala koşma, oturma, kıvrılıp uyuma, uzanma, gerinme, zıplama, koklama, kabarma.
+  - **Davranışlar:** Kedi tımarlanır ve gerinir; köpek koklar, silkinir; mutluyken kuyruk hızlı sallanır.
+- **Civciv:** Yumurtacık artık kabuktan bakıyor. Kanatçık'ta ilk tavus tüyleri çıkıyor. Tavus Yavrusu yarı açık kuyruklu küçük bir tavus.
+- **Bitki:** Aynı tatlılıkta ama daha olgun: küçük gözler, ağız yalnızca duygu anında, yaprak damarları, katlı taç yapraklar, oluklu kaktüs, katmanlı ağaç tacı.
+
+---
+
 # dam-la 2.2.1 — Renkli petler ve yeni evrim hatları
 
 Uzaktan güncellemeyle gelir.

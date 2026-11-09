@@ -50,6 +50,30 @@ const LINES = {
 };
 
 const pick = a => a[Math.floor(Math.random() * a.length)];
+
+// Emote balonları: petin başının üstünde beliren, büyük ve okunaklı duygu simgeleri
+const EM = {
+  love: '<path d="M12 20.6C5 15.6 2.4 11.7 2.4 8.4 2.4 5.3 4.8 3.4 7.3 3.4c2 0 3.7 1.2 4.7 2.9 1-1.7 2.7-2.9 4.7-2.9 2.5 0 4.9 1.9 4.9 5 0 3.3-2.6 7.2-9.6 12.2z" fill="#FF5C7A"/><path d="M6.3 7.2c.4-1.2 1.4-1.8 2.4-1.7" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".8"/>',
+  note: '<path d="M8.5 17.5V6.2l10-2.4v11.4" fill="none" stroke="#7B61FF" stroke-width="2.2" stroke-linejoin="round"/><ellipse cx="6.4" cy="17.6" rx="2.9" ry="2.3" fill="#7B61FF"/><ellipse cx="16.4" cy="15.3" rx="2.9" ry="2.3" fill="#7B61FF"/><path d="M8.5 9l10-2.4" stroke="#7B61FF" stroke-width="2.2"/>',
+  excl: '<rect x="9.6" y="2.6" width="4.8" height="12.8" rx="2.4" fill="#FF6A3D"/><circle cx="12" cy="19.4" r="2.6" fill="#FF6A3D"/>',
+  ask: '<path d="M7.6 8.4c0-2.8 2-4.6 4.6-4.6 2.6 0 4.5 1.7 4.5 4 0 3.4-4.4 3.4-4.4 7" fill="none" stroke="#3E8EF7" stroke-width="3.2" stroke-linecap="round"/><circle cx="12.3" cy="19.6" r="2.2" fill="#3E8EF7"/>',
+  anger: '<g fill="none" stroke="#E5484D" stroke-width="2.6" stroke-linecap="round"><path d="M9.5 2.8v3.4c0 2-1.3 3.3-3.3 3.3H2.8"/><path d="M14.5 2.8v3.4c0 2 1.3 3.3 3.3 3.3h3.4"/><path d="M9.5 21.2v-3.4c0-2-1.3-3.3-3.3-3.3H2.8"/><path d="M14.5 21.2v-3.4c0-2 1.3-3.3 3.3-3.3h3.4"/></g>',
+  tear: '<path d="M12 2.8S5.4 10.8 5.4 15a6.6 6.6 0 0 0 13.2 0C18.6 10.8 12 2.8 12 2.8z" fill="#5BB4F0"/><path d="M8.8 15.2c0 1.6 1 2.8 2.4 3.2" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".85"/>',
+  sweat: '<path d="M15.5 3.4s-6 6.4-6 10.4a6 6 0 0 0 12 0c0-4-6-10.4-6-10.4z" fill="#9FDCFF" transform="rotate(18 15.5 12)"/><path d="M3 8.5h4.5M2.5 13h4M4 17.5h3.5" stroke="#7DB7E0" stroke-width="1.8" stroke-linecap="round"/>',
+  zz: '<path d="M3.5 12.5h5.2l-5.2 6h5.2" fill="none" stroke="#6A55E0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 3.5h8.5L11 13.5h8.5" fill="none" stroke="#6A55E0" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
+  star: '<path d="M12 2.6l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z" fill="#F7C531" stroke="#E7A915" stroke-width="1.2" stroke-linejoin="round"/>',
+  fire: '<path d="M12 21.4c-4.4 0-7.4-3-7.4-6.9 0-3.4 2.2-5.4 3.6-7.6.5 1.9 1.5 2.9 2.6 3.3-.3-3.4 1.2-6.2 3.6-8 0 3 1.4 4.6 2.9 6.4 1.3 1.6 2.1 3.4 2.1 5.9 0 3.9-3 6.9-7.4 6.9z" fill="#FF7A2F"/><path d="M12 21.2c-2.2 0-3.6-1.5-3.6-3.4 0-2 1.6-3.2 2.5-4.7.6 1.4 1.4 2 2.2 2.2-.1-1.2.3-2.3 1-3.1.9 1.5 1.7 2.6 1.7 4.6 0 2.4-1.6 4.4-3.8 4.4z" fill="#FFC23D"/>',
+  idea: '<path d="M12 3.2a6.3 6.3 0 0 0-3.8 11.3c.7.6 1.1 1.4 1.1 2.3h5.4c0-.9.4-1.7 1.1-2.3A6.3 6.3 0 0 0 12 3.2z" fill="#FFD84A" stroke="#E5B421" stroke-width="1.2"/><rect x="9.4" y="17.6" width="5.2" height="3.4" rx="1.2" fill="#9A93A0"/><path d="M10.4 9.4c.3-1.3 1.2-2.1 2.4-2.3" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>',
+  dots: '<circle cx="5.5" cy="12.5" r="2.3" fill="#6f6870"/><circle cx="12" cy="12.5" r="2.3" fill="#6f6870"/><circle cx="18.5" cy="12.5" r="2.3" fill="#6f6870"/>',
+  shield: '<path d="M12 2.8l7.6 3v5.6c0 4.6-3.2 8.2-7.6 9.8-4.4-1.6-7.6-5.2-7.6-9.8V5.8z" fill="#4F8BF7"/><path d="M8.4 12l2.6 2.6 4.8-5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
+  spark: '<path d="M12 2.5c.8 4.6 2.9 6.7 7.5 7.5-4.6.8-6.7 2.9-7.5 7.5-.8-4.6-2.9-6.7-7.5-7.5 4.6-.8 6.7-2.9 7.5-7.5z" fill="#8F7CFF"/><path d="M19 15.5c.3 1.7 1.1 2.5 2.8 2.8-1.7.3-2.5 1.1-2.8 2.8-.3-1.7-1.1-2.5-2.8-2.8 1.7-.3 2.5-1.1 2.8-2.8z" fill="#B9ABFF"/>',
+  cloud: '<path d="M7 14.2h10.4a3.6 3.6 0 0 0 .2-7.2 5 5 0 0 0-9.6 1A3.1 3.1 0 0 0 7 14.2z" fill="#9AA3B2"/><path d="M8.2 17l-1 3M12.2 17l-1 3M16.2 17l-1 3" stroke="#5BB4F0" stroke-width="1.8" stroke-linecap="round"/>',
+  fish: '<path d="M3 12c3.2-4.4 8-5.6 12.4-3.2L20.6 6v12l-5.2-2.8C11 17.6 6.2 16.4 3 12z" fill="#5BA4E6"/><circle cx="7.4" cy="11.2" r="1.2" fill="#1f2a3a"/><path d="M11.6 9.2c.8 1.8.8 3.8 0 5.6" fill="none" stroke="#3E86C9" stroke-width="1.3" stroke-linecap="round"/>',
+  bone: '<path d="M6.6 9.2a2.6 2.6 0 1 1 2.8-3.6l5.2 5.2a2.6 2.6 0 1 1 3.6 2.8 2.6 2.6 0 1 1-2.8 3.6l-5.2-5.2a2.6 2.6 0 1 1-3.6-2.8z" fill="#F3E6D2" stroke="#C9AE88" stroke-width="1.4" stroke-linejoin="round"/>',
+  drop: '<path d="M12 2.8S5.4 10.8 5.4 15a6.6 6.6 0 0 0 13.2 0C18.6 10.8 12 2.8 12 2.8z" fill="#4FA6EA"/><path d="M8.8 15.2c0 1.6 1 2.8 2.4 3.2" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".85"/>',
+  seed: '<ellipse cx="8" cy="13" rx="2.4" ry="3.6" fill="#E6B54A" transform="rotate(-25 8 13)"/><ellipse cx="15.5" cy="10" rx="2.4" ry="3.6" fill="#D9A23A" transform="rotate(20 15.5 10)"/><ellipse cx="14" cy="17.5" rx="2.4" ry="3.6" fill="#E6B54A" transform="rotate(70 14 17.5)"/>',
+};
+const FOOD_EMOTE = { cat: 'fish', dog: 'bone', plant: 'drop', chick: 'seed' };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 export function initPet(core, quiz) {
@@ -203,9 +227,9 @@ export function initPet(core, quiz) {
   // ---------- DOM: dolaşan pet ----------
   const actorEl = document.createElement('div');
   actorEl.className = 'pet-actor hidden'; actorEl.id = 'petActor';
-  actorEl.innerHTML = `<div class="pet-shadow"></div><div class="pet-sprite" id="petSprite"></div><div class="pet-fx" id="petFx"></div><div class="pet-bubble" id="petBubble" role="status" aria-live="polite"></div>`;
+  actorEl.innerHTML = `<div class="pet-shadow"></div><div class="pet-sprite" id="petSprite"></div><div class="pet-fx" id="petFx"></div><div class="pet-emote" id="petEmote" aria-hidden="true"></div><div class="pet-bubble" id="petBubble" role="status" aria-live="polite"></div>`;
   document.body.appendChild(actorEl);
-  const sprite = actorEl.querySelector('#petSprite'), fx = actorEl.querySelector('#petFx'), bubble = actorEl.querySelector('#petBubble');
+  const sprite = actorEl.querySelector('#petSprite'), fx = actorEl.querySelector('#petFx'), bubble = actorEl.querySelector('#petBubble'), emoteEl = actorEl.querySelector('#petEmote');
 
   // ---------- DOM: katmanlar ----------
   const layer = (id, cls, html) => { const d = document.createElement('div'); d.className = `pet-overlay ${cls}`; d.id = id; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.innerHTML = html; document.body.appendChild(d); return d; };
@@ -224,7 +248,7 @@ export function initPet(core, quiz) {
   }
 
   // ---------- çizim ----------
-  let tempMood = null, tempUntil = 0, animCls = '', animUntil = 0, artKey = '';
+  let tempMood = null, tempUntil = 0, animCls = '', animUntil = 0, artKey = '', lookDir = 0;
   function currentMood() {
     const p = P(); if (!p) return 'idle';
     if (!p.alive) return 'dead';
@@ -248,14 +272,36 @@ export function initPet(core, quiz) {
     if (ph === 'night' || ph === 'dawn') return Date.now() >= awakeUntil;
     return false;
   }
+  // kedi/köpek pozları: o anki hareket ve ruh haline göre tüm vücut duruşu değişir
+  const isQuad = () => ['cat', 'dog'].includes(P()?.species);
+  const ANIM_POSE = { hop: 'jump', joy: 'jump', dance: 'jump', stretch: 'bow', sit: 'sit', eat: 'sniff', sniff: 'sniff', sad: 'sit', love: 'sit', roll: 'lie', doze: 'lie', yawn: 'sit', look: 'stand', focus: 'stand', flee: 'run', dead: 'flat', sleep: 'loaf', flinch: 'stand', shake: 'stand', chase: 'run', groom: 'sit', shock: 'jump', poked: 'arch' };
+  function poseNow() {
+    const p = P(); if (!p) return 'stand';
+    if (!p.alive) return 'flat';
+    const now = Date.now();
+    if (animCls && now < animUntil) {
+      if (animCls === 'poked') return p.species === 'dog' ? 'bow' : 'arch';
+      if (animCls === 'shock') return p.species === 'dog' ? 'jump' : 'arch';
+      if (ANIM_POSE[animCls]) return ANIM_POSE[animCls];
+    }
+    if (isSleeping() || currentMood() === 'sleep') return 'loaf';
+    if (moving && mode !== 'home') return sprite.classList.contains('a-flee') ? 'run' : 'stand';
+    const m = currentMood();
+    if (m === 'full') return 'lie';
+    if (m === 'groggy' || m === 'sleepy') return mode === 'home' ? 'lie' : 'sit';
+    if (m === 'sad' || m === 'hungry') return 'sit';
+    if (m === 'focus') return 'stand';
+    return mode === 'home' ? 'sit' : 'stand';
+  }
   function drawSprite(force = false) {
     const p = P(); if (!p) return;
     const mood = currentMood(), belly = clamp(p.stuffed / 100, 0, 1);
-    const key = `${p.species}|${p.stage}|${mood}|${Math.round(belly * 4)}`;
+    const pose = isQuad() ? poseNow() : '';
+    const key = `${p.species}|${p.stage}|${mood}|${Math.round(belly * 4)}|${pose}|${lookDir}`;
     if (!force && key === artKey) return;
     artKey = key;
-    sprite.innerHTML = petSVG(p.species, p.stage, { mood, belly: Math.round(belly * 4) / 4 });
-    sprite.dataset.mood = mood;
+    sprite.innerHTML = petSVG(p.species, p.stage, { mood, belly: Math.round(belly * 4) / 4, pose, look: lookDir });
+    sprite.dataset.mood = mood; sprite.dataset.pose = pose || 'front';
   }
   function statusText(p) {
     if (!p.alive) return '🕊️ Öldü';
@@ -322,19 +368,32 @@ export function initPet(core, quiz) {
       fx.appendChild(e); setTimeout(() => e.remove(), 1900 + i * 120);
     }
   }
-  function react(mood, ms = 1200, anim = '') {
+  let emoteTimer = 0, emoteOut = 0;
+  function emote(kind, ms = 1800) {
+    const p = P(); if (!p || actorEl.classList.contains('hidden')) return;
+    if (kind === 'food') kind = FOOD_EMOTE[p.species] || 'star';
+    const svg = EM[kind]; if (!svg) return;
+    clearTimeout(emoteTimer); clearTimeout(emoteOut);
+    emoteEl.className = `pet-emote e-${kind}`;
+    emoteEl.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${svg}</svg>`;
+    void emoteEl.offsetWidth; emoteEl.classList.add('show'); actorEl.classList.add('emoting');
+    emoteTimer = setTimeout(() => { emoteEl.classList.add('out'); emoteOut = setTimeout(() => { emoteEl.className = 'pet-emote'; actorEl.classList.remove('emoting'); }, 260); }, ms);
+  }
+  function react(mood, ms = 1200, anim = '', em = '') {
     tempMood = mood; tempUntil = Date.now() + ms;
     if (anim) { setAnim(anim, ms); }
+    if (em) emote(em, Math.max(1300, ms + 300));
     drawSprite();
     setTimeout(() => drawSprite(), ms + 30);
   }
   function setAnim(cls, ms) {
     animCls = cls; animUntil = Date.now() + ms;
     sprite.className = 'pet-sprite a-' + cls;
+    drawSprite();
   }
 
   // ---------- hareket motoru ----------
-  const W = 66, H = 66;
+  const W = 76, H = 76;
   const pos = { x: -200, y: -200 }, target = { x: 0, y: 0 };
   let mode = 'home', moving = false, speed = 70, facing = 1, nextThink = 0, lastTs = 0, onArrive = null, visible = false;
   function homeAnchor() {
@@ -393,26 +452,34 @@ export function initPet(core, quiz) {
     walkTo(freeSpot(), baseSpeed());
   }
   function idleAct() {
-    const p = P(), m = currentMood();
-    if (m === 'full' && Math.random() < 0.45) { setAnim('roll', 4200); return; }
-    if (m === 'sleepy') { dozing = true; drawSprite(); setAnim('doze', 3200); setTimeout(() => { dozing = false; drawSprite(); }, 3200); return; }
-    if (m === 'groggy' && Math.random() < 0.5) { setAnim('yawn', 1800); return; }
+    const p = P(), m = currentMood(), sp = p.species;
+    if (m === 'full' && Math.random() < 0.45) { setAnim('roll', 4200); if (Math.random() < 0.5) emote('sweat', 1800); return; }
+    if (m === 'sleepy') { dozing = true; drawSprite(); setAnim('doze', 3200); emote('zz', 2600); setTimeout(() => { dozing = false; drawSprite(); }, 3200); return; }
+    if (m === 'groggy' && Math.random() < 0.5) { setAnim('yawn', 1800); if (Math.random() < 0.5) emote('dots', 1600); return; }
+    if (m === 'hungry' && Math.random() < 0.5) { setAnim('sit', 2200); emote('food', 2200); return; }
+    if (m === 'sad' && Math.random() < 0.4) { setAnim('sad', 2200); emote('cloud', 2200); return; }
+    if (p.flow && Math.random() < 0.4) { setAnim('focus', 2200); if (Math.random() < 0.4) emote('spark', 1500); return; }
     const r = Math.random();
-    if (r < 0.25) { facing *= -1; setAnim('look', 1400); }
-    else if (r < 0.45) setAnim('stretch', 1600);
-    else if (r < 0.6) setAnim('hop', 900);
+    if (r < 0.2) { facing *= -1; lookDir = 1; setAnim('look', 1600); setTimeout(() => { lookDir = 0; drawSprite(); }, 1600); if (Math.random() < 0.35) emote('ask', 1400); }
+    else if (r < 0.36) setAnim('stretch', 1800);
+    else if (r < 0.5) { setAnim('hop', 900); if (Math.random() < 0.5) emote('note', 1400); }
+    else if (r < 0.64 && sp === 'dog') setAnim(Math.random() < 0.5 ? 'sniff' : 'shake', 1600);
+    else if (r < 0.64 && sp === 'cat') setAnim('groom', 2400);
+    else if (r < 0.64) { setAnim('dance', 1400); emote('note', 1500); }
     else setAnim('sit', 2600);
-    if (p.flow && Math.random() < 0.4) setAnim('focus', 2200);
   }
   function think(now) {
     const p = P();
     if (!p.alive) { nextThink = now + 4000; return; }
+    // süren bir tepki (sevinç, üzüntü, irkilme…) yarıda kesilmesin
+    if (animCls && Date.now() < animUntil && !['sit', 'look', 'groom', 'sleep'].includes(animCls)) { nextThink = now + (animUntil - Date.now()) + 400; return; }
     const sleeping = isSleeping();
     if (sleeping || !p.roam || reduced) {
       if (mode !== 'home') goHome();
       else if (sleeping) setAnim('sleep', 4000);
       else idleAct();
       if (sleeping && Math.random() < 0.6) spawn('z', 'zz', 2);
+      if (sleeping && Math.random() < 0.35) emote('zz', 2400);
       nextThink = now + 3200; return;
     }
     const lazy = p.stuffed >= 30 || ['groggy', 'sleepy'].includes(currentMood());
@@ -427,11 +494,11 @@ export function initPet(core, quiz) {
     const sinceSay = now - lastSay;
     if (sinceSay > (p.flow ? 70000 : 110000) && Math.random() < 0.35) {
       const mx = maxes(p);
-      if (p.flow) say(pick(LINES.flow));
-      else if (p.food < mx.food * 0.25) say(pick(p.species === 'plant' ? LINES.hungry.plant : LINES.hungry.other));
-      else if (p.stuffed >= 50) say(pick(LINES.full));
-      else if (p.hp < mx.hp * 0.3) say(pick(LINES.low));
-      else say(pick(LINES.cheer));
+      if (p.flow) { say(pick(LINES.flow)); emote('spark', 1500); }
+      else if (p.food < mx.food * 0.25) { say(pick(p.species === 'plant' ? LINES.hungry.plant : LINES.hungry.other)); emote('food', 2400); }
+      else if (p.stuffed >= 50) { say(pick(LINES.full)); emote('sweat', 1800); }
+      else if (p.hp < mx.hp * 0.3) { say(pick(LINES.low)); emote('cloud', 2000); }
+      else { say(pick(LINES.cheer)); emote(Math.random() < 0.5 ? 'love' : 'note', 1600); }
     }
     nextThink = now + (2600 + Math.random() * 3800) * (lazy ? 1.5 : 1);
   }
@@ -460,6 +527,7 @@ export function initPet(core, quiz) {
     else if (animCls && now > animUntil) { animCls = ''; sprite.className = 'pet-sprite ' + (isSleeping() ? 'a-sleep' : 'a-idle'); }
     else if (!animCls && !/a-(idle|sleep)/.test(sprite.className)) sprite.className = 'pet-sprite ' + (isSleeping() ? 'a-sleep' : 'a-idle');
     actorEl.classList.toggle('at-home', mode === 'home');
+    drawSprite();
     if (now > nextThink && !moving && p) think(now);
   }
 
@@ -479,34 +547,34 @@ export function initPet(core, quiz) {
   function pet() {
     const p = P(); if (!p?.alive) return;
     if (isSleeping()) awakeUntil = Date.now() + 45000;
-    react('love', 2200, 'love'); spawn('♥', 'heart', 4); say(pick(PET_SPECS[p.species].love));
+    react('love', 2200, 'love', 'love'); spawn('♥', 'heart', 4); say(pick(PET_SPECS[p.species].love));
   }
   function tap() {
     const p = P(); if (!p?.alive) return;
-    if (isSleeping()) { awakeUntil = Date.now() + 45000; react('poked', 1500, 'poked'); say(pick(LINES.woke)); return; }
+    if (isSleeping()) { awakeUntil = Date.now() + 45000; react('surprised', 1500, 'shock', 'excl'); say(pick(LINES.woke)); return; }
     const r = Math.random();
     if (r < 0.3 && p.roam && !reduced) {
-      react('surprised', 1300, 'flee'); spawn('•', 'sweat', 2);
+      react('surprised', 1300, 'flee', 'sweat'); spawn('•', 'sweat', 2);
       if (mode === 'home') { const a = homeAnchor(); pos.x = a.x; pos.y = a.y; mode = 'roam'; }
       const vw = window.innerWidth, vh = window.innerHeight;
       const t = { x: pos.x < vw / 2 ? vw - W - 12 - Math.random() * 60 : 12 + Math.random() * 60, y: clamp(pos.y + (Math.random() - 0.5) * vh * 0.5, 90, vh - H - 20) };
-      walkTo(t, 260, () => react('happy', 900, 'hop'));
+      walkTo(t, 260, () => react('happy', 900, 'hop', 'note'));
       sprite.className = 'pet-sprite a-flee';
       if (Math.random() < 0.5) say(pick(LINES.flee), 1800);
-    } else if (r < 0.65) { react('poked', 1200, 'poked'); if (Math.random() < 0.6) say(pick(LINES.tapped), 1800); }
-    else { react('love', 1800, 'love'); spawn('♥', 'heart', 3); if (Math.random() < 0.6) say(pick(PET_SPECS[p.species].love), 2200); }
+    } else if (r < 0.65) { react('poked', 1300, 'poked', Math.random() < 0.6 ? 'anger' : 'excl'); if (Math.random() < 0.6) say(pick(LINES.tapped), 1800); }
+    else { react('love', 1800, 'love', 'love'); spawn('♥', 'heart', 3); if (Math.random() < 0.6) say(pick(PET_SPECS[p.species].love), 2200); }
   }
   $('#petHab').addEventListener('click', () => {
     const p = P(); if (!p?.alive) return;
-    if (mode === 'home') { react('happy', 900, 'hop'); say(pick(LINES.cheer), 2200); return; }
+    if (mode === 'home') { react('happy', 900, 'hop', 'note'); say(pick(LINES.cheer), 2200); return; }
     goHome(); say('Geliyorum! 🐾', 1500);
   });
   $('#petNameBtn').addEventListener('click', () => openInfo());
   $('#flowBtn').addEventListener('click', () => {
     const p = P(); if (!p) return;
     p.flow = !p.flow; p.flowCount = 0; save(true);
-    if (p.flow) { react('focus', 1600, 'focus'); spawn('✦', 'spark', 2); say('Flow açık! Ödül pencereleri kapalı, enerjim 10 soruda bir azalır 🌊', 3600); core.toast('🌊 Flow modu açık · ödül pencereleri kapandı'); }
-    else { react('happy', 1000, 'hop'); say('Güzel bir akıştı! Biraz dinlenelim mi? 😊', 2600); core.toast('Flow modu kapandı'); }
+    if (p.flow) { react('focus', 1600, 'focus', 'spark'); spawn('✦', 'spark', 2); say('Flow açık! Ödül pencereleri kapalı, enerjim 10 soruda bir azalır 🌊', 3600); core.toast('🌊 Flow modu açık · ödül pencereleri kapandı'); }
+    else { react('happy', 1000, 'hop', 'note'); say('Güzel bir akıştı! Biraz dinlenelim mi? 😊', 2600); core.toast('Flow modu kapandı'); }
     renderPanel();
   });
   $('#petAbility').addEventListener('click', useAbility);
@@ -514,10 +582,10 @@ export function initPet(core, quiz) {
   function useAbility() {
     const p = P(); if (!p?.alive) return;
     const sp = PET_SPECS[p.species], ab = sp.active;
-    if (p.energy < ab.cost) { say('Enerjim yetmiyor… biraz dinlenmem lazım 😪'); return; }
+    if (p.energy < ab.cost) { react('groggy', 1400, 'yawn', 'dots'); say('Enerjim yetmiyor… biraz dinlenmem lazım 😪'); return; }
     if (isSleeping()) awakeUntil = Date.now() + 60000;
     const t = quiz.petTarget();
-    if (!t) { core.toast('Yetenekler pop quiz kartındaki cevaplanmamış sorularda çalışır.'); say('Bir soru açalım, sonra yardım ederim 🤓', 2400); return; }
+    if (!t) { core.toast('Yetenekler pop quiz kartındaki cevaplanmamış sorularda çalışır.'); emote('ask', 1600); say('Bir soru açalım, sonra yardım ederim 🤓', 2400); return; }
     let ok = false, msg = '';
     if (ab.id === 'weed') {
       if (t.style === 'type') { ok = quiz.freeHint(); msg = 'Bir harfi senin için açtım 🌱'; }
@@ -529,9 +597,9 @@ export function initPet(core, quiz) {
       const n = t.style === 'type' ? 0 : quiz.eliminate(1); p.shieldFor = t.item.id; ok = true;
       msg = n ? 'Kokladım: bir şık yanlış! Bu soruda seni koruyorum 🛡️' : 'Bu soruda seni koruyorum, yanlışta canım gitmez 🛡️';
     }
-    if (!ok) { say('Şu an bunu yapamam 🤔', 2000); return; }
+    if (!ok) { emote('ask', 1500); say('Şu an bunu yapamam 🤔', 2000); return; }
     p.energy = Math.max(0, p.energy - ab.cost); save(true);
-    react('happy', 1100, 'hop'); spawn('✦', 'spark', 3); say(msg, 4600); renderPanel();
+    react('happy', 1300, ab.id === 'sniff' ? 'sniff' : 'hop', ab.id === 'sniff' ? 'shield' : 'idea'); spawn('✦', 'spark', 3); say(msg, 4600); renderPanel();
   }
 
   // ---------- cevaplar ----------
@@ -556,36 +624,38 @@ export function initPet(core, quiz) {
       if (p.food + feed > mx.food) p.stuffed = clamp(p.stuffed + 9, 0, 100);
       p.food = clamp(p.food + feed, 0, mx.food);
       if (p.food > mx.food * 0.3) p.hp = clamp(p.hp + 2, 0, mx.hp);
-      if (p.species === 'dog' && p.streak % 5 === 0) { p.hp = clamp(p.hp + 10, 0, mx.hp); setTimeout(() => say('Sadık dost: +10 can 🐶'), 1300); }
+      if (p.species === 'dog' && p.streak % 5 === 0) { p.hp = clamp(p.hp + 10, 0, mx.hp); setTimeout(() => { emote('love', 1600); say('Sadık dost: +10 can 🐶'); }, 1300); }
       if (p.shieldFor === d.id) p.shieldFor = null;
-      if (asleep) { spawn('z', 'zz', 1); if (Math.random() < 0.25) say('Zzz… aferin… zzz', 1800); }
+      if (asleep) { spawn('z', 'zz', 1); emote('zz', 1600); if (Math.random() < 0.25) say('Zzz… aferin… zzz', 1800); }
       else {
-        react('eat', 900, 'eat');
+        react('eat', 1000, 'eat', 'food');
         if (p.species === 'plant') spawn('•', 'rain', 4); else spawn('•', 'crumb', 3);
-        setTimeout(() => { react('happy', 1100, 'hop'); spawn('✦', 'spark', 2); }, 950);
+        const big = p.streak >= 3;
+        setTimeout(() => { react('happy', big ? 1500 : 1100, big ? 'dance' : 'joy', p.streak >= 5 ? 'fire' : big ? 'star' : 'note'); spawn('✦', 'spark', big ? 4 : 2); }, 1050);
         if ([3, 5, 10, 20].includes(p.streak)) setTimeout(() => say({ 3: 'Seri başladı! 🔥', 5: '5’te 5! Harikasın! 🤩', 10: 'On doğru üst üste! Efsanesin 🏆', 20: 'Yirmi! Ben bile şaşırdım 😮' }[p.streak], 2600), 900);
         else if (p.stuffed >= 50 && Math.random() < 0.3) setTimeout(() => say(pick(LINES.full)), 1200);
       }
     } else {
       p.streak = 0;
       let dmg = d.kind === 'legacy-miss' ? 5 : d.kind === 'legacy-fail' ? 8 : 14;
-      if (p.shieldFor && p.shieldFor === d.id) { dmg = 0; p.shieldFor = null; react('focus', 1300, 'hop'); spawn('✦', 'spark', 1); say('Seni korudum! 🛡️ Açıklamaya bakalım.', 2600); }
+      if (p.shieldFor && p.shieldFor === d.id) { dmg = 0; p.shieldFor = null; react('focus', 1300, 'hop', 'shield'); spawn('✦', 'spark', 1); say('Seni korudum! 🛡️ Açıklamaya bakalım.', 2600); }
       if (dmg > 0) {
         if (p.hp - dmg <= 0 && p.species === 'cat' && p.nineLivesDay !== todayKey()) {
-          p.hp = 1; p.nineLivesDay = todayKey(); react('surprised', 1500, 'poked'); say('Dokuz candan birini kullandım! 😼 Dikkat!', 3600);
+          p.hp = 1; p.nineLivesDay = todayKey(); react('surprised', 1500, 'shock', 'excl'); say('Dokuz candan birini kullandım! 😼 Dikkat!', 3600);
         } else {
           p.hp = Math.max(0, p.hp - dmg);
           if (p.hp <= 0) { die(d.cat); save(true); renderPanel(); return; }
-          if (asleep) spawn('•', 'tear', 1);
+          if (asleep) { spawn('•', 'tear', 1); emote('tear', 1400); }
           else {
-            react('sad', 1500, 'sad'); spawn('•', 'tear', 2);
+            react('sad', 700, 'flinch', p.hp < mx.hp * 0.3 ? 'cloud' : 'tear'); spawn('•', 'tear', 2);
+            setTimeout(() => { if (P()?.alive) react('sad', 1600, 'sad'); }, 720);
             if (p.hp < mx.hp * 0.3 && Math.random() < 0.7) setTimeout(() => say(pick(LINES.low), 2800), 700);
             else if (Math.random() < 0.4) setTimeout(() => say(pick(LINES.wrong), 2600), 700);
           }
         }
       }
     }
-    if (gains) setTimeout(() => react('happy', 1200, 'hop'), 300);
+    if (gains) setTimeout(() => react('happy', 1200, 'joy', 'star'), 300);
     save(true); renderPanel();
   }
 
@@ -636,7 +706,7 @@ export function initPet(core, quiz) {
   }
   $('#evoOk').addEventListener('click', () => {
     evoEl.classList.remove('show', 'done', 'flashing', 'flicker', 'star'); evolving = false;
-    react('happy', 1400, 'hop'); spawn('✦', 'spark', 3);
+    react('happy', 1500, 'dance', 'star'); spawn('✦', 'spark', 3);
     if (evoQueue.length) setTimeout(runEvoQueue, 300);
     renderPanel();
   });
@@ -646,7 +716,7 @@ export function initPet(core, quiz) {
     const p = P();
     p.alive = false; p.hp = 0; p.flow = false; p.death = { cat: cat || 'en', at: Date.now() };
     deathPending = true; evoQueue.length = 0;
-    tempMood = null; drawSprite(true); setAnim('dead', 99999);
+    tempMood = null; setAnim('dead', 99999); drawSprite(true); emote('cloud', 1400);
     setTimeout(openDeath, 1500);
   }
   function catLevelText(cat) {
@@ -656,7 +726,7 @@ export function initPet(core, quiz) {
   function openDeath() {
     const p = P(); if (!p || p.alive) { deathPending = false; return; }
     const cat = p.death?.cat || 'en', label = catLabel(cat), lv = catLevelText(cat);
-    $('#deathPet').innerHTML = petSVG(p.species, p.stage, { mood: 'dead' });
+    $('#deathPet').innerHTML = petSVG(p.species, p.stage, { mood: 'dead', pose: 'flat' });
     $('#deathTitle').textContent = `${p.name} öldü…`;
     $('#deathLead').textContent = `Canı ${label} sorusunda tükendi. Ona ne olsun istersin?`;
     $('#reviveTxt').innerHTML = `${esc(label)} seviyen sıfırlanır (${esc(lv)} → ${cat === 'en' ? 'A1' : 'Sv 1'}). Telafi: eski XP’ne (${catXpOf(cat)} XP) ulaşana kadar bu konuda <b>2× XP</b>. ${esc(p.name)} aynı formuyla geri döner.`;
@@ -675,7 +745,7 @@ export function initPet(core, quiz) {
     deathPending = false; deathEl.classList.remove('show');
     tempMood = null; animCls = ''; sprite.className = 'pet-sprite a-idle'; drawSprite(true);
     save(true); core.renderProgress(); quiz.renderAll(); renderPanel();
-    react('happy', 1600, 'hop'); spawn('✦', 'spark', 4);
+    react('happy', 1600, 'joy', 'love'); spawn('✦', 'spark', 4);
     setTimeout(() => say('Geri döndüm! Bu sefer daha dikkatli olalım 💪', 3600), 400);
     core.toast(`💫 ${p.name} canlandı · ${catLabel(cat)} sıfırlandı · telafi 2× XP`);
   });
@@ -724,7 +794,7 @@ export function initPet(core, quiz) {
     else { const now2 = levelsNow(); for (const [k, v] of Object.entries(now2)) app.petLevels[k] = Math.max(app.petLevels[k] ?? v, v); }
     chooser.classList.remove('show'); save(true);
     mode = 'home'; artKey = ''; renderPanel();
-    setTimeout(() => { react('happy', 1500, 'hop'); spawn('♥', 'heart', 3); say(`Merhaba! Ben ${p.name}. Doğru cevaplarla ${p.species === 'plant' ? 'sulanırım 💧' : 'beslenirim 🍖'}`, 4200); }, 500);
+    setTimeout(() => { react('happy', 1500, 'joy', 'love'); spawn('♥', 'heart', 3); say(`Merhaba! Ben ${p.name}. Doğru cevaplarla ${p.species === 'plant' ? 'sulanırım 💧' : 'beslenirim 🍖'}`, 4200); }, 500);
     if (notifyAvailable()) LocalNotifications.requestPermissions().catch(() => {});
     $('#petHome')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
   });
@@ -782,8 +852,8 @@ export function initPet(core, quiz) {
     const p = P(); if (!p || !p.alive) return;
     const away = Date.now() - (p.lastSeen || Date.now());
     p.lastSeen = Date.now();
-    if (away > 8 * HOUR) setTimeout(() => { react('love', 2000, 'love'); spawn('♥', 'heart', 3); say(pick(LINES.missed), 3600); }, 1200);
-    else if (away > 40 * 60000) setTimeout(() => say(pick(LINES.greet[phase()] || LINES.greet.day), 3000), 1500);
+    if (away > 8 * HOUR) setTimeout(() => { react('love', 2000, 'love', 'love'); spawn('♥', 'heart', 3); say(pick(LINES.missed), 3600); }, 1200);
+    else if (away > 40 * 60000) setTimeout(() => { emote(phase() === 'night' ? 'zz' : 'note', 1800); say(pick(LINES.greet[phase()] || LINES.greet.day), 3000); }, 1500);
   }
   function ensure() {
     normalize();
@@ -805,6 +875,6 @@ export function initPet(core, quiz) {
     ensure, reload, render: renderPanel, openChooser, openInfo, xpMod,
     onPause() { const p = P(); if (p) { tick(); p.lastSeen = Date.now(); save(); schedule(); } },
     onResume() { cancelNotes(); tick(); greetIfAway(); renderPanel(); },
-    debug: { die: () => { const p = P(); if (p) { p.hp = 1; } }, evolve: n => evolveBy(n || 1), phase, react, say, tick },
+    debug: { die: () => { const p = P(); if (p) { p.hp = 1; } }, evolve: n => evolveBy(n || 1), phase, react, say, tick, emote, setAnim, poseNow },
   };
 }

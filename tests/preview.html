@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8"><style>
 body{margin:0;background:#f4f0e8;font:11px system-ui}
-.row{display:flex;gap:4px;padding:4px 6px;align-items:flex-end}
+.row{display:flex;gap:4px;padding:4px 6px;align-items:flex-end;flex-wrap:wrap}
 .cell{width:118px;text-align:center}
 .cell svg{width:118px;height:118px;background:#fffdf8;border-radius:10px;overflow:visible}
 h3{margin:6px 8px 0;font-size:12px}
@@ -8,16 +8,22 @@ h3{margin:6px 8px 0;font-size:12px}
 <script type="module">
 import { petSVG, speciesList, stageName, homeSVG } from '/src/pet-art.js';
 const root = document.getElementById('root');
-const mode = new URLSearchParams(location.search).get('m') || 'stages';
+const q = new URLSearchParams(location.search);
+const mode = q.get('m') || 'stages';
+const sz = +(q.get('z') || 118);
+const cell = (svg, label) => `<div class="cell" style="width:${sz}px">${svg.replace('<svg', `<svg style="width:${sz}px;height:${sz}px"`)}<div>${label}</div></div>`;
+const only = q.get('sp');
+const list = only ? only.split(',') : speciesList();
 if (mode === 'stages') {
-  for (const sp of speciesList()) {
-    root.insertAdjacentHTML('beforeend', `<h3>${sp}</h3><div class="row">${[0,1,2,3,4,5].map(s=>`<div class="cell">${petSVG(sp,s)}<div>${stageName(sp,s)}</div></div>`).join('')}</div>`);
-  }
+  const pose = q.get('pose') || 'stand';
+  for (const sp of list) root.insertAdjacentHTML('beforeend', `<h3>${sp}</h3><div class="row">${[0,1,2,3,4,5].map(s=>cell(petSVG(sp,s,{pose, mood: q.get('mood')||'idle'}), stageName(sp,s))).join('')}</div>`);
+} else if (mode === 'poses') {
+  const poses = ['stand','sit','loaf','lie','bow','run','jump','sniff','arch','flat'];
+  const stage = +(q.get('s') || 1);
+  for (const sp of list) root.insertAdjacentHTML('beforeend', `<h3>${sp} · aşama ${stage}</h3><div class="row">${poses.map(p=>cell(petSVG(sp,stage,{pose:p, mood: p==='loaf'?'sleep':p==='flat'?'dead':p==='jump'?'happy':p==='arch'?'poked':'idle'}), p)).join('')}</div>`);
 } else {
-  const moods = ['idle','happy','love','sad','sleep','groggy','poked','surprised','hungry','focus','full','dead'];
-  const stage = +(new URLSearchParams(location.search).get('s') || 1);
-  for (const sp of speciesList()) {
-    root.insertAdjacentHTML('beforeend', `<h3>${sp} · aşama ${stage}</h3><div class="row">${moods.map(m=>`<div class="cell" style="width:84px">${petSVG(sp,stage,{mood:m, belly: m==='full'?1:0}).replace('<svg','<svg style="width:84px;height:84px"')}<div>${m}</div></div>`).join('')}</div>`);
-  }
+  const moods = ['idle','happy','love','sad','sleep','groggy','poked','surprised','hungry','focus','full','eat','dead'];
+  const stage = +(q.get('s') || 1);
+  for (const sp of list) root.insertAdjacentHTML('beforeend', `<h3>${sp} · aşama ${stage}</h3><div class="row">${moods.map(m=>cell(petSVG(sp,stage,{mood:m, pose: q.get('pose')||'stand', belly: m==='full'?1:0}), m)).join('')}</div>`);
 }
 </script></body></html>

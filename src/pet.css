@@ -47,66 +47,166 @@ body.pet-flow .quiz-card,body.pet-flow #legacyBlock .challenge{box-shadow:0 0 0 
 @media(max-width:420px){.pet-home{grid-template-columns:108px 1fr;gap:9px}.pet-hab-bg svg{width:104px;height:104px}.pbar{grid-template-columns:16px 1fr 46px}}
 
 /* ---------- dolaşan pet ---------- */
-.pet-actor{position:fixed;left:0;top:0;width:66px;height:66px;z-index:35;will-change:transform;touch-action:none;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .3s}
+.pet-actor{position:fixed;left:0;top:0;width:76px;height:76px;z-index:35;will-change:transform;touch-action:none;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .3s}
 .pet-actor.hidden{display:block!important;opacity:0;pointer-events:none}
 .pet-sprite{position:absolute;inset:0;transform-origin:50% 92%;transform:scaleX(var(--face,1))}
 .pet-sprite svg{width:100%;height:100%;overflow:visible}
 .pet-shadow{display:none}
 .pet-sprite[data-mood="dead"] svg{filter:grayscale(1) opacity(.7)}
 .pet-sprite .p-eyes{animation:blink 5.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
-.pet-sprite[data-mood="sleep"] .p-eyes,.pet-sprite[data-mood="dead"] .p-eyes{animation:none}
+.pet-sprite[data-mood="sleep"] .p-eyes,.pet-sprite[data-mood="dead"] .p-eyes,.pet-sprite[data-mood="happy"] .p-eyes,.pet-sprite[data-mood="love"] .p-eyes{animation:none}
 @keyframes blink{0%,93%,100%{transform:scaleY(1)}95.5%{transform:scaleY(.12)}}
 .pet-sprite .p-tail{transform-box:fill-box;transform-origin:0% 100%;animation:wag 2.4s ease-in-out infinite}
 .pet-sprite .p-leaf{transform-box:fill-box;transform-origin:50% 100%;animation:sway 4.2s ease-in-out infinite}
+.pet-sprite .p-fan{transform-box:fill-box;transform-origin:50% 100%;animation:fanBreath 4.6s ease-in-out infinite}
 .pet-sprite .p-ear{transform-box:fill-box;transform-origin:50% 0%;animation:earFlop 3.6s ease-in-out infinite}
-.pet-sprite .p-ground{transition:rx .3s}
 @keyframes wag{0%,100%{transform:rotate(0)}50%{transform:rotate(9deg)}}
 @keyframes sway{0%,100%{transform:rotate(0)}50%{transform:rotate(-5deg)}}
 @keyframes earFlop{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
-/* sade, yumuşak hareketler (kedi/köpek örneklerindeki gibi) */
-.a-idle,.a-sit{animation:breathe 3.6s ease-in-out infinite}
+@keyframes fanBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+
+/* kedi/köpek parçaları: kuyruk, bacak, kafa ayrı ayrı oynar */
+.pet-sprite .quad .q-tail,.pet-sprite .quad .q-leg,.pet-sprite .quad .q-head{transform-box:view-box}
+.pet-sprite .quad .q-tail{animation:qWag 2.6s ease-in-out infinite}
+.pet-sprite .quad.q-dog .q-tail{animation:qWag 1.1s ease-in-out infinite}
+.pet-sprite .quad .q-head{animation:qHead 4.8s ease-in-out infinite}
+.pet-sprite[data-pose="loaf"] .quad .q-head,.pet-sprite[data-pose="flat"] .quad *{animation:none}
+@keyframes qWag{0%,100%{transform:rotate(0)}50%{transform:rotate(10deg)}}
+@keyframes qHead{0%,100%{transform:rotate(0)}50%{transform:rotate(-3deg)}}
+/* yürüyüş: çapraz bacaklar birlikte */
+.pet-sprite.a-walk .quad .q-leg.lf,.pet-sprite.a-walk .quad .q-leg.hb{animation:legA .52s ease-in-out infinite}
+.pet-sprite.a-walk .quad .q-leg.lb,.pet-sprite.a-walk .quad .q-leg.hf{animation:legB .52s ease-in-out infinite}
+.pet-sprite.a-walk .quad .q-bob{animation:qBob .26s ease-in-out infinite}
+.pet-sprite.a-walk .quad .q-head{animation:qNod .52s ease-in-out infinite}
+@keyframes legA{0%,100%{transform:rotate(-20deg)}50%{transform:rotate(20deg)}}
+@keyframes legB{0%,100%{transform:rotate(20deg)}50%{transform:rotate(-20deg)}}
+@keyframes qBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.6px)}}
+@keyframes qNod{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
+/* koşu: dörtnala */
+.pet-sprite.a-flee .quad .q-leg.lf,.pet-sprite.a-flee .quad .q-leg.lb{animation:gallopF .3s ease-in-out infinite}
+.pet-sprite.a-flee .quad .q-leg.hf,.pet-sprite.a-flee .quad .q-leg.hb{animation:gallopH .3s ease-in-out infinite}
+.pet-sprite.a-flee .quad .q-leg.lb,.pet-sprite.a-flee .quad .q-leg.hb{animation-delay:-.05s}
+.pet-sprite.a-flee .quad .q-bob{animation:qGallop .3s ease-in-out infinite}
+.pet-sprite.a-flee .quad .q-tail{animation:none}
+@keyframes gallopF{0%,100%{transform:rotate(-28deg)}50%{transform:rotate(22deg)}}
+@keyframes gallopH{0%,100%{transform:rotate(26deg)}50%{transform:rotate(-24deg)}}
+@keyframes qGallop{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-4px) rotate(-3deg)}}
+/* mutlu: kuyruk hızlı sallanır */
+.pet-sprite[data-mood="happy"] .quad .q-tail,.pet-sprite[data-mood="love"] .quad .q-tail{animation:qWagFast .32s ease-in-out infinite}
+@keyframes qWagFast{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(16deg)}}
+/* yemek: kafa aşağı yukarı */
+.pet-sprite.a-eat .quad .q-head,.pet-sprite.a-sniff .quad .q-head{animation:qPeck .3s ease-in-out infinite}
+@keyframes qPeck{0%,100%{transform:rotate(0)}50%{transform:rotate(12deg)}}
+.pet-sprite.a-groom .quad .q-head{animation:qGroom .5s ease-in-out infinite}
+@keyframes qGroom{0%,100%{transform:rotate(4deg)}50%{transform:rotate(18deg)}}
+.pet-sprite.a-look .quad .q-head{animation:qLook 1.6s ease-in-out}
+@keyframes qLook{0%,100%{transform:rotate(0)}30%,70%{transform:rotate(-10deg)}}
+
+/* ---- genel hareketler: boşta yumuşak, tepkilerde belirgin ---- */
+.a-idle,.a-sit,.a-groom{animation:breathe 3.6s ease-in-out infinite}
 @keyframes breathe{0%,100%{transform:scaleX(var(--face,1)) scaleY(1)}50%{transform:scaleX(var(--face,1)) scaleY(1.025)}}
 .a-walk{animation:walk .62s ease-in-out infinite}
 @keyframes walk{0%,100%{transform:scaleX(var(--face,1)) translateY(0) rotate(0)}25%{transform:scaleX(var(--face,1)) translateY(-2.5px) rotate(-1.6deg)}50%{transform:scaleX(var(--face,1)) translateY(0) rotate(0)}75%{transform:scaleX(var(--face,1)) translateY(-2.5px) rotate(1.6deg)}}
+.pet-sprite.a-walk[data-pose="stand"]{animation:none}
 .a-flee{animation:run .3s ease-in-out infinite}
 @keyframes run{0%,100%{transform:scaleX(var(--face,1)) translateY(0) rotate(-3deg)}50%{transform:scaleX(var(--face,1)) translateY(-6px) rotate(-6deg)}}
-.a-hop{animation:hop .9s cubic-bezier(.33,0,.25,1)}
-@keyframes hop{0%,100%{transform:scaleX(var(--face,1)) translateY(0)}18%{transform:scaleX(var(--face,1)) translateY(1px) scaleY(.97)}50%{transform:scaleX(var(--face,1)) translateY(-11px)}82%{transform:scaleX(var(--face,1)) translateY(0) scaleY(.98)}}
-.a-eat{animation:nibble .45s ease-in-out 2}
-@keyframes nibble{50%{transform:scaleX(var(--face,1)) translateY(2px) rotate(3deg)}}
-.a-sad{animation:slump 1.6s ease-in-out forwards}
-@keyframes slump{0%{transform:scaleX(var(--face,1))}100%{transform:scaleX(var(--face,1)) translateY(3px) scaleY(.96)}}
-.a-poked{animation:surprise .7s cubic-bezier(.25,.8,.3,1)}
-@keyframes surprise{0%{transform:scaleX(var(--face,1)) translateY(0)}30%{transform:scaleX(var(--face,1)) translateY(-8px)}100%{transform:scaleX(var(--face,1)) translateY(0)}}
-.a-love{animation:snuggle 1.1s ease-in-out 2}
-@keyframes snuggle{0%,100%{transform:scaleX(var(--face,1)) rotate(0)}30%{transform:scaleX(var(--face,1)) rotate(-4deg)}70%{transform:scaleX(var(--face,1)) rotate(4deg)}}
+.pet-sprite.a-flee[data-pose="run"]{animation:none}
+/* sevinç zıplaması: hazırlan, sıçra, uzan, yere bas */
+.a-hop,.a-joy{animation:joy .9s cubic-bezier(.3,0,.3,1)}
+@keyframes joy{0%,100%{transform:scaleX(var(--face,1)) translateY(0)}14%{transform:scaleX(calc(var(--face,1)*1.1)) scaleY(.84) translateY(2px)}42%{transform:scaleX(calc(var(--face,1)*.94)) scaleY(1.1) translateY(-22px)}62%{transform:scaleX(var(--face,1)) translateY(-14px)}80%{transform:scaleX(calc(var(--face,1)*1.08)) scaleY(.9) translateY(0)}90%{transform:scaleX(var(--face,1)) scaleY(1.03) translateY(-2px)}}
+/* dans (seri): sağa sola zıplar */
+.a-dance{animation:dance .7s ease-in-out 2}
+@keyframes dance{0%,100%{transform:scaleX(var(--face,1)) translate(0,0) rotate(0)}25%{transform:scaleX(var(--face,1)) translate(-5px,-14px) rotate(-10deg)}50%{transform:scaleX(var(--face,1)) translate(0,0) scaleY(.92)}75%{transform:scaleX(var(--face,1)) translate(5px,-14px) rotate(10deg)}}
+/* yemek */
+.a-eat{animation:nibble .25s ease-in-out 4}
+@keyframes nibble{50%{transform:scaleX(var(--face,1)) translateY(3px) scaleY(.94) rotate(4deg)}}
+.a-sniff{animation:sniffWalk 1.6s ease-in-out}
+@keyframes sniffWalk{0%,100%{transform:scaleX(var(--face,1)) translateX(0)}50%{transform:scaleX(var(--face,1)) translateX(calc(var(--face,1)*4px))}}
+/* yanlış: geri sarsılma, sonra boynu bükük */
+.a-flinch{animation:flinch .7s cubic-bezier(.2,.8,.3,1)}
+@keyframes flinch{0%{transform:scaleX(var(--face,1))}12%{transform:scaleX(var(--face,1)) translateX(calc(var(--face,1)*-9px)) rotate(calc(var(--face,1)*-12deg)) scaleY(.92)}28%{transform:scaleX(var(--face,1)) translateX(calc(var(--face,1)*4px)) rotate(calc(var(--face,1)*5deg))}40%{transform:scaleX(var(--face,1)) translateX(calc(var(--face,1)*-3px))}52%{transform:scaleX(var(--face,1)) translateX(calc(var(--face,1)*2px))}100%{transform:scaleX(var(--face,1)) translateY(2px) scaleY(.96)}}
+.a-sad{animation:slump 1.8s ease-in-out forwards}
+@keyframes slump{0%{transform:scaleX(var(--face,1))}30%{transform:scaleX(var(--face,1)) translateY(3px) scaleY(.94) rotate(-3deg)}60%{transform:scaleX(var(--face,1)) translateY(3px) scaleY(.94) rotate(3deg)}100%{transform:scaleX(var(--face,1)) translateY(3px) scaleY(.95)}}
+/* dürtülünce: büzülüp titrer */
+.a-poked{animation:pokeShake .8s cubic-bezier(.3,.7,.3,1)}
+@keyframes pokeShake{0%{transform:scaleX(var(--face,1))}10%{transform:scaleX(calc(var(--face,1)*1.12)) scaleY(.82)}22%{transform:scaleX(calc(var(--face,1)*.92)) scaleY(1.12) translateY(-6px)}34%{transform:scaleX(var(--face,1)) translateX(-4px)}44%{transform:scaleX(var(--face,1)) translateX(4px)}54%{transform:scaleX(var(--face,1)) translateX(-3px)}64%{transform:scaleX(var(--face,1)) translateX(3px)}100%{transform:scaleX(var(--face,1))}}
+/* irkilme: havaya sıçrar, titrer */
+.a-shock{animation:shock .9s cubic-bezier(.2,.9,.3,1)}
+@keyframes shock{0%{transform:scaleX(var(--face,1))}18%{transform:scaleX(calc(var(--face,1)*.9)) scaleY(1.16) translateY(-16px)}36%{transform:scaleX(var(--face,1)) translateY(0) scaleY(.9)}46%,66%{transform:scaleX(var(--face,1)) translateX(-2px)}56%,76%{transform:scaleX(var(--face,1)) translateX(2px)}100%{transform:scaleX(var(--face,1))}}
+/* sevgi: sağa sola sokulur */
+.a-love{animation:snuggle .55s ease-in-out 4}
+@keyframes snuggle{0%,100%{transform:scaleX(var(--face,1)) rotate(0) translateY(0)}25%{transform:scaleX(var(--face,1)) rotate(-9deg) translateY(-3px)}75%{transform:scaleX(var(--face,1)) rotate(9deg) translateY(-3px)}}
 .a-look{animation:look 1.8s ease-in-out}
 @keyframes look{0%,100%{transform:scaleX(var(--face,1)) rotate(0)}35%,65%{transform:scaleX(var(--face,1)) rotate(-5deg)}}
-.a-stretch{animation:stretch 2s ease-in-out}
-@keyframes stretch{0%,100%{transform:scaleX(var(--face,1)) scaleY(1)}45%,60%{transform:scaleX(calc(var(--face,1)*1.07)) scaleY(.94)}}
+.a-stretch{animation:stretch 1.8s ease-in-out}
+@keyframes stretch{0%,100%{transform:scaleX(var(--face,1)) scaleY(1)}45%,60%{transform:scaleX(calc(var(--face,1)*1.08)) scaleY(.94)}}
+.a-shake{animation:dogShake .16s linear 8}
+@keyframes dogShake{0%,100%{transform:scaleX(var(--face,1)) rotate(0)}25%{transform:scaleX(var(--face,1)) rotate(-7deg)}75%{transform:scaleX(var(--face,1)) rotate(7deg)}}
 .a-yawn{animation:yawn 2.2s ease-in-out}
-@keyframes yawn{0%,100%{transform:scaleX(var(--face,1))}40%,65%{transform:scaleX(var(--face,1)) scaleY(1.04) rotate(-3deg)}}
+@keyframes yawn{0%,100%{transform:scaleX(var(--face,1))}40%,65%{transform:scaleX(var(--face,1)) scaleY(1.06) rotate(-4deg)}}
 .a-doze{animation:doze 3.2s ease-in-out}
 @keyframes doze{0%,100%{transform:scaleX(var(--face,1)) rotate(0)}25%,50%{transform:scaleX(var(--face,1)) rotate(5deg) translateY(1px)}62%{transform:scaleX(var(--face,1)) rotate(-1deg)}80%{transform:scaleX(var(--face,1)) rotate(4deg) translateY(1px)}}
 .a-sleep{animation:sleepBreath 4.2s ease-in-out infinite}
 @keyframes sleepBreath{0%,100%{transform:scaleX(var(--face,1)) scaleY(1)}50%{transform:scaleX(var(--face,1)) scaleY(.965)}}
 .a-roll{animation:liedown 4.2s ease-in-out}
 @keyframes liedown{0%,100%{transform:scaleX(var(--face,1)) rotate(0)}20%,80%{transform:scaleX(var(--face,1)) rotate(-72deg) translate(-4px,8px)}}
+.pet-sprite.a-roll[data-pose="lie"]{animation:sleepBreath 2.4s ease-in-out infinite}
 .a-focus{animation:focus 1.4s ease-in-out 2}
 @keyframes focus{0%,100%{transform:scaleX(var(--face,1)) translateY(0)}50%{transform:scaleX(var(--face,1)) translateY(-3px)}}
 .a-dead{animation:faint 1.6s ease-in forwards}
 @keyframes faint{40%{transform:scaleX(var(--face,1)) rotate(-8deg)}100%{transform:scaleX(var(--face,1)) rotate(-82deg) translate(-6px,10px)}}
+.pet-sprite.a-dead[data-pose="flat"]{animation:fadeSink 1.2s ease-in forwards}
+@keyframes fadeSink{to{transform:scaleX(var(--face,1)) translateY(2px)}}
 .pet-sprite[data-mood="focus"] svg{filter:drop-shadow(0 0 5px rgba(143,124,255,.45))}
+
+/* ---- emote balonu ---- */
+.pet-emote{position:absolute;left:50%;top:-30px;width:34px;height:34px;margin-left:-17px;display:grid;place-items:center;background:#fff;border:2px solid #2b2230;border-radius:50%;box-shadow:0 3px 0 rgba(31,28,34,.16);opacity:0;pointer-events:none;z-index:3;transform:translateX(calc(var(--face,1)*15px)) scale(.2);transform-origin:50% 120%}
+.pet-emote:after{content:"";position:absolute;bottom:-6px;left:50%;margin-left:calc(var(--face,1)*-9px - 4px);width:8px;height:8px;background:#fff;border:2px solid #2b2230;border-top:0;border-left:0;transform:rotate(45deg);border-radius:0 0 3px 0}
+.pet-emote svg{width:23px;height:23px;display:block;overflow:visible}
+.pet-emote.show{animation:emPop .5s cubic-bezier(.2,1.6,.4,1) forwards}
+.pet-emote.show.out{animation:emOut .26s ease-in forwards}
+@keyframes emPop{0%{opacity:0;transform:translateX(calc(var(--face,1)*15px)) translateY(8px) scale(.2) rotate(-25deg)}60%{opacity:1;transform:translateX(calc(var(--face,1)*15px)) translateY(-3px) scale(1.18) rotate(8deg)}100%{opacity:1;transform:translateX(calc(var(--face,1)*15px)) scale(1) rotate(0)}}
+@keyframes emOut{0%{opacity:1;transform:translateX(calc(var(--face,1)*15px)) scale(1)}100%{opacity:0;transform:translateX(calc(var(--face,1)*15px)) translateY(-10px) scale(.6)}}
+.e-love svg{animation:emBeat .55s ease-in-out infinite}
+.e-excl svg{animation:emJolt .22s ease-in-out 4}
+.e-ask svg{animation:emTilt 1s ease-in-out infinite}
+.e-anger svg{animation:emThrob .35s ease-in-out infinite}
+.e-tear svg,.e-drop svg{animation:emDrip 1s ease-in-out infinite}
+.e-sweat svg{animation:emSlide .8s ease-in-out infinite}
+.e-zz svg{animation:emFloat 1.6s ease-in-out infinite}
+.e-note svg{animation:emBounce .5s ease-in-out infinite}
+.e-star svg,.e-spark svg{animation:emSpin 1.2s ease-in-out infinite}
+.e-fire svg{animation:emFlick .3s ease-in-out infinite}
+.e-idea svg{animation:emGlow .8s ease-in-out infinite}
+.e-dots circle{animation:emDot 1s ease-in-out infinite}.e-dots circle:nth-child(2){animation-delay:.15s}.e-dots circle:nth-child(3){animation-delay:.3s}
+.e-cloud svg{animation:emFloat 2s ease-in-out infinite}
+.e-fish svg,.e-bone svg,.e-seed svg{animation:emWiggle .45s ease-in-out infinite}
+@keyframes emBeat{0%,100%{transform:scale(1)}30%{transform:scale(1.22)}55%{transform:scale(.95)}}
+@keyframes emJolt{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-2px) rotate(-8deg)}75%{transform:translateX(2px) rotate(8deg)}}
+@keyframes emTilt{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(12deg)}}
+@keyframes emThrob{0%,100%{transform:scale(.9)}50%{transform:scale(1.15)}}
+@keyframes emDrip{0%,100%{transform:translateY(-1px)}50%{transform:translateY(2px) scaleY(1.06)}}
+@keyframes emSlide{0%,100%{transform:translate(0,0)}50%{transform:translate(-2px,2px)}}
+@keyframes emFloat{0%,100%{transform:translateY(1px)}50%{transform:translateY(-3px)}}
+@keyframes emBounce{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-3px) rotate(6deg)}}
+@keyframes emSpin{0%{transform:rotate(0) scale(1)}50%{transform:rotate(20deg) scale(1.15)}100%{transform:rotate(0) scale(1)}}
+@keyframes emFlick{0%,100%{transform:scaleY(1) skewX(0)}50%{transform:scaleY(1.1) skewX(-4deg)}}
+@keyframes emGlow{0%,100%{filter:none}50%{filter:drop-shadow(0 0 4px #FFD84A)}}
+@keyframes emDot{0%,100%{transform:translateY(0)}40%{transform:translateY(-3px)}}
+@keyframes emWiggle{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(10deg)}}
+.pet-actor.emoting .pet-bubble{bottom:calc(100% + 40px)}
+.pet-actor.at-home .pet-emote{top:-22px}
+
 .pet-fx{position:absolute;left:-10px;right:-10px;top:-20px;bottom:0;pointer-events:none}
-.pfx{position:absolute;bottom:40%;font-size:13px;font-weight:900;line-height:1;animation:fxUp 1.8s ease-out forwards;opacity:0}
-.pfx.heart{color:#FF6B8A}.pfx.spark{color:#E9B93C}.pfx.sweat,.pfx.tear,.pfx.rain{color:#6DB6EE;font-size:16px}.pfx.crumb{color:#D99A55;font-size:16px}
-.pfx.zz{font-weight:900;font-size:14px;color:#6a55e0;font-family:ui-rounded,system-ui;animation:fxZ 2.2s ease-out forwards}
+.pfx{position:absolute;bottom:40%;font-size:16px;font-weight:900;line-height:1;animation:fxUp 1.8s ease-out forwards;opacity:0}
+.pfx.heart{color:#FF6B8A;font-size:18px}.pfx.spark{color:#E9B93C;font-size:17px}.pfx.sweat,.pfx.tear,.pfx.rain{color:#6DB6EE;font-size:18px}.pfx.crumb{color:#D99A55;font-size:18px}
+.pfx.zz{font-weight:900;font-size:15px;color:#6a55e0;font-family:ui-rounded,system-ui;animation:fxZ 2.2s ease-out forwards}
 .pfx.crumb,.pfx.rain{bottom:auto;top:-6px;animation:fxDown 1s ease-in forwards}
-.pfx.tear{bottom:50%;font-size:11px;animation:fxDown 1s ease-in forwards}
-@keyframes fxUp{0%{opacity:0;transform:translate(0,0) scale(.7)}20%{opacity:1}100%{opacity:0;transform:translate(var(--dx),-38px) scale(1)}}
+.pfx.tear{bottom:50%;font-size:12px;animation:fxDown 1s ease-in forwards}
+@keyframes fxUp{0%{opacity:0;transform:translate(0,0) scale(.7)}20%{opacity:1}100%{opacity:0;transform:translate(var(--dx),-44px) scale(1.1)}}
 @keyframes fxZ{0%{opacity:0;transform:translate(0,0) scale(.7)}20%{opacity:1}100%{opacity:0;transform:translate(22px,-40px) scale(1.3)}}
 @keyframes fxDown{0%{opacity:0;transform:translate(var(--dx),-6px)}25%{opacity:1}100%{opacity:0;transform:translate(var(--dx),36px)}}
-.pet-bubble{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%) scale(.6);transform-origin:50% 100%;width:max-content;max-width:min(230px,70vw);background:#221d29;color:#fffdf8;border:0;border-radius:14px;padding:7px 11px;font-size:12px;font-weight:750;line-height:1.35;box-shadow:0 6px 16px rgba(31,28,34,.18);opacity:0;pointer-events:none;transition:opacity .18s,transform .22s cubic-bezier(.2,1.4,.4,1);text-align:center}
+.pet-bubble{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%) scale(.6);transform-origin:50% 100%;width:max-content;max-width:min(230px,70vw);background:#221d29;color:#fffdf8;border:0;border-radius:14px;padding:7px 11px;font-size:12px;font-weight:750;line-height:1.35;box-shadow:0 6px 16px rgba(31,28,34,.18);opacity:0;pointer-events:none;transition:opacity .18s,transform .22s cubic-bezier(.2,1.4,.4,1),bottom .2s;text-align:center}
 .pet-bubble:after{content:"";position:absolute;left:50%;top:100%;margin-left:-6px;border:6px solid transparent;border-top-color:#221d29}
 .pet-bubble.show{opacity:1;transform:translateX(-50%) scale(1)}
 .pet-bubble.left{left:0;transform:translateX(0) scale(.6);transform-origin:10% 100%}.pet-bubble.left.show{transform:translateX(0) scale(1)}.pet-bubble.left:after{left:24px}
@@ -189,4 +289,4 @@ body.pet-flow .quiz-card,body.pet-flow #legacyBlock .challenge{box-shadow:0 0 0 
 .pi-stats span{font-size:11px;font-weight:800;background:#ece6dc;border-radius:99px;padding:4px 9px}
 .quiz-opt.elim{opacity:.38;text-decoration:line-through;pointer-events:none;filter:grayscale(1)}
 .quiz-opt.elim .opt-key:after{content:" ✂"}
-@media(prefers-reduced-motion:reduce){.pet-sprite,.pet-sprite *{animation:none!important}.pfx{animation-duration:.01s!important}}
+@media(prefers-reduced-motion:reduce){.pet-sprite,.pet-sprite *{animation:none!important}.pfx{animation-duration:.01s!important}.pet-emote.show{animation:none;opacity:1;transform:translateX(calc(var(--face,1)*15px))}.pet-emote svg{animation:none!important}}
