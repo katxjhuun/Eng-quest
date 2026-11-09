@@ -1,3 +1,55 @@
+# dam-la 2.2.0 — Petler ve “dam-la Kedi” teması
+
+Petler ve tema uzaktan güncellemeyle gelir. **Yalnızca “acıktım” bildirimleri** için yeni APK/IPA kurulmalı (bildirim eklentisi yerel koddur).
+
+## Petler
+- **4 tür, her biri 6 evrim formu** (hepsi özgün çizim, kedi-köpek örneklerindeki sade siluet tarzında, çizgisiz, yumuşak gölgeli):
+  - 🌱 **Bitki:** Tohumcuk › Filizcik › Fidancık › Tomurcuk › Çiçek Perisi › Kadim Ağaç
+  - 🐣 **Civciv:** Yumurtacık › Pıtırcık › Tombiş › Kanatçık › Alevkuş › Anka
+  - 🐈‍⬛ **Kedi:** Minnoş › Mırnav › Pati Ustası › Pars › Aslan › Gök Aslanı
+  - 🐕 **Köpek:** Tosbik › Hav › İzci › Kurtçuk › Ay Kurdu › Yıldız Kurdu
+- **Seçim:** İlk açılışta, kalibrasyondan hemen sonra pet seçilir ve adı verilir. Mevcut kullanıcılara da bir kez sorulur.
+- **Yuva:** Seviye çubuğu ile soru tipi düğmesinin arasında. Petin yuvası (saksı, yuva, minder, kulübe), adı, formu ve üç çubuk burada görünür:
+  - **❤️ Can:** Yanlış cevaplar azaltır.
+  - **Yemek:** Bitkide **💧 Su**. Her doğru cevap doldurur, zamanla azalır.
+  - **⚡ Enerji:** Her soruda azalır, dinlenince ve gece uykusunda dolar.
+- **Dolaşma:** Pet uygulamanın her yerinde dolaşır, soruların ve yazıların önünden geçer. Durduğu yeri düğmelerin üstü olmayacak şekilde seçer. Yuvaya dokununca yanına gelir.
+- **Tepkiler:**
+  - Doğru cevapta yemek yer ve sevinir. Yanlışta üzülür.
+  - Çok soru çözülünce **karnı şişer**, mayışır, yavaş yürür, uzanır.
+  - Dokununca bazen **kaçar**, bazen **dürtülmüş gibi** irkilir, bazen sevilmekten hoşlanır (kalpler). Basılı tutunca okşanır.
+  - Arada konuşma balonuyla moral ve destek verir; seri yapınca, yanlıştan sonra, acıkınca ve flow modunda farklı konuşur. Sesli konuşmaz.
+- **Saat:**
+  - 23:00–06:00 arası uyur.
+  - 06:00–07:30 arası hâlâ uyuyordur; soru çözünce uyanır.
+  - 07:30–10:00 arası **sabah mahmurudur**.
+  - 20:00–23:00 arası uykusu gelir ve uyuklar.
+  - Yuvanın gökyüzü de akşam ve gece rengine döner.
+- **Evrim:** Her seviye atlayışta (İngilizce veya herhangi bir konu) bir üst forma evrimleşir; parlayan siluet animasyonu oynar. Son formdan sonraki her seviye ⭐ ekler. Evrimde can, yemek ve enerji sınırları büyür.
+- **Ölüm:** Can 0 olursa pet ölür ve iki seçenek çıkar:
+  - **Canlandır:** Ölümün olduğu konunun seviyesi sıfırlanır, aynı pet döner. Eski XP’ne ulaşana kadar o konuda **2× XP telafi bonusu** alırsın.
+  - **Yeni pet:** Eski pet anı köşesine uğurlanır, yeni pet baştan büyür. O konunun seviyesi düşmez; yalnızca o seviyedeki XP çubuğu sıfırlanır.
+- **Yetenekler:**
+
+| Pet | Güçlü yanı | Pasif | Aktif (enerji harcar) |
+|---|---|---|---|
+| Bitki | Büyük su deposu | Fotosentez: gündüz susuzluk ve enerji kaybı yarıda | Ayıkla: 2 yanlış şıkkı eler / yazmada cezasız 1 harf açar |
+| Civciv | Ekstra enerji | Erken Kuş: sabah 06–12 doğrulara +%25 XP | Cik İpucu: cevabın ilk harfi + harf/kelime sayısı |
+| Kedi | Ekstra can | Dokuz Can: günde bir kez ölümcül yanlışta 1 canla kurtulur | Pati Atla: soruyu cezasız ve seriyi bozmadan geçer |
+| Köpek | Can + mama dengesi | Sadık Dost: her 5’li doğru seride +10 can | İz Sür: 1 yanlış şıkkı eler, o soruda can kaybını engeller |
+
+- **Flow modu (🌊):**
+  - Açıkken ödül pencereleri açılmaz.
+  - Enerji her soruda değil, 10 soruda bir azalır.
+  - Pet kafa bandıyla odaklanmış görünür ve destek verir.
+  - Enerji çubuğunda dönen bir **direnç kalkanı** görünür.
+- **Bildirimler (yeni APK/IPA ile):** Uygulama uzun süre açılmazsa telefona bildirim gelir: petin acıktığında, çok acıktığında, 1 gün ve 3 gün sonra. 22:00–09:30 arasında bildirim gönderilmez. Pet bilgisinden kapatılabilir.
+
+## Tema
+- **dam-la Kedi:** Logodaki pembe zemin, nane yeşili ve kalın siyah çizgili çıkartma görünümü (Ayarlar › Görünüm). Toplam 12 tema.
+
+---
+
 # dam-la 2.1.2 — Yönetici paneli bağlandı
 
 Firebase projesi (`dam-la`, Avrupa sunucusu, ücretsiz Spark planı) kuruldu: anonim giriş + Google girişi, güvenlik kuralları yayında, uygulama ve panel bağlı. Uzaktan güncellemeyle gelir.

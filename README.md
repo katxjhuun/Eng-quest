@@ -1,4 +1,4 @@
-# dam-la 2.1
+# dam-la 2.2
 
 İngilizce ve genel kültür **pop quiz** uygulaması — Android ve iPhone için mobil uygulama (Capacitor 8) + tarayıcı/PWA sürümü + uygulamadan bağımsız **yönetici paneli**.
 İlerleme telefonda kalıcı olarak saklanır; yeni sürümler uygulama yeniden kurulmadan uzaktan iner.
@@ -20,6 +20,8 @@
 | `src/music.js` | Ödül müziği (canlı listeler, beğeniler) |
 | `src/cloud.js` | DL-kimlik ve yönetici paneli bağlantısı (Firebase) |
 | `src/birthday.js` | 24 Kasım doğum günü teması ve simgesi |
+| `src/pet.js`, `src/pet-art.js`, `src/pet.css` | Pet sistemi: durum, dolaşma, evrim, ölüm, flow, yetenekler, bildirimler; özgün SVG çizimler |
+| `src/theme-extras.css` | Tema özel ek stiller (dam-la Kedi çıkartma görünümü) |
 | `src/platform.js`, `src/config.js` | Telefon katmanı ve ayarlar (OTA adresi, Firebase) |
 | `admin/` | Yönetici paneli (Pages'te `/admin/`) |
 | `database.rules.json` | Firebase Realtime Database güvenlik kuralları |

@@ -332,9 +332,11 @@ export function initQuiz(core) {
       optBox.innerHTML = c.order.map((idx, k) => {
         const text = optionText(item, idx);
         let cls = 'quiz-opt';
+        const out = !c.done && Array.isArray(c.elim) && c.elim.includes(idx);
         if (c.done) { if (idx === 0) cls += ' right'; else if (c.choice === idx) cls += ' wrong'; else cls += ' dim'; }
+        else if (out) cls += ' elim';
         const speakBtn = (c.style === 'listen' || item.optLang === 'en') ? `<span class="opt-say" role="button" tabindex="0" data-say="${k}" aria-label="Seçeneği dinle">🔊</span>` : '';
-        return `<button class="${cls}" data-opt="${Number(idx) | 0}" ${c.done ? 'aria-disabled="true"' : ''}><span class="opt-key">${'ABCD'[k]}</span><span class="opt-text" lang="${item.optLang}">${esc(text)}</span>${speakBtn}</button>`;
+        return `<button class="${cls}" data-opt="${Number(idx) | 0}" ${c.done || out ? 'aria-disabled="true"' : ''}><span class="opt-key">${'ABCD'[k]}</span><span class="opt-text" lang="${item.optLang}">${esc(text)}</span>${speakBtn}</button>`;
       }).join('');
     } else renderTyped(item, c);
     // açıklama
@@ -419,7 +421,7 @@ export function initQuiz(core) {
     const exact = answer.toLocaleLowerCase('tr') === item.a.toLocaleLowerCase('tr');
     const close = fold(answer) === fold(item.a);
     if (exact || close) {
-      const delta = c.hints.length ? XP.typeHinted : XP.type;
+      const delta = c.hints.length > (c.freeHints || 0) ? XP.typeHinted : XP.type;
       if (!exact) c.note = 'Türkçe karakterlere dikkat';
       finish(item, c, true, delta, $('#qzSlots'));
       return;
@@ -450,6 +452,7 @@ export function initQuiz(core) {
     const viewCat = app.cat;
     const before = viewCat === 'en' ? app.xp : (viewCat === 'mix' ? totalXp() : catXp(viewCat));
     const realBefore = catXp(targetCat);
+    if (delta > 0 && core.xpMod) delta = core.xpMod(targetCat, delta, right);
     addXp(targetCat, delta);
     c.delta = catXp(targetCat) - realBefore;
     if (viewCat === 'en') core.freezeXp(before); else frozen = { cat: viewCat, value: before };
@@ -463,6 +466,7 @@ export function initQuiz(core) {
       rewardNow = mode === 'every' || (mode === 'question' && q.rewardCount % 5 === 0);
     }
     core.cloudEvent?.({ type: 'answer', cat: item.cat, right, delta: c.delta, q: item.q });
+    window.dispatchEvent(new CustomEvent('dl:answer', { detail: { right, cat: targetCat, kind: c.style === 'type' ? 'type' : 'quiz', id: item.id, delta: c.delta } }));
     flyXp(src, c.delta, { onLand: () => { core.unfreezeXp(); frozen = null; core.renderProgress(); } })
       .then(() => { if (rewardNow) core.showRewardPopup(c.delta); });
   }
@@ -510,7 +514,7 @@ export function initQuiz(core) {
     const say = e.target.closest('[data-say]');
     const c = cur(), item = findItem(c.id);
     if (say) { e.stopPropagation(); const idx = c.order[+say.dataset.say]; core.speak(optionText(item, idx), item.optLang === 'en' ? 'en' : 'tr'); return; }
-    const b = e.target.closest('[data-opt]'); if (!b) return;
+    const b = e.target.closest('[data-opt]'); if (!b || b.classList.contains('elim')) return;
     if (!c.revealed && c.style === 'listen') c.revealed = true;
     choose(+b.dataset.opt, b);
   });
@@ -543,6 +547,38 @@ export function initQuiz(core) {
       core.renderProgress();
       return flyXp(fromEl, delta, { onLand: () => { core.unfreezeXp(); frozen = null; core.renderProgress(); } });
     },
+    // ---- pet yetenekleri için ----
+    petTarget() {
+      const c = cur(); if (!c || c.legacy || c.done) return null;
+      const item = findItem(c.id); return item ? { item, c, style: c.style } : null;
+    },
+    eliminate(n) {
+      const t = this.petTarget(); if (!t || t.style === 'type') return 0;
+      const c = t.c; c.elim = Array.isArray(c.elim) ? c.elim : [];
+      const wrong = c.order.filter(i => i !== 0 && !c.elim.includes(i));
+      // en az bir yanlış şık kalsın (tamamen bedava olmasın)
+      const pick = seededShuffle(wrong, hash(t.item.id + Date.now())).slice(0, Math.min(n, Math.max(0, wrong.length - 1)));
+      c.elim.push(...pick); core.saveLocal(false); render(); return pick.length;
+    },
+    freeHint() {
+      const t = this.petTarget(); if (!t || t.style !== 'type') return false;
+      const c = t.c, before = c.hints.length;
+      const max = slotPositions(t.item).length; if (c.hints.length >= max - 1) return false;
+      const free = slotPositions(t.item).filter(i => !c.hints.includes(i));
+      const typedLen = [...(c.typed || '')].length;
+      const pick = free.slice(typedLen)[0] ?? free[free.length - 1]; if (pick == null) return false;
+      c.hints.push(pick); c.hints.sort((a, b) => a - b); c.freeHints = (c.freeHints || 0) + 1;
+      c.typed = [...(c.typed || '')].slice(0, freeSlotCount(t.item, c)).join(''); $('#qzInput').value = c.typed;
+      c.fb = 'Petin bir harf açtı (XP cezası yok).'; c.fbType = 'hint';
+      core.saveLocal(false); render(); return c.hints.length > before;
+    },
+    skip() { const t = this.petTarget(); if (!t) return false; next({ speak: true }); return true; },
+    answerHint() {
+      const t = this.petTarget(); if (!t) return null;
+      const a = String(t.item.a); const letters = [...a].filter(ch => SLOT_RE.test(ch)).length;
+      return { first: a.trim()[0] || '', letters, words: a.trim().split(/\s+/).length, text: a };
+    },
+    renderAll() { render(); },
     resetDeptCache() { Object.keys(vocabCache).forEach(k => delete vocabCache[k]); const q = Q(); if (q.cur.en && !q.cur.en.legacy && String(q.cur.en.id).startsWith('dv-') && !q.cur.en.done) q.cur.en = newCur('en'); },
   };
 }

@@ -1,4 +1,4 @@
-# dam-la 2.1 — Kurulum rehberi (App Store / Play Store olmadan)
+# dam-la 2.2 — Kurulum rehberi (App Store / Play Store olmadan)
 
 Uygulama **telefonun içinde** çalışır. Sunucu veya açık bir bilgisayar gerekmez; ilerleme (XP, sorular, tekrar planı, ayarlar) telefonda kalıcı olarak kaydedilir. Yeni sürümler uygulamayı yeniden kurmadan internetten iner.
 Kullanıcı profil açmaz: ilk açılışta cihaza **DL-XXXXX** biçiminde bir kimlik verilir (Ayarlar'da görünür). İsteğe bağlı **yönetici paneli** (bölüm 7) bu kimliklerle kullanıcıları canlı takip eder.
@@ -24,9 +24,9 @@ ZIP'teki `GIZLI_android_imza/GITHUB_SECRETS.txt` dosyasını aç. GitHub'da **Se
 **Settings › Pages › Build and deployment › Source: GitHub Actions** seç. Her `main` güncellemesinde uygulama `https://katxjhuun.github.io/Eng-quest/` adresinde de yayınlanır (iPhone için en kolay yol, aşağıya bak).
 
 ### 0.4 İlk sürümü üret
-**Actions › "Release (APK + uzaktan güncelleme)" › Run workflow** düğmesine bas. 5–8 dakika sonra **Releases** sayfasında `dam-la 2.1.0` oluşur; içinde:
-- `dam-la-2.1.0.apk` — Android kurulum dosyası
-- `dam-la-2.1.0-unsigned.ipa` — iPhone (Sideloadly) dosyası ("iOS IPA" iş akışı ekler)
+**Actions › "Release (APK + uzaktan güncelleme)" › Run workflow** düğmesine bas. 5–8 dakika sonra **Releases** sayfasında `dam-la 2.2.0` oluşur; içinde:
+- `dam-la-2.2.0.apk` — Android kurulum dosyası
+- `dam-la-2.2.0-unsigned.ipa` — iPhone (Sideloadly) dosyası ("iOS IPA" iş akışı ekler)
 - `web-bundle.zip` + `update.json` — uzaktan güncelleme dosyaları (dokunma)
 
 ---
@@ -83,7 +83,7 @@ ZIP'teki `GIZLI_android_imza/GITHUB_SECRETS.txt` dosyasını aç. GitHub'da **Se
 
 ### Yeni bir güncelleme yayınlama (sen yaparsın)
 1. `src/` içinde değişikliği yap (ör. `src/app.js` içindeki `questions` listesine soru ekle).
-2. `package.json` içindeki `"version"` değerini artır: `2.1.0` → `2.1.1`.
+2. `package.json` içindeki `"version"` değerini artır: `2.2.0` → `2.2.1`.
 3. Değişiklikleri GitHub'a gönder (commit/push veya web'den yükle).
 4. **Actions › Release › Run workflow**. Bitti — telefonlar bir sonraki açılışta indirir. PWA sürümü de kendiliğinden güncellenir.
 
@@ -91,6 +91,7 @@ ZIP'teki `GIZLI_android_imza/GITHUB_SECRETS.txt` dosyasını aç. GitHub'da **Se
 Yalnızca **telefon tarafını** değiştiren durumlarda: yeni bir Capacitor eklentisi, uygulama simgesi/adı, izinler veya Capacitor sürüm yükseltmesi. O zaman:
 - `package.json` içinde `"nativeVersion"` ve `"minNativeVersion"` değerlerini birlikte artır (ör. `2.1.0`),
 - Release'i çalıştır, yeni APK'yı eskisinin üzerine kur. Eski kabuktaki telefonlara uygulama "yeniden kurulum gerekiyor" uyarısı gösterir; uyumsuz paket yüklenmez.
+- İstisna: yeni eklenti isteğe bağlıysa (kod, eklenti yoksa o özelliği sessizce atlıyorsa) yalnızca `nativeVersion` artırılır; eski kurulumlar yine güncelleme alır. 2.2.0'daki bildirim eklentisi böyledir: petler eski kurulumda da çalışır, bildirimler yeni APK/IPA ile gelir.
 
 ---
 
@@ -121,6 +122,7 @@ Android Studio'n varsa: `npm run android` (projeyi açar, ▶ ile telefona kurar
 - **iPhone uygulaması açılmıyor:** 7 gün dolmuştur; Sideloadly ile yeniden yükle (uygulamayı silme).
 
 - **AI sesi (Kokoro) yavaş:** ilk kullanımda ~90 MB model iner; telefonda bir cümle birkaç saniyede üretilir. Üretilen sesler önbelleğe alınır, aynı cümle ikinci kez anında çalar. Hız önemliyse telefon sesini seç.
+- **Pet bildirimleri gelmiyor:** Bildirimler 2.2.0 APK/IPA ile gelir; eski kurulumda petler çalışır ama bildirim gönderilemez. Telefon ayarlarında dam-la için bildirim izni açık olmalı. Pet bilgisi › “Acıkınca bildirim gönder”.
 - **24 Kasım'da simge değişmedi:** iPhone simgeyi hemen değiştirir (kısa bir bildirim gösterir). Android uygulama arka plana alınınca değiştirir; bazı başlatıcılar bu sırada ana ekrandaki kısayolu kaldırabilir — uygulama çekmecesinden yeniden ekle. 25 Kasım'da normal simgeye döner.
 
 ---

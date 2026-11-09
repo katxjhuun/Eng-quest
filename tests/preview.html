@@ -1,0 +1,23 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;background:#f4f0e8;font:11px system-ui}
+.row{display:flex;gap:4px;padding:4px 6px;align-items:flex-end}
+.cell{width:118px;text-align:center}
+.cell svg{width:118px;height:118px;background:#fffdf8;border-radius:10px;overflow:visible}
+h3{margin:6px 8px 0;font-size:12px}
+</style></head><body><div id="root"></div>
+<script type="module">
+import { petSVG, speciesList, stageName, homeSVG } from '/src/pet-art.js';
+const root = document.getElementById('root');
+const mode = new URLSearchParams(location.search).get('m') || 'stages';
+if (mode === 'stages') {
+  for (const sp of speciesList()) {
+    root.insertAdjacentHTML('beforeend', `<h3>${sp}</h3><div class="row">${[0,1,2,3,4,5].map(s=>`<div class="cell">${petSVG(sp,s)}<div>${stageName(sp,s)}</div></div>`).join('')}</div>`);
+  }
+} else {
+  const moods = ['idle','happy','love','sad','sleep','groggy','poked','surprised','hungry','focus','full','dead'];
+  const stage = +(new URLSearchParams(location.search).get('s') || 1);
+  for (const sp of speciesList()) {
+    root.insertAdjacentHTML('beforeend', `<h3>${sp} · aşama ${stage}</h3><div class="row">${moods.map(m=>`<div class="cell" style="width:84px">${petSVG(sp,stage,{mood:m, belly: m==='full'?1:0}).replace('<svg','<svg style="width:84px;height:84px"')}<div>${m}</div></div>`).join('')}</div>`);
+  }
+}
+</script></body></html>

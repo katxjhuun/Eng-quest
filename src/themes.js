@@ -13,6 +13,7 @@ export const THEMES = [
   { id: 'kahve', name: 'Kahve', nh: 32, ns: 1.6, accent: 24, accentSat: 0.55, green: 82, gold: 34, coral: 12, blue: 200, meta: '#f2e9dc' },
   { id: 'gecemavi', name: 'Gece Mavisi', dark: true, nh: 220, ns: 1.6, accent: 214, green: 170, gold: 44, coral: 6, blue: 205, meta: '#0e131c' },
   { id: 'kontrast', name: 'Yüksek Kontrast', contrast: true, nh: 0, ns: 0, accent: 236, accentSat: 1.15, green: 150, gold: 44, coral: 4, blue: 222, meta: '#ffffff' },
+  { id: 'kedi', name: 'dam-la Kedi', note: 'Logodaki pembe-nane çıkartma tarzı', nh: 338, ns: 1.9, accent: 154, accentSat: 1.05, green: 150, gold: 46, coral: 340, blue: 205, meta: '#f8dbe7' },
   { id: 'neon', name: 'Neon', dark: true, nh: 280, ns: 1.0, accent: 300, accentSat: 1.2, green: 160, gold: 55, coral: 340, blue: 190, meta: '#0d0a12' },
 ];
 export const DEFAULT_THEME = 'krem';

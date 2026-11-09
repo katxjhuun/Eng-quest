@@ -28,11 +28,12 @@ await build({
 });
 
 // Temalar: renkler CSS değişkenlerine çevrilir; her tema yalnızca değişkenleri değiştirir.
-const baseCss = (await readFile(path.join(root, 'src/styles.css'), 'utf8')) + '\n' + (await readFile(path.join(root, 'src/features.css'), 'utf8'));
+const baseCss = (await readFile(path.join(root, 'src/styles.css'), 'utf8')) + '\n' + (await readFile(path.join(root, 'src/features.css'), 'utf8')) + '\n' + (await readFile(path.join(root, 'src/pet.css'), 'utf8'));
 const themed = buildThemedCss(baseCss);
 await mkdir(path.join(root, '.build'), { recursive: true });
 await writeFile(path.join(root, '.build/styles.css'), themed.css);
-await writeFile(path.join(root, '.build/themes.css'), themed.themes);
+// Tema özel ek stiller (ör. logo temasının çıkartma görünümü): renkleri dönüştürülmeden, temaların arkasına eklenir.
+await writeFile(path.join(root, '.build/themes.css'), themed.themes + '\n' + (await readFile(path.join(root, 'src/theme-extras.css'), 'utf8')));
 for (const name of ['styles', 'themes']) {
   await build({
     entryPoints: [path.join(root, `.build/${name}.css`)],

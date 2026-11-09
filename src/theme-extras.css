@@ -1,0 +1,15 @@
+/* "dam-la Kedi" teması: logodaki pembe zemin, nane yeşili ve kalın siyah çizgili çıkartma (sticker) görünümü.
+   Bu dosyadaki renkler tema dönüştürücüden geçmez; olduğu gibi kullanılır. */
+html[data-theme="kedi"] body{background:radial-gradient(circle,rgba(32,29,35,.07) 1.2px,transparent 1.6px) 0 0/22px 22px,linear-gradient(180deg,#f6d3e1 0%,#f9e2eb 45%,#fbeaf1 100%)!important}
+html[data-theme="kedi"] .progress-panel,html[data-theme="kedi"] .challenge,html[data-theme="kedi"] .pet-home,html[data-theme="kedi"] .mode-btn,html[data-theme="kedi"] .quiz-opt,html[data-theme="kedi"] .iconbtn,html[data-theme="kedi"] .cat-tab,html[data-theme="kedi"] .flow-btn,html[data-theme="kedi"] .pet-abil{border:2px solid #201d23!important;box-shadow:3px 3px 0 #201d23!important}
+html[data-theme="kedi"] .challenge,html[data-theme="kedi"] .progress-panel,html[data-theme="kedi"] .pet-home{border-radius:22px!important;box-shadow:5px 5px 0 #201d23!important}
+html[data-theme="kedi"] .quiz-opt:not([aria-disabled]):active,html[data-theme="kedi"] .cat-tab:active,html[data-theme="kedi"] .mode-btn:active{transform:translate(2px,2px)!important;box-shadow:1px 1px 0 #201d23!important}
+html[data-theme="kedi"] .cat-tab.on{background:#94f9bd!important;color:#201d23!important}
+html[data-theme="kedi"] .level-chip{background:#94f9bd!important;color:#201d23!important;border:2px solid #201d23!important;box-shadow:2px 2px 0 #201d23!important}
+html[data-theme="kedi"] .primarybtn{background:#201d23!important;color:#94f9bd!important;box-shadow:3px 3px 0 #e86fa0!important}
+html[data-theme="kedi"] .quiz-opt.right{background:#d6fde6!important}
+html[data-theme="kedi"] .quiz-opt.wrong{background:#ffd9e6!important}
+html[data-theme="kedi"] .pet-hab{border:2px solid #201d23!important}
+html[data-theme="kedi"] .app-logo{border:2px solid #201d23;box-shadow:3px 3px 0 #201d23}
+html[data-theme="kedi"] .headline h1{text-shadow:2px 2px 0 #94f9bd}
+html[data-theme="kedi"] .cefr-track span.active,html[data-theme="kedi"] .cefr-track span.current{background-color:#3bd486!important}
