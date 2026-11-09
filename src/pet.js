@@ -232,7 +232,14 @@ export function initPet(core, quiz) {
   const actorEl = document.createElement('div');
   actorEl.className = 'pet-actor hidden'; actorEl.id = 'petActor';
   actorEl.innerHTML = `<div class="pet-shadow"></div><div class="pet-sprite" id="petSprite"></div><div class="pet-fx" id="petFx"></div><div class="pet-emote" id="petEmote" aria-hidden="true"></div><div class="pet-bubble" id="petBubble" role="status" aria-live="polite"></div>`;
-  document.body.appendChild(actorEl);
+  // Pet sayfa koordinatlarında yaşar: katman belgeyle birlikte kaydığı için kaydırma sırasında
+  // tarayıcının kendi kaydırmasıyla aynı karede hareket eder (fixed + rAF gibi geriden gelmez).
+  const layerEl = document.createElement('div');
+  layerEl.className = 'pet-layer';
+  layerEl.appendChild(actorEl);
+  document.body.appendChild(layerEl);
+  const SY = () => window.scrollY || document.documentElement.scrollTop || 0;
+  const SX = () => window.scrollX || document.documentElement.scrollLeft || 0;
   const sprite = actorEl.querySelector('#petSprite'), fx = actorEl.querySelector('#petFx'), bubble = actorEl.querySelector('#petBubble'), emoteEl = actorEl.querySelector('#petEmote');
 
   // ---------- DOM: katmanlar ----------
@@ -357,7 +364,7 @@ export function initPet(core, quiz) {
   function placeBubble() {
     const vw = window.innerWidth;
     bubble.classList.toggle('left', pos.x < 90); bubble.classList.toggle('right', pos.x > vw - 150);
-    bubble.classList.toggle('below', pos.y < 90);
+    bubble.classList.toggle('below', vy(pos.y) < 90);
   }
   function spawn(char, cls = '', n = 1) {
     if (reduced && n > 2) n = 2;
@@ -405,8 +412,12 @@ export function initPet(core, quiz) {
   function homeAnchor() {
     const r = $('#petHab')?.getBoundingClientRect();
     if (!r || !r.width) return { x: -300, y: -300 };
-    return { x: r.left + r.width / 2 - W / 2, y: r.bottom - H - 6 };
+    return { x: r.left + SX() + r.width / 2 - W / 2, y: r.bottom + SY() - H - 6 };
   }
+  // pos sayfa koordinatıdır; ekran (viewport) hesapları için dönüştürücüler
+  const vy = y => y - SY();
+  function inView(m = 0) { const y = vy(pos.y); return y + H > -m && y < window.innerHeight + m; }
+  function pageH() { return layerEl.offsetHeight || document.documentElement.scrollHeight; }
   function habVisible() { const r = $('#petHab')?.getBoundingClientRect(); return r && r.bottom > 40 && r.top < window.innerHeight - 40 && !home.classList.contains('hidden'); }
   function blocked() {
     return !!document.querySelector('.overlay.show, .pet-overlay.show') || document.visibilityState === 'hidden';
@@ -419,13 +430,14 @@ export function initPet(core, quiz) {
     const vw = window.innerWidth, vh = window.innerHeight, rects = busyRects();
     const top = Math.max(80, vh * 0.16), span = Math.max(10, vh - H - 90 - top);
     // çoğunlukla aynı "zeminde" yürür (yatay); çapraz süzülme yerine adım adım ilerler
-    const sameFloor = mode === 'roam' && pos.y > 0 && Math.random() < 0.7;
+    const sameFloor = mode === 'roam' && inView() && Math.random() < 0.7;
+    const sy = SY();
     let best = null;
     for (let i = 0; i < 8; i++) {
       const x = 8 + Math.random() * Math.max(10, vw - W - 16);
-      const y = sameFloor ? clamp(pos.y + (Math.random() - 0.5) * 50, top, top + span) : top + Math.random() * span;
+      const y = sameFloor ? clamp(vy(pos.y) + (Math.random() - 0.5) * 50, top, top + span) : top + Math.random() * span;
       const hit = rects.some(r => x < r.right && x + W > r.left && y < r.bottom && y + H > r.top);
-      best = { x, y }; if (!hit) return best;
+      best = { x, y: y + sy }; if (!hit) return best;
     }
     return best;
   }
@@ -447,8 +459,10 @@ export function initPet(core, quiz) {
     if (!habVisible()) {
       // yuva ekranda değilse o yöne doğru yürüyüp ekrandan çıkar
       const r = $('#petHab')?.getBoundingClientRect();
+      // pet de ekran dışındaysa yürütmeye gerek yok, doğrudan yuvasına döner
+      if (!inView(20)) { mode = 'home'; moving = false; onArrive = null; return; }
       const above = !r || r.bottom < window.innerHeight / 2;
-      mode = 'exit'; walkTo({ x: pos.x, y: above ? -H - 20 : window.innerHeight + 20 }, baseSpeed() * 1.3, () => { mode = 'home'; });
+      mode = 'exit'; walkTo({ x: pos.x, y: (above ? -H - 20 : window.innerHeight + 20) + SY() }, baseSpeed() * 1.3, () => { mode = 'home'; });
       return;
     }
     mode = 'walkHome'; walkTo(homeAnchor(), baseSpeed() * 1.3, () => { mode = 'home'; });
@@ -459,7 +473,7 @@ export function initPet(core, quiz) {
     else {
       // yuva ekran dışındaysa en yakın kenardan içeri girer
       const r = $('#petHab')?.getBoundingClientRect(), a = homeAnchor();
-      pos.x = clamp(a.x, 8, window.innerWidth - W - 8); pos.y = !r || r.bottom < 0 ? -H : window.innerHeight + 4;
+      pos.x = clamp(a.x, 8, window.innerWidth - W - 8); pos.y = (!r || r.bottom < 0 ? -H : window.innerHeight + 4) + SY();
     }
     mode = 'roam';
     walkTo(freeSpot(), baseSpeed());
@@ -511,7 +525,12 @@ export function initPet(core, quiz) {
     }
     const lazy = p.stuffed >= 30 || ['groggy', 'sleepy'].includes(currentMood());
     if (mode === 'home') { if (Math.random() < (p.flow ? 0.35 : 0.55)) leaveHome(); else idleAct(); }
-    else {
+    else if (!inView(H)) {
+      // kullanıcı kaydırıp peti geride bıraktıysa: en yakın kenardan ekrana geri girer
+      const above = vy(pos.y) < 0;
+      pos.y = (above ? -H : window.innerHeight + 4) + SY();
+      walkTo(freeSpot(), baseSpeed());
+    } else {
       const r = Math.random();
       if (r < 0.14) goHome();
       else if (r < (lazy ? 0.4 : 0.6)) walkTo(freeSpot(), baseSpeed());
@@ -548,7 +567,7 @@ export function initPet(core, quiz) {
     if (stepPx) puppet.travel(stepPx, running ? 'run' : 'walk', W);
     puppet.face(facing);
     // pencere küçülürse ekranda kalsın
-    if (mode === 'roam' && !moving) { pos.x = clamp(pos.x, 0, window.innerWidth - W); pos.y = clamp(pos.y, 40, window.innerHeight - H - 6); }
+    if (mode === 'roam' && !moving) { pos.x = clamp(pos.x, 0, window.innerWidth - W); pos.y = clamp(pos.y, 40, pageH() - H - 6); }
     actorEl.style.transform = `translate3d(${pos.x.toFixed(1)}px, ${pos.y.toFixed(1)}px, 0)`;
     actorEl.style.setProperty('--face', facing);
     const walking = moving && mode !== 'home';
@@ -590,7 +609,7 @@ export function initPet(core, quiz) {
       react('surprised', 1300, 'flee', 'sweat'); spawn('•', 'sweat', 2);
       if (mode === 'home') { const a = homeAnchor(); pos.x = a.x; pos.y = a.y; mode = 'roam'; }
       const vw = window.innerWidth, vh = window.innerHeight;
-      const t = { x: pos.x < vw / 2 ? vw - W - 12 - Math.random() * 60 : 12 + Math.random() * 60, y: clamp(pos.y + (Math.random() - 0.5) * vh * 0.5, 90, vh - H - 20) };
+      const t = { x: pos.x < vw / 2 ? vw - W - 12 - Math.random() * 60 : 12 + Math.random() * 60, y: clamp(vy(pos.y) + (Math.random() - 0.5) * vh * 0.5, 90, vh - H - 20) + SY() };
       walkTo(t, 260, () => react('happy', 900, 'hop', 'note'));
       sprite.className = 'pet-sprite a-flee';
       if (Math.random() < 0.5) say(pick(LINES.flee), 1800);
@@ -657,12 +676,12 @@ export function initPet(core, quiz) {
     const p = P();
     const pounce = () => { setAnim('pounce', 2200); setTimeout(done, 1650); };
     if (!p.roam || reduced || !visible) { pounce(); return; }
-    const dot = document.createElement('div'); dot.className = 'pet-laser'; document.body.appendChild(dot);
+    const dot = document.createElement('div'); dot.className = 'pet-laser'; layerEl.appendChild(dot);
     if (mode === 'home') { const a = homeAnchor(); pos.x = a.x; pos.y = a.y; mode = 'roam'; }
     const vw = window.innerWidth, vh = window.innerHeight;
     const card = document.querySelector('.quiz-card')?.getBoundingClientRect();
     const end = card && card.width && card.top > 60 && card.top < vh - 60
-      ? { x: clamp(card.left + card.width * 0.5 - W / 2, 8, vw - W - 8), y: clamp(card.top - H + 14, 70, vh - H - 10) } : freeSpot();
+      ? { x: clamp(card.left + card.width * 0.5 - W / 2, 8, vw - W - 8), y: clamp(card.top - H + 14, 70, vh - H - 10) + SY() } : freeSpot();
     const pts = [freeSpot(), freeSpot(), end];
     let i = 0, ended = false;
     const place = (q, ms) => {

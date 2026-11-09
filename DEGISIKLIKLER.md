@@ -1,3 +1,11 @@
+# dam-la 2.2.5 — Pet kaydırmaya anında uyar
+
+Uzaktan güncellemeyle gelir.
+- Ekranı kaydırırken pet artık geriden gelip sonradan yerine kaymıyor; sayfayla birlikte aynı anda hareket ediyor (yuvadayken de gezerken de).
+- Gezen pet sayfanın bir parçası gibi davranır: kaydırıp onu geride bırakırsan en yakın kenardan ekrana yürüyerek geri girer.
+
+---
+
 # dam-la 2.2.4 — Petler baştan: gerçek iskelet animasyonu
 
 Uzaktan güncellemeyle gelir. Yeni bağımlılık yok, veritabanı kuralları değişmedi.
