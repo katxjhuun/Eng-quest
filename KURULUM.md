@@ -136,7 +136,7 @@ Yapabildiklerin: XP artır/azalt (konu seçerek), seviye ayarla (İngilizce A1�
 1. https://console.firebase.google.com — Google hesabında **2 adımlı doğrulama açık olmalı** (Firebase artık şart koşuyor).
 2. **Proje ekle** › ad: `dam-la` › Google Analytics: kapalı.
 3. **Build › Authentication › Get started** › Sign-in method: **Anonymous** ve **Google**'ı aç. **Settings › Authorized domains**'e `katxjhuun.github.io` ekle.
-4. **Build › Realtime Database › Create database** › konum `europe-west1` › kilitli modda başlat › **Rules** sekmesine depodaki `database.rules.json` içeriğini yapıştır › Publish. Kurallardaki e-posta, panele girebilecek yönetici hesabıdır; başka yönetici eklemek için veritabanında `admins/<uid>: true` kaydı oluştur.
+4. **Build › Realtime Database › Create database** › konum `europe-west1` › kilitli modda başlat › **Rules** sekmesine depodaki `database.rules.json` içeriğini yapıştır › Publish. Kurallardaki e-postalar ([yönetici e-postası], [yönetici e-postası]) panele girebilen yönetici hesaplarıdır; başka yönetici eklemek için veritabanında `admins/<uid>: true` kaydı oluştur.
 5. **Project settings › General › Your apps › Web (</>)** › ad `dam-la` › çıkan `firebaseConfig` değerlerini `src/config.js` içindeki `FIREBASE_CONFIG`'e yaz (`apiKey`, `authDomain`, `databaseURL`, `projectId`, `appId`). Bu değerler gizli değildir; erişimi kurallar korur.
 6. Değişikliği `main`'e gönder ve **Release**'i çalıştır: Pages paneli yayınlar, telefonlar yeni ayarı OTA ile alır.
 

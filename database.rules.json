@@ -3,10 +3,10 @@
     ".read": false,
     ".write": false,
     "users": {
-      ".read": "auth != null && ((auth.token.email == '[yönetici e-postası]' && auth.token.email_verified == true) || root.child('admins').child(auth.uid).val() == true)",
+      ".read": "auth != null && ((auth.token.email_verified == true && (auth.token.email == '[yönetici e-postası]' || auth.token.email == '[yönetici e-postası]')) || root.child('admins').child(auth.uid).val() == true)",
       "$uid": {
         ".read": "auth != null && auth.uid == $uid",
-        ".write": "auth != null && ((auth.token.email == '[yönetici e-postası]' && auth.token.email_verified == true) || root.child('admins').child(auth.uid).val() == true)",
+        ".write": "auth != null && ((auth.token.email_verified == true && (auth.token.email == '[yönetici e-postası]' || auth.token.email == '[yönetici e-postası]')) || root.child('admins').child(auth.uid).val() == true)",
         "profile": {
           ".write": "auth != null && auth.uid == $uid",
           "shortId": { ".validate": "newData.isString() && newData.val().matches(/^DL-[A-Z0-9]{5}$/)" },
@@ -32,18 +32,18 @@
       }
     },
     "history": {
-      ".read": "auth != null && ((auth.token.email == '[yönetici e-postası]' && auth.token.email_verified == true) || root.child('admins').child(auth.uid).val() == true)",
+      ".read": "auth != null && ((auth.token.email_verified == true && (auth.token.email == '[yönetici e-postası]' || auth.token.email == '[yönetici e-postası]')) || root.child('admins').child(auth.uid).val() == true)",
       "$uid": {
-        ".write": "auth != null && ((auth.token.email == '[yönetici e-postası]' && auth.token.email_verified == true) || root.child('admins').child(auth.uid).val() == true)",
+        ".write": "auth != null && ((auth.token.email_verified == true && (auth.token.email == '[yönetici e-postası]' || auth.token.email == '[yönetici e-postası]')) || root.child('admins').child(auth.uid).val() == true)",
         "$msg": { ".write": "auth != null && auth.uid == $uid && !data.exists()" }
       }
     },
     "admin": {
-      ".read": "auth != null && ((auth.token.email == '[yönetici e-postası]' && auth.token.email_verified == true) || root.child('admins').child(auth.uid).val() == true)",
-      ".write": "auth != null && ((auth.token.email == '[yönetici e-postası]' && auth.token.email_verified == true) || root.child('admins').child(auth.uid).val() == true)"
+      ".read": "auth != null && ((auth.token.email_verified == true && (auth.token.email == '[yönetici e-postası]' || auth.token.email == '[yönetici e-postası]')) || root.child('admins').child(auth.uid).val() == true)",
+      ".write": "auth != null && ((auth.token.email_verified == true && (auth.token.email == '[yönetici e-postası]' || auth.token.email == '[yönetici e-postası]')) || root.child('admins').child(auth.uid).val() == true)"
     },
     "admins": {
-      ".read": "auth != null && ((auth.token.email == '[yönetici e-postası]' && auth.token.email_verified == true) || root.child('admins').child(auth.uid).val() == true)",
+      ".read": "auth != null && ((auth.token.email_verified == true && (auth.token.email == '[yönetici e-postası]' || auth.token.email == '[yönetici e-postası]')) || root.child('admins').child(auth.uid).val() == true)",
       ".write": false
     }
   }
