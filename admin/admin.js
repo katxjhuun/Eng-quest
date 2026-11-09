@@ -9,7 +9,7 @@ import { FIREBASE_CONFIG } from '../src/config.js';
 import { SUBJECTS, SUBJECT_ORDER } from '../src/data/subjects.js';
 import { DEPARTMENTS } from '../src/data/departments.js';
 import { THEMES } from '../src/themes.js';
-import { petSVG, stageName, PET_SPECIES } from '../src/pet-art.js';
+import { petSVG, stageName, PET_SPECIES, coatFromName } from '../src/pet-art.js';
 
 // Başka bir sitenin paneli görünmez çerçeve içinde açıp tıklatmasını engelle (clickjacking).
 if (window.top !== window.self) { document.documentElement.style.display = 'none'; try { window.top.location = window.self.location.href; } catch {} }
@@ -253,7 +253,7 @@ function renderPet() {
     ].join('');
     box.className = 'petcard' + (p.alive ? '' : ' isdead');
     // çizim yalnızca doğrulanmış tür/aşama/ruh hali ile üretilir
-    box.innerHTML = `<div class="pa">${petSVG(p.species, p.stage, { mood: p.alive ? p.mood : 'dead', pose: p.alive ? (p.mood === 'sleep' ? 'loaf' : 'sit') : 'flat', belly: p.stuffed / 100 })}</div>
+    box.innerHTML = `<div class="pa">${petSVG(p.species, p.stage, { mood: p.alive ? p.mood : 'dead', pose: p.alive ? (p.mood === 'sleep' ? 'loaf' : 'sit') : 'flat', belly: p.stuffed / 100, coat: coatFromName(p.name) })}</div>
       <div><div class="pn">${esc(p.name)}${p.stars ? ` <small>${p.stars}⭐</small>` : ''}</div><div class="pf">${esc(stageName(p.species, p.stage))} · ${esc(k.label)} · Form ${p.stage + 1}/6</div>
       <div class="chips">${chips}</div>
       ${bar('hp', '❤️', p.hp, p.hpMax)}${bar(p.species === 'plant' ? 'water' : 'food', k.food, p.food, p.foodMax)}${bar('en', '⚡', p.energy, p.energyMax)}

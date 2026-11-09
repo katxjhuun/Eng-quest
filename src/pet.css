@@ -49,114 +49,19 @@ body.pet-flow .quiz-card,body.pet-flow #legacyBlock .challenge{box-shadow:0 0 0 
 /* ---------- dolaşan pet ---------- */
 .pet-actor{position:fixed;left:0;top:0;width:76px;height:76px;z-index:35;will-change:transform;touch-action:none;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .3s}
 .pet-actor.hidden{display:block!important;opacity:0;pointer-events:none}
-.pet-sprite{position:absolute;inset:0;transform-origin:50% 92%;transform:scaleX(var(--face,1))}
+/* Pet çizimi ve tüm hareketi src/pets/ oynatıcısından gelir (her karede iskelet pozu); burada yalnızca kap kutusu var. */
+.pet-sprite{position:absolute;inset:0}
 .pet-sprite svg{width:100%;height:100%;overflow:visible}
 .pet-shadow{display:none}
-.pet-sprite[data-mood="dead"] svg{filter:grayscale(1) opacity(.7)}
-.pet-sprite .p-eyes{animation:blink 5.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
-.pet-sprite[data-mood="sleep"] .p-eyes,.pet-sprite[data-mood="dead"] .p-eyes,.pet-sprite[data-mood="happy"] .p-eyes,.pet-sprite[data-mood="love"] .p-eyes{animation:none}
-@keyframes blink{0%,93%,100%{transform:scaleY(1)}95.5%{transform:scaleY(.12)}}
-.pet-sprite .p-tail{transform-box:fill-box;transform-origin:0% 100%;animation:wag 2.4s ease-in-out infinite}
-.pet-sprite .p-leaf{transform-box:fill-box;transform-origin:50% 100%;animation:sway 4.2s ease-in-out infinite}
-.pet-sprite .p-fan{transform-box:fill-box;transform-origin:50% 100%;animation:fanBreath 4.6s ease-in-out infinite}
-.pet-sprite .p-ear{transform-box:fill-box;transform-origin:50% 0%;animation:earFlop 3.6s ease-in-out infinite}
-@keyframes wag{0%,100%{transform:rotate(0)}50%{transform:rotate(9deg)}}
-@keyframes sway{0%,100%{transform:rotate(0)}50%{transform:rotate(-5deg)}}
-@keyframes earFlop{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
-@keyframes fanBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+.pet-sprite[data-mood="dead"] svg{filter:grayscale(.85) opacity(.8)}
+/* açık tüylü kedi/köpek: açık zeminde silüet kaybolmasın diye ince kontur */
+.pet-svg.coat-light{filter:drop-shadow(0 0 .7px rgba(43,34,48,.6)) drop-shadow(0 1px 1px rgba(43,34,48,.12))}
+/* kedinin lazer noktası (Pati Atla) */
+.pet-laser{position:fixed;left:0;top:0;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:#ff2d2d;box-shadow:0 0 0 3px rgba(255,59,59,.28),0 0 14px 5px rgba(255,45,45,.45);z-index:36;pointer-events:none;animation:laserJit .14s linear infinite}
+@keyframes laserJit{50%{margin:-4px 0 0 -5px}}
 
-/* kedi/köpek parçaları: kuyruk, bacak, kafa ayrı ayrı oynar */
-.pet-sprite .quad .q-tail,.pet-sprite .quad .q-leg,.pet-sprite .quad .q-head{transform-box:view-box}
-.pet-sprite .quad .q-tail{animation:qWag 2.6s ease-in-out infinite}
-.pet-sprite .quad.q-dog .q-tail{animation:qWag 1.1s ease-in-out infinite}
-.pet-sprite .quad .q-head{animation:qHead 4.8s ease-in-out infinite}
-.pet-sprite[data-pose="loaf"] .quad .q-head,.pet-sprite[data-pose="flat"] .quad *{animation:none}
-@keyframes qWag{0%,100%{transform:rotate(0)}50%{transform:rotate(10deg)}}
-@keyframes qHead{0%,100%{transform:rotate(0)}50%{transform:rotate(-3deg)}}
-/* yürüyüş: çapraz bacaklar birlikte */
-.pet-sprite.a-walk .quad .q-leg.lf,.pet-sprite.a-walk .quad .q-leg.hb{animation:legA .52s ease-in-out infinite}
-.pet-sprite.a-walk .quad .q-leg.lb,.pet-sprite.a-walk .quad .q-leg.hf{animation:legB .52s ease-in-out infinite}
-.pet-sprite.a-walk .quad .q-bob{animation:qBob .26s ease-in-out infinite}
-.pet-sprite.a-walk .quad .q-head{animation:qNod .52s ease-in-out infinite}
-@keyframes legA{0%,100%{transform:rotate(-20deg)}50%{transform:rotate(20deg)}}
-@keyframes legB{0%,100%{transform:rotate(20deg)}50%{transform:rotate(-20deg)}}
-@keyframes qBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.6px)}}
-@keyframes qNod{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
-/* koşu: dörtnala */
-.pet-sprite.a-flee .quad .q-leg.lf,.pet-sprite.a-flee .quad .q-leg.lb{animation:gallopF .3s ease-in-out infinite}
-.pet-sprite.a-flee .quad .q-leg.hf,.pet-sprite.a-flee .quad .q-leg.hb{animation:gallopH .3s ease-in-out infinite}
-.pet-sprite.a-flee .quad .q-leg.lb,.pet-sprite.a-flee .quad .q-leg.hb{animation-delay:-.05s}
-.pet-sprite.a-flee .quad .q-bob{animation:qGallop .3s ease-in-out infinite}
-.pet-sprite.a-flee .quad .q-tail{animation:none}
-@keyframes gallopF{0%,100%{transform:rotate(-28deg)}50%{transform:rotate(22deg)}}
-@keyframes gallopH{0%,100%{transform:rotate(26deg)}50%{transform:rotate(-24deg)}}
-@keyframes qGallop{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-4px) rotate(-3deg)}}
-/* mutlu: kuyruk hızlı sallanır */
-.pet-sprite[data-mood="happy"] .quad .q-tail,.pet-sprite[data-mood="love"] .quad .q-tail{animation:qWagFast .32s ease-in-out infinite}
-@keyframes qWagFast{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(16deg)}}
-/* yemek: kafa aşağı yukarı */
-.pet-sprite.a-eat .quad .q-head,.pet-sprite.a-sniff .quad .q-head{animation:qPeck .3s ease-in-out infinite}
-@keyframes qPeck{0%,100%{transform:rotate(0)}50%{transform:rotate(12deg)}}
-.pet-sprite.a-groom .quad .q-head{animation:qGroom .5s ease-in-out infinite}
-@keyframes qGroom{0%,100%{transform:rotate(4deg)}50%{transform:rotate(18deg)}}
-.pet-sprite.a-look .quad .q-head{animation:qLook 1.6s ease-in-out}
-@keyframes qLook{0%,100%{transform:rotate(0)}30%,70%{transform:rotate(-10deg)}}
-
-/* ---- genel hareketler: boşta yumuşak, tepkilerde belirgin ---- */
-.a-idle,.a-sit,.a-groom{animation:breathe 3.6s ease-in-out infinite}
-@keyframes breathe{0%,100%{transform:scaleX(var(--face,1)) scaleY(1)}50%{transform:scaleX(var(--face,1)) scaleY(1.025)}}
-.a-walk{animation:walk .62s ease-in-out infinite}
-@keyframes walk{0%,100%{transform:scaleX(var(--face,1)) translateY(0) rotate(0)}25%{transform:scaleX(var(--face,1)) translateY(-2.5px) rotate(-1.6deg)}50%{transform:scaleX(var(--face,1)) translateY(0) rotate(0)}75%{transform:scaleX(var(--face,1)) translateY(-2.5px) rotate(1.6deg)}}
-.pet-sprite.a-walk[data-pose="stand"]{animation:none}
-.a-flee{animation:run .3s ease-in-out infinite}
-@keyframes run{0%,100%{transform:scaleX(var(--face,1)) translateY(0) rotate(-3deg)}50%{transform:scaleX(var(--face,1)) translateY(-6px) rotate(-6deg)}}
-.pet-sprite.a-flee[data-pose="run"]{animation:none}
-/* sevinç zıplaması: hazırlan, sıçra, uzan, yere bas */
-.a-hop,.a-joy{animation:joy .9s cubic-bezier(.3,0,.3,1)}
-@keyframes joy{0%,100%{transform:scaleX(var(--face,1)) translateY(0)}14%{transform:scaleX(calc(var(--face,1)*1.1)) scaleY(.84) translateY(2px)}42%{transform:scaleX(calc(var(--face,1)*.94)) scaleY(1.1) translateY(-22px)}62%{transform:scaleX(var(--face,1)) translateY(-14px)}80%{transform:scaleX(calc(var(--face,1)*1.08)) scaleY(.9) translateY(0)}90%{transform:scaleX(var(--face,1)) scaleY(1.03) translateY(-2px)}}
-/* dans (seri): sağa sola zıplar */
-.a-dance{animation:dance .7s ease-in-out 2}
-@keyframes dance{0%,100%{transform:scaleX(var(--face,1)) translate(0,0) rotate(0)}25%{transform:scaleX(var(--face,1)) translate(-5px,-14px) rotate(-10deg)}50%{transform:scaleX(var(--face,1)) translate(0,0) scaleY(.92)}75%{transform:scaleX(var(--face,1)) translate(5px,-14px) rotate(10deg)}}
-/* yemek */
-.a-eat{animation:nibble .25s ease-in-out 4}
-@keyframes nibble{50%{transform:scaleX(var(--face,1)) translateY(3px) scaleY(.94) rotate(4deg)}}
-.a-sniff{animation:sniffWalk 1.6s ease-in-out}
-@keyframes sniffWalk{0%,100%{transform:scaleX(var(--face,1)) translateX(0)}50%{transform:scaleX(var(--face,1)) translateX(calc(var(--face,1)*4px))}}
-/* yanlış: geri sarsılma, sonra boynu bükük */
-.a-flinch{animation:flinch .7s cubic-bezier(.2,.8,.3,1)}
-@keyframes flinch{0%{transform:scaleX(var(--face,1))}12%{transform:scaleX(var(--face,1)) translateX(calc(var(--face,1)*-9px)) rotate(calc(var(--face,1)*-12deg)) scaleY(.92)}28%{transform:scaleX(var(--face,1)) translateX(calc(var(--face,1)*4px)) rotate(calc(var(--face,1)*5deg))}40%{transform:scaleX(var(--face,1)) translateX(calc(var(--face,1)*-3px))}52%{transform:scaleX(var(--face,1)) translateX(calc(var(--face,1)*2px))}100%{transform:scaleX(var(--face,1)) translateY(2px) scaleY(.96)}}
-.a-sad{animation:slump 1.8s ease-in-out forwards}
-@keyframes slump{0%{transform:scaleX(var(--face,1))}30%{transform:scaleX(var(--face,1)) translateY(3px) scaleY(.94) rotate(-3deg)}60%{transform:scaleX(var(--face,1)) translateY(3px) scaleY(.94) rotate(3deg)}100%{transform:scaleX(var(--face,1)) translateY(3px) scaleY(.95)}}
-/* dürtülünce: büzülüp titrer */
-.a-poked{animation:pokeShake .8s cubic-bezier(.3,.7,.3,1)}
-@keyframes pokeShake{0%{transform:scaleX(var(--face,1))}10%{transform:scaleX(calc(var(--face,1)*1.12)) scaleY(.82)}22%{transform:scaleX(calc(var(--face,1)*.92)) scaleY(1.12) translateY(-6px)}34%{transform:scaleX(var(--face,1)) translateX(-4px)}44%{transform:scaleX(var(--face,1)) translateX(4px)}54%{transform:scaleX(var(--face,1)) translateX(-3px)}64%{transform:scaleX(var(--face,1)) translateX(3px)}100%{transform:scaleX(var(--face,1))}}
-/* irkilme: havaya sıçrar, titrer */
-.a-shock{animation:shock .9s cubic-bezier(.2,.9,.3,1)}
-@keyframes shock{0%{transform:scaleX(var(--face,1))}18%{transform:scaleX(calc(var(--face,1)*.9)) scaleY(1.16) translateY(-16px)}36%{transform:scaleX(var(--face,1)) translateY(0) scaleY(.9)}46%,66%{transform:scaleX(var(--face,1)) translateX(-2px)}56%,76%{transform:scaleX(var(--face,1)) translateX(2px)}100%{transform:scaleX(var(--face,1))}}
-/* sevgi: sağa sola sokulur */
-.a-love{animation:snuggle .55s ease-in-out 4}
-@keyframes snuggle{0%,100%{transform:scaleX(var(--face,1)) rotate(0) translateY(0)}25%{transform:scaleX(var(--face,1)) rotate(-9deg) translateY(-3px)}75%{transform:scaleX(var(--face,1)) rotate(9deg) translateY(-3px)}}
-.a-look{animation:look 1.8s ease-in-out}
-@keyframes look{0%,100%{transform:scaleX(var(--face,1)) rotate(0)}35%,65%{transform:scaleX(var(--face,1)) rotate(-5deg)}}
-.a-stretch{animation:stretch 1.8s ease-in-out}
-@keyframes stretch{0%,100%{transform:scaleX(var(--face,1)) scaleY(1)}45%,60%{transform:scaleX(calc(var(--face,1)*1.08)) scaleY(.94)}}
-.a-shake{animation:dogShake .16s linear 8}
-@keyframes dogShake{0%,100%{transform:scaleX(var(--face,1)) rotate(0)}25%{transform:scaleX(var(--face,1)) rotate(-7deg)}75%{transform:scaleX(var(--face,1)) rotate(7deg)}}
-.a-yawn{animation:yawn 2.2s ease-in-out}
-@keyframes yawn{0%,100%{transform:scaleX(var(--face,1))}40%,65%{transform:scaleX(var(--face,1)) scaleY(1.06) rotate(-4deg)}}
-.a-doze{animation:doze 3.2s ease-in-out}
-@keyframes doze{0%,100%{transform:scaleX(var(--face,1)) rotate(0)}25%,50%{transform:scaleX(var(--face,1)) rotate(5deg) translateY(1px)}62%{transform:scaleX(var(--face,1)) rotate(-1deg)}80%{transform:scaleX(var(--face,1)) rotate(4deg) translateY(1px)}}
-.a-sleep{animation:sleepBreath 4.2s ease-in-out infinite}
-@keyframes sleepBreath{0%,100%{transform:scaleX(var(--face,1)) scaleY(1)}50%{transform:scaleX(var(--face,1)) scaleY(.965)}}
-.a-roll{animation:liedown 4.2s ease-in-out}
-@keyframes liedown{0%,100%{transform:scaleX(var(--face,1)) rotate(0)}20%,80%{transform:scaleX(var(--face,1)) rotate(-72deg) translate(-4px,8px)}}
-.pet-sprite.a-roll[data-pose="lie"]{animation:sleepBreath 2.4s ease-in-out infinite}
-.a-focus{animation:focus 1.4s ease-in-out 2}
-@keyframes focus{0%,100%{transform:scaleX(var(--face,1)) translateY(0)}50%{transform:scaleX(var(--face,1)) translateY(-3px)}}
-.a-dead{animation:faint 1.6s ease-in forwards}
-@keyframes faint{40%{transform:scaleX(var(--face,1)) rotate(-8deg)}100%{transform:scaleX(var(--face,1)) rotate(-82deg) translate(-6px,10px)}}
-.pet-sprite.a-dead[data-pose="flat"]{animation:fadeSink 1.2s ease-in forwards}
-@keyframes fadeSink{to{transform:scaleX(var(--face,1)) translateY(2px)}}
+/* seçim kartlarındaki durağan çizimler için hafif nefes */
+@keyframes breathe{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.025)}}
 .pet-sprite[data-mood="focus"] svg{filter:drop-shadow(0 0 5px rgba(143,124,255,.45))}
 
 /* ---- emote balonu ---- */

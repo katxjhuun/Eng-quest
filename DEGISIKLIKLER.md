@@ -1,3 +1,20 @@
+# dam-la 2.2.4 — Petler baştan: gerçek iskelet animasyonu
+
+Uzaktan güncellemeyle gelir. Yeni bağımlılık yok, veritabanı kuralları değişmedi.
+- **Yeni oynatıcı mimarisi (`src/pets/`):** 4 pet artık koddan çizilen bir iskeletle her karede canlandırılıyor (eski CSS animasyon sistemi kaldırıldı).
+  - `anim.js`: yumuşatma eğrileri, anahtar kare harmanlama, yay fiziği, ters kinematik.
+  - `quad.js` / `bean.js`: kedi-köpek ve civciv-bitki iskeletleri, 6'şar evrim formu, klipler.
+  - `face.js`: ruh haline göre göz/ağız ifadeleri. `props.js`: mama kabı, kemik, lazer, yağmur bulutu, ayna, papatya, güneş gibi sahne eşyaları.
+  - `puppet.js`: klip oynatma, geçiş harmanlama, göz kırpma, dönüş; durağan çizim (seçim/bilgi/evrim/ölüm/yönetici paneli) için `staticSVG`.
+- **Yürüyüş artık kaymıyor:** adımlar kat edilen mesafeye bağlı; kuyruk/kulak/yaprak yaylı ikincil hareketle sallanıyor.
+- **Kedi ve köpek rastgele tüy rengi alır** — sahiplenirken otomatik atanır, kullanıcı seçemez. Yönetici panelinde tüy rengi pet adından türetilerek gösterilir.
+- **Koşullu klipler:** doğru cevapta mama kabından yiyip zıplama, seride dans; yanlışta irkilip çökme, canı azken yağmur bulutu altında ağlama; açken kabın başında titreme, tokken sırtüstü yuvarlanma; gece kıvrılıp uyuma, sabah esneme.
+- **Yetenek animasyonları:** kedi lazeri kovalayıp üstüne atlar (soru o anda atlanır); köpek yeri kazıp kemik çıkarır; bitki forma göre filizlenir/ot söker/diken fırlatır/yaprak döker; civciv kabuğunu fırlatır, fısıldar ya da tavus kuyruğunu açar.
+- **Boşta davranışlar türe özel:** kedi tımarlanır/gerinir, köpek koklar/silkinir/kuyruğunu kovalar, civciv aynaya bakar/papatya koparır, bitki gündüz güneşlenir.
+- İsteğe bağlı geliştirici aracı (Pet Lab) eklendi; uygulamaya girmiyor, yalnızca kliplerin tarayıcıda denenmesi için.
+
+---
+
 # dam-la 2.2.3 — Yönetici panelinden pet yönetimi
 
 Uzaktan güncellemeyle gelir. Veritabanı kuralları da güncellendi (Firebase'de yayınlandı).
