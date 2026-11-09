@@ -1,10 +1,11 @@
 {
-  "name": "english-quest-app",
-  "version": "2.0.0",
-  "minNativeVersion": "2.0.0",
-  "nativeVersion": "2.0.0",
+  "name": "dam-la",
+  "version": "2.1.0",
+  "minNativeVersion": "2.1.0",
+  "nativeVersion": "2.1.0",
   "private": true,
-  "description": "English Quest — İngilizce quiz mobil uygulaması (Android + iPhone), cihazda kayıt ve uzaktan güncelleme",
+  "type": "module",
+  "description": "dam-la — İngilizce ve genel kültür pop quiz uygulaması (Android + iPhone)",
   "scripts": {
     "build": "node scripts/build.mjs",
     "dev": "node scripts/build.mjs && node scripts/serve.mjs",
@@ -13,9 +14,12 @@
     "ios": "node scripts/build.mjs && npx cap sync ios && npx cap open ios",
     "bundle": "node scripts/build.mjs && node scripts/make-update-bundle.mjs",
     "icons": "npx @capacitor/assets generate --iconBackgroundColor '#2f6152' --iconBackgroundColorDark '#2f6152' --splashBackgroundColor '#f4f0e8' --splashBackgroundColorDark '#1f1c22'",
-    "version:bump": "npm version patch --no-git-tag-version"
+    "version:bump": "npm version patch --no-git-tag-version",
+    "build:admin": "node scripts/build-admin.mjs",
+    "build:site": "node scripts/build.mjs && node scripts/build-admin.mjs && node scripts/assemble-site.mjs"
   },
   "dependencies": {
+    "@capacitor-community/app-icon": "^7.0.0",
     "@capacitor-community/text-to-speech": "8.0.2",
     "@capacitor/android": "8.6.0",
     "@capacitor/app": "8.1.2",
@@ -24,7 +28,9 @@
     "@capacitor/ios": "8.6.0",
     "@capacitor/preferences": "8.0.1",
     "@capacitor/share": "8.0.3",
-    "@capgo/capacitor-updater": "8.54.2"
+    "@capgo/capacitor-updater": "8.54.2",
+    "firebase": "^13.2.0",
+    "kokoro-js": "^1.2.1"
   },
   "devDependencies": {
     "@capacitor/assets": "4.0.0",

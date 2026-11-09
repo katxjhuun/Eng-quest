@@ -17,4 +17,4 @@ http.createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
     res.end(body);
   } catch { res.writeHead(404); res.end('Not found'); }
-}).listen(port, () => console.log(`English Quest: http://localhost:${port}`));
+}).listen(port, () => console.log(`dam-la: http://localhost:${port}`));

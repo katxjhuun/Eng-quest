@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#f4f0e8">
+  <title>dam-la · Yönetici paneli</title>
+  <link rel="icon" href="./logo.png">
+  <link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><img src="./logo.png" alt="" class="logo"><div><strong>dam-la</strong><small>Yönetici paneli</small></div></div>
+    <div class="who hidden" id="who"><span id="whoEmail"></span><button class="ghost" id="signOut">Çıkış</button></div>
+  </header>
+
+  <main>
+    <section class="card login" id="loginCard">
+      <h1>Kullanıcıları takip et</h1>
+      <p>Bu panel uygulamadan ayrıdır. Uygulamayı kullananların çevrimiçi durumunu, seviyesini, XP’sini ve o anda çözdüğü soruyu canlı gösterir; XP/seviye değiştirmeni, ödül ve mesaj göndermeni sağlar.</p>
+      <button class="primary" id="signIn">Google ile giriş yap</button>
+      <p class="note" id="loginNote"></p>
+    </section>
+
+    <section class="card setup hidden" id="setupCard">
+      <h1>Firebase bağlantısı eksik</h1>
+      <p><code>src/config.js</code> içindeki <code>FIREBASE_CONFIG</code> boş. KURULUM.md’deki “Yönetici paneli” adımlarını tamamlayıp yeniden derle.</p>
+    </section>
+
+    <section class="hidden" id="dash">
+      <div class="summary">
+        <div class="pill"><b id="sumTotal">0</b><span>kullanıcı</span></div>
+        <div class="pill on"><b id="sumOnline">0</b><span>çevrimiçi</span></div>
+        <div class="pill"><b id="sumToday">0</b><span>bugün aktif</span></div>
+        <button class="primary small" id="broadcastBtn">📣 Herkese gönder</button>
+      </div>
+      <div class="tools">
+        <input id="search" type="search" placeholder="Kimlik (DL-…) ya da isim ara" autocomplete="off">
+        <div class="seg" id="filterSeg">
+          <button data-f="all" class="on">Tümü</button><button data-f="online">Çevrimiçi</button><button data-f="today">Bugün</button>
+        </div>
+      </div>
+      <div class="list" id="userList"></div>
+      <p class="empty hidden" id="emptyList">Henüz kullanıcı yok. Uygulama Firebase ayarıyla açıldığında burada görünür.</p>
+    </section>
+  </main>
+
+  <!-- Kullanıcı ayrıntısı -->
+  <aside class="sheet" id="sheet" aria-hidden="true">
+    <div class="sheet-inner">
+      <div class="sheet-head">
+        <div>
+          <div class="sid"><span class="dot" id="dDot"></span><strong id="dId">DL-…</strong></div>
+          <div class="label-row"><input id="dLabel" placeholder="İsim / not ekle (yalnızca sen görürsün)"><button class="ghost small" id="dLabelSave">Kaydet</button></div>
+          <small id="dMeta"></small>
+        </div>
+        <button class="close" id="sheetClose" aria-label="Kapat">×</button>
+      </div>
+
+      <div class="live hidden" id="dLive"></div>
+
+      <div class="stats" id="dStats"></div>
+      <h3>Konu XP’leri</h3>
+      <div class="cats" id="dCats"></div>
+
+      <h3>İşlem</h3>
+      <div class="seg tabs" id="actTabs">
+        <button data-t="xp" class="on">± XP</button><button data-t="level">Seviye</button><button data-t="reward">🎁 Ödül</button><button data-t="message">✉️ Mesaj</button>
+      </div>
+      <form class="act" data-t="xp" id="fXp">
+        <div class="row">
+          <label>Miktar<input name="amount" type="number" step="1" value="10" required></label>
+          <label>Konu<select name="cat" class="catSel"></select></label>
+        </div>
+        <div class="quick"><button type="button" data-q="-20">−20</button><button type="button" data-q="-5">−5</button><button type="button" data-q="5">+5</button><button type="button" data-q="20">+20</button><button type="button" data-q="50">+50</button></div>
+        <label>Not (isteğe bağlı)<input name="text" maxlength="160" placeholder="Örn. Haftanın en çalışkanı!"></label>
+        <button class="primary">XP’yi gönder</button>
+      </form>
+      <form class="act hidden" data-t="level" id="fLevel">
+        <label>Konu<select name="cat" class="catSel"></select></label>
+        <label>Yeni seviye<select name="level" id="levelSel"></select></label>
+        <p class="note" id="levelNote"></p>
+        <label>Not (isteğe bağlı)<input name="text" maxlength="160"></label>
+        <button class="primary">Seviyeyi ayarla</button>
+      </form>
+      <form class="act hidden" data-t="reward" id="fReward">
+        <div class="row">
+          <label class="emoji">Simge<input name="emoji" value="🏆" maxlength="4"></label>
+          <label>Başlık<input name="title" value="Harika gidiyorsun!" maxlength="60" required></label>
+        </div>
+        <label>Mesaj<textarea name="text" rows="2" maxlength="240">Bu hafta gösterdiğin emek için küçük bir ödül.</textarea></label>
+        <div class="row">
+          <label>XP<input name="amount" type="number" step="1" value="25"></label>
+          <label>Konu<select name="cat" class="catSel"></select></label>
+        </div>
+        <label class="check"><input type="checkbox" name="music" checked> Ödül penceresini müzik önerisiyle aç</label>
+        <button class="primary">Ödülü gönder</button>
+      </form>
+      <form class="act hidden" data-t="message" id="fMessage">
+        <label>Başlık<input name="title" value="Yöneticiden mesaj" maxlength="60" required></label>
+        <label>Mesaj<textarea name="text" rows="3" maxlength="500" required placeholder="Uygulamada bildirim olarak görünür."></textarea></label>
+        <button class="primary">Mesajı gönder</button>
+      </form>
+
+      <h3>Bekleyen gönderiler <small>(uygulama açılınca teslim edilir)</small></h3>
+      <div class="msgs" id="dPending"></div>
+      <h3>Teslim edilenler</h3>
+      <div class="msgs" id="dHistory"></div>
+      <div class="danger"><button class="ghost small" id="dDelete">Bu kaydı panelden sil</button></div>
+    </div>
+  </aside>
+
+  <!-- Herkese gönder -->
+  <div class="modal hidden" id="bcModal">
+    <form class="card" id="fBroadcast">
+      <h2>📣 Herkese gönder</h2>
+      <div class="seg" id="bcType"><button type="button" data-t="message" class="on">Mesaj</button><button type="button" data-t="reward">Ödül</button></div>
+      <div class="row">
+        <label class="emoji bc-reward hidden">Simge<input name="emoji" value="🎉" maxlength="4"></label>
+        <label>Başlık<input name="title" value="dam-la’dan duyuru" maxlength="60" required></label>
+      </div>
+      <label>Mesaj<textarea name="text" rows="3" maxlength="500" required></textarea></label>
+      <div class="row bc-reward hidden">
+        <label>XP<input name="amount" type="number" value="10"></label>
+        <label>Konu<select name="cat" class="catSel"></select></label>
+      </div>
+      <label class="check"><input type="checkbox" name="onlineOnly"> Yalnızca şu an çevrimiçi olanlara</label>
+      <div class="row end"><button type="button" class="ghost" id="bcCancel">Vazgeç</button><button class="primary">Gönder</button></div>
+    </form>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="./admin.js"></script>
+</body>
+</html>

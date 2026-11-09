@@ -76,17 +76,17 @@ jobs:
           chmod +x gradlew
           if [ -n "$ANDROID_KEYSTORE_PATH" ]; then
             ./gradlew --no-daemon assembleRelease
-            cp app/build/outputs/apk/release/app-release.apk "../dist-ota/EnglishQuest-${{ steps.ver.outputs.version }}.apk"
+            cp app/build/outputs/apk/release/app-release.apk "../dist-ota/dam-la-${{ steps.ver.outputs.version }}.apk"
           else
             ./gradlew --no-daemon assembleDebug
-            cp app/build/outputs/apk/debug/app-debug.apk "../dist-ota/EnglishQuest-${{ steps.ver.outputs.version }}-debug.apk"
+            cp app/build/outputs/apk/debug/app-debug.apk "../dist-ota/dam-la-${{ steps.ver.outputs.version }}-debug.apk"
           fi
 
       - name: GitHub Release oluştur
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.ver.outputs.version }}
-          name: English Quest ${{ steps.ver.outputs.version }}
+          name: dam-la ${{ steps.ver.outputs.version }}
           make_latest: true
           body: |
             **Telefona ilk kurulum:** Android için `.apk` dosyasını telefonda indirip aç. iPhone için "iOS IPA" iş akışının çıktısını kullan (KURULUM.md).

@@ -1,4 +1,4 @@
-// English Quest — uygulama ayarları.
+// dam-la — uygulama ayarları.
 // Uzaktan güncelleme (OTA) bu adresteki update.json dosyasını okur.
 // GitHub deposu herkese açık olmalı; "Release" iş akışı bu dosyayı her sürümde yeniden yükler.
 // Depo adını değiştirirsen yalnızca bu satırı güncelle ve yeni bir APK/IPA derle.
@@ -11,3 +11,19 @@ export const BUILD_TIME = typeof __BUILD_TIME__ === 'string' ? __BUILD_TIME__ : 
 
 // Açılışta otomatik denetimler arasında en az bu kadar süre beklenir.
 export const UPDATE_CHECK_INTERVAL_MS = 3 * 60 * 60 * 1000;
+
+// ---- dam-la ----
+export const APP_NAME = 'dam-la';
+
+// Doğum günü teması: bu gün (yerel saatle) logo şapkalı olur, konfeti ve tema açılır; ertesi gün normale döner.
+export const BIRTHDAY = { month: 11, day: 24, name: 'Damla' };
+
+// Yönetici paneli için Firebase (Realtime Database + Anonim giriş). Boşsa takip kapalıdır, uygulama yine çalışır.
+// Bu değerler gizli değildir; erişim, veritabanı kurallarıyla (database.rules.json) korunur.
+export const FIREBASE_CONFIG = {
+  apiKey: '',
+  authDomain: '',
+  databaseURL: '',
+  projectId: '',
+  appId: ''
+};

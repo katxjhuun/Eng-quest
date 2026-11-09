@@ -20,6 +20,22 @@
             </intent-filter>
         </activity>
 
+
+        <!-- 24 Kasım doğum günü simgesi: uygulama bu takma adı o gün etkinleştirir, ertesi gün kapatır. -->
+        <activity-alias
+            android:name=".birthday"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_birthday"
+            android:roundIcon="@mipmap/ic_launcher_birthday_round"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

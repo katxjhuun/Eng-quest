@@ -1,14 +1,14 @@
 {
   "appId": "com.katxjhuun.englishquest",
-  "appName": "English Quest",
+  "appName": "dam-la",
   "webDir": "www",
-  "backgroundColor": "#f4f0e8",
+  "backgroundColor": "#eda1bf",
   "android": {
     "allowMixedContent": false
   },
   "ios": {
     "contentInset": "never",
-    "backgroundColor": "#f4f0e8"
+    "backgroundColor": "#eda1bf"
   },
   "plugins": {
     "CapacitorHttp": {
