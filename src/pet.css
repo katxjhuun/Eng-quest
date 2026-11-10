@@ -266,3 +266,7 @@ body.pet-night .pet-sprite svg{filter:brightness(.82) saturate(.66) hue-rotate(-
 
 /* yeni pet motoru */
 .pet-svg.is-dead{filter:grayscale(.85) brightness(.95)}
+/* 3B kil petler */
+.pet-3d{width:100%;height:100%;display:block}
+.pet-img{width:100%;height:100%;object-fit:contain;display:block}
+.pet-3d.is-dead,.pet-img.is-dead{filter:grayscale(.85) brightness(.95)}

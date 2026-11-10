@@ -1,0 +1,8 @@
+<!doctype html><meta charset="utf-8"><style>body{margin:0;background:#ECE2CC;display:flex;flex-wrap:wrap}div{width:280px;height:280px}img{width:100%;height:100%}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js"}}</script>
+<script type="module">
+import { staticSVG } from '../src/pets/clay/engine.js';
+const q = new URLSearchParams(location.search);
+const L = (q.get('l') || 'cat:5,dog:4,chick:2,owl:3,gecko:4,plant:4,whale:3,doodle:2,goat:3').split(',').map(x => x.split(':'));
+document.body.innerHTML = L.map(([s, t, m, f]) => `<div>${staticSVG(s, +t, { mood: m || 'idle', face: +(f || 1), coat: +(q.get('coat') || 1) })}</div>`).join('');
+</script>

@@ -134,7 +134,7 @@
         "pet": {
           ".write": "auth != null && auth.uid == $uid",
           "species": {
-            ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^(plant|chick|cat|dog|owl|gecko)$/)"
+            ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^(plant|chick|cat|dog|owl|gecko|whale|doodle|goat)$/)"
           },
           "stage": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5"
@@ -249,7 +249,7 @@
               ".validate": "newData.isString() && newData.val().length <= 12 && newData.val().matches(/^(heal|feed|energy|restore|revive|set|stage|name|species|flow|roam|say|react|reset)$/)"
             },
             "species": {
-              ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^(plant|chick|cat|dog|owl|gecko)$/)"
+              ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^(plant|chick|cat|dog|owl|gecko|whale|doodle|goat)$/)"
             },
             "stage": {
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5"
@@ -331,7 +331,7 @@
             ".validate": "newData.isString() && newData.val().length <= 12 && newData.val().matches(/^(heal|feed|energy|restore|revive|set|stage|name|species|flow|roam|say|react|reset)$/)"
           },
           "species": {
-            ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^(plant|chick|cat|dog|owl|gecko)$/)"
+            ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^(plant|chick|cat|dog|owl|gecko|whale|doodle|goat)$/)"
           },
           "stage": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5"

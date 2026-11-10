@@ -3,12 +3,12 @@
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { petSVG, homeSVG, stageName, PET_SPECIES, randomCoat } from './pet-art.js';
-import { Puppet } from './pets/figure.js';
+import { Puppet } from './pets/clay/engine.js';
 import { CAT_XP_STEP, catLabel } from './quiz.js';
 import { SUBJECT_ORDER } from './data/subjects.js';
 
 const HOUR = 3600e3;
-const ORDER = ['plant', 'chick', 'cat', 'dog', 'owl', 'gecko'];
+const ORDER = ['plant', 'chick', 'cat', 'dog', 'owl', 'gecko', 'whale', 'doodle', 'goat'];
 const QUAD = ['cat', 'dog', 'gecko']; // rastgele (seçilemeyen) renk alan türler
 export const PET_SPECS = {
   plant: {
@@ -53,6 +53,27 @@ export const PET_SPECS = {
     soul: 'Herkesten farklıdır; farklı görünür, farklı yaşar, farklı düşünür. Hayat onun süzgecinden bambaşka geçer; artı ve eksi yoktur. Güneş ne kadar yakarsa yaksın sabit durur. Av peşinde koşmaz; av ona gelir, bir şekilde hep gelir.',
     love: ['…', 'Mavi bugün tatlı.', 'Kıpırdama. Böyle iyi.'],
   },
+  whale: {
+    name: 'Derin', hp: 140, food: 120, energy: 90, foodLabel: 'Plankton', foodIcon: '🦐', treat: '🦐', perk: 'Heybetli can',
+    passive: { name: 'Yalnızlığa Uyum', desc: 'Yalnızlık ceza değil: yanlış cevaplarda %15 daha az can kaybeder; uzun süre gelmesen de küsmez.' },
+    active: { id: 'dive', name: 'Bilinmeyene Dal', cost: 25, desc: 'Sorudan kaçar, derine dalar: soruyu cezasız ve serini bozmadan geçer.' },
+    soul: 'Yalnızlık ve ona uyum; yalnızlık onun için ceza değil, ödül. Hayatı kafasında yaşar, düşünmekten ölebilir. Heybetli bir cüsse ama bedenine sığmayan coşkulu bir ruh: keşiş kadar sakin, gerektiğinde hiddetli. Yüzgeçleriyle kuş gibi uçabileceğini sanır. Anlam arar, kaderini sorgular; karanlığı yararak bilinmeyene gider. Süreklilik ona ters; motivasyonu ve arzusuyla hareket eder.',
+    love: ['…', 'Derinde sessiz.', 'Uçabilirim bence.'],
+  },
+  doodle: {
+    name: 'Bodur', hp: 100, food: 100, energy: 100, foodLabel: 'Kırıntı', foodIcon: '🍞', treat: '🍞', perk: 'Sarsılmaz nötr',
+    passive: { name: 'Nötr', desc: 'Hiçbir şey onu değiştirmez: yanlışlarda %20 daha az can kaybı, doğrularda %10 daha az XP.' },
+    active: { id: 'replay', name: 'Aynı Satranç', cost: 20, desc: 'Sonucunu bildiği oyunu yeniden oynar: bu soruda yanlış yaparsan can kaybetmezsin.' },
+    soul: 'Sıkıntı, monotonluk, boğukluk. Hiçbir şey zevk vermez, hiçbir şeye şaşırmaz; duyguları ameliyatla alınmış gibi, neredeyse ruhsuz. Temas ettiğini de boğar. Zaman durmuştur; karanlık bir odada sessizlikten kulak çınlaması. Nadiren başını yastığa koyup sessizce haykırır. Sonucunu bildiği satrancı yeniden oynar; sırası hiç gelmemiştir. Nötrlüğün karşılığı.',
+    love: ['…', 'Fark etmez.', 'Peki.'],
+  },
+  goat: {
+    name: 'Kurban', hp: 110, food: 100, energy: 110, foodLabel: 'Ot', foodIcon: '🌿', treat: '🌿', perk: 'Aynayı tutar',
+    passive: { name: 'Günah Keçisi', desc: 'Yanlışların yükünü üstlenir (%25 daha fazla can kaybı); ama bir yanlıştan sonraki ilk doğru %50 fazla XP verir.' },
+    active: { id: 'mirror', name: 'Ayna', cost: 20, desc: 'Gerçeğin aynasını tutar: cevabın ilk ve son harfini, uzunluğunu gösterir.' },
+    soul: 'Acıların ve günahın masum av gibi görünen avcısı; kötülük beyazdır. Duyguları alt üst eder: bazen acırsın, bazen masum sanırsın. Zararı kendinedir; üzüntü onun yaşam biçimi. Gözlerinde anlam yok, misyonu buymuş gibi. En gömülü duygularını gösterir, gerçekliğin aynasını tutar. Hep suçlanan günah keçisidir; kendini savunmaz, başına geleceği bilir.',
+    love: ['…', 'Biliyorum.', 'Suçlu benim, değil mi?'],
+  },
 };
 
 const LINES = {
@@ -95,7 +116,7 @@ const EM = {
   bug: '<ellipse cx="12" cy="13.5" rx="4.6" ry="6" fill="#6E6258"/><path d="M12 7.5v12" stroke="#4E453E" stroke-width="1.2"/><circle cx="12" cy="6.4" r="2.4" fill="#4E453E"/><path d="M10.6 4.6L8.4 2.4M13.4 4.6l2.2-2.2M7.4 11l-3-1.4M16.6 11l3-1.4M7.4 15.4l-3 1.2M16.6 15.4l3 1.2" stroke="#4E453E" stroke-width="1.3" stroke-linecap="round"/>',
   seed: '<ellipse cx="8" cy="13" rx="2.4" ry="3.6" fill="#C9AA6A" transform="rotate(-25 8 13)"/><ellipse cx="15.5" cy="10" rx="2.4" ry="3.6" fill="#B89458" transform="rotate(20 15.5 10)"/><ellipse cx="14" cy="17.5" rx="2.4" ry="3.6" fill="#C9AA6A" transform="rotate(70 14 17.5)"/>',
 };
-const FOOD_EMOTE = { cat: 'fish', dog: 'bone', plant: 'drop', chick: 'seed', owl: 'mouse', gecko: 'bug' };
+const FOOD_EMOTE = { cat: 'fish', dog: 'bone', plant: 'drop', chick: 'seed', owl: 'mouse', gecko: 'bug', whale: 'drop', doodle: 'seed', goat: 'seed' };
 const DOG_BITE_STAGE = 3; // Genç Kurt ve sonrası: uyurken dürtülürse ısırır
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
@@ -243,6 +264,8 @@ export function initPet(core, quiz) {
     if (p && p.alive && p.energy > 0) {
       if (p.species === 'chick') { const h = clockNow().getHours(); if (h >= 6 && h < 12) m *= 1.25; }
       if (p.species === 'owl') { const h = clockNow().getHours(); if (h >= 22 || h < 4) m *= 1.25; }
+      if (p.species === 'doodle' && right) m *= 0.9;
+      if (p.species === 'goat' && p.mirrorBonus && right) { m *= 1.5; p.mirrorBonus = false; }
       if (p.species === 'gecko' && p.prey && right) { m *= 2; p.prey = false; setTimeout(() => { emote('bug', 1600, true); sayNow('Av geldi. ×2 XP', 2400); renderPanel(); }, 900); }
     }
     return Math.round(delta * m);
@@ -382,6 +405,7 @@ export function initPet(core, quiz) {
     else if (p.species === 'owl') { const ph = phase(); parts.push(ph === 'night' || ph === 'evening' ? '🌙 Nöbette' : ph === 'morning' ? '☕ Mahmur' : '😐 Gündüz yorgunu'); if (p.ward) parts.push(`♟️ ${p.ward} tur önde`); }
     else { const ph = phase(); if (ph === 'morning') parts.push('☕ Mahmur'); else if (ph === 'evening') parts.push('🌙 Uykusu geliyor'); else parts.push(p.species === 'gecko' ? '🦎 Kendi halinde' : '😊 Keyifli'); }
     if (p.species === 'gecko' && p.prey) parts.push('🦗 Av yaklaşıyor');
+    if (p.species === 'goat' && p.mirrorBonus) parts.push('🪞 Ayna hazır');
     if (p.species === 'plant') { const v = Number.isFinite(p.vig) ? p.vig : 1; parts.push(v > 0.75 ? '🌿 Gür' : v > 0.5 ? '🍃 İdare ediyor' : v > 0.3 ? '🥀 Yarı solgun' : '🌵 Kuru, dikenli'); if ((p.vigTrend || 0) > 0 && v < 0.7) parts.push('🌱 toparlanıyor'); }
     if (p.stuffed >= 30) parts.push('😌 Mayışmış');
     else if (p.food < mx.food * 0.2) parts.push(p.species === 'plant' ? '🥀 Susuz' : '🍖 Aç');
@@ -565,7 +589,11 @@ export function initPet(core, quiz) {
     chick: [['look', 1700, 3], ['mirror', 3200, 2], ['petals', 3400, 2], ['hop', 950, 1], ['stretch', 2000, 1]],
     plant: [['photo', 3600, 3], ['sit', 3000, 2], ['look', 1700, 1]],
     owl: [['headturn', 2400, 3], ['look', 1700, 1], ['sit', 3000, 2], ['coffee', 4000, 1]],
-    gecko: [['lick', 1800, 3], ['tongue', 1600, 2], ['freeze', 3000, 2], ['tailwave', 2600, 1], ['bask', 4200, 1]],  };
+    gecko: [['lick', 1800, 3], ['tongue', 1600, 2], ['freeze', 3000, 2], ['tailwave', 2600, 1], ['bask', 4200, 1]],
+    whale: [['look', 2200, 2], ['stretch', 2400, 2], ['tailwave', 2600, 2], ['ability', 2000, 1]],
+    doodle: [['freeze', 4000, 4], ['sit', 3600, 3], ['look', 2000, 1], ['sad', 2600, 1]],
+    goat: [['look', 1800, 2], ['sniff', 1800, 2], ['freeze', 2600, 2], ['eat', 2000, 1]],
+  };
   // mizaç durumu (oturum içi): kedinin can sıkıntısı, köpeğin seni kollaması
   let catBored = 0, wrongRun = 0, guardUntil = 0, mischiefAt = 0;
   function pickIdle(sp) {
@@ -714,6 +742,9 @@ export function initPet(core, quiz) {
     if (sp === 'plant') { react('love', 2400, isDaytime(clockNow()) ? 'photo' : 'sit', 'love'); say(pick(PET_SPECS.plant.love)); return; }
     if (sp === 'owl') { react('love', 2200, 'sit', 'love'); say(pick(PET_SPECS.owl.love)); return; }
     if (sp === 'gecko') { react('love', 2600, isDaytime(clockNow()) ? 'bask' : 'tailwave', 'love'); say(pick(PET_SPECS.gecko.love)); return; }
+    if (sp === 'whale') { react('love', 2600, 'hop', 'love'); say(pick(PET_SPECS.whale.love)); return; }
+    if (sp === 'doodle') { react('idle', 2000, 'freeze', 'dots'); say(pick(PET_SPECS.doodle.love)); return; }
+    if (sp === 'goat') { react('sad', 2200, 'rub', 'love'); say(pick(PET_SPECS.goat.love)); return; }
     react('love', 2200, sp === 'dog' ? 'cuddle' : 'love', 'love'); spawn('♥', 'heart', 2); say(pick(PET_SPECS[sp].love));
   }
   // kurt uyurken dürtülürse ısırır
@@ -773,6 +804,9 @@ export function initPet(core, quiz) {
       else react('groggy', 1800, r < 0.5 ? 'yawn' : 'headturn', 'dots');
       return;
     }
+    if (sp === 'doodle') { if (r < 0.7) { setAnim('freeze', 2600); } else react('sad', 1800, 'sad', 'cloud'); return; }
+    if (sp === 'whale') { if (r < 0.5) react('happy', 1800, 'hop', 'note'); else react('focus', 2000, 'look', 'dots'); return; }
+    if (sp === 'goat') { if (r < 0.5) react('sad', 1600, 'look', 'dots'); else react('surprised', 1200, 'poked', 'excl'); return; }
     if (sp === 'gecko') {
       // farklı tepki verir: donar, gözünü yalar ya da dil çıkarır
       if (r < 0.4) { setAnim('freeze', 3000); emote('dots', 1400); }
@@ -830,6 +864,12 @@ export function initPet(core, quiz) {
     } else if (ab.id === 'prey') {
       if (p.prey) { emote('dots', 1400, true); sayNow('Zaten bekliyorum.', 1800); return; }
       p.prey = true; ok = true; msg = 'Kıpırdamıyorum. Sonraki doğru cevap ×2 XP.';
+    } else if (ab.id === 'dive') {
+      if (quiz.skip()) { ok = true; msg = 'Derine daldım. Bu soru sonraya kaldı.'; }
+    } else if (ab.id === 'replay') {
+      p.shieldFor = t.item.id; ok = true; msg = 'Bu oyunu biliyorum. Bu soruda yanlışın can götürmez.';
+    } else if (ab.id === 'mirror') {
+      const h = quiz.answerHint(); if (h) { ok = true; const tx = String(h.text || ''); msg = `Ayna: “${h.first.toLocaleUpperCase('tr')}…${tx.slice(-1).toLocaleUpperCase('tr')}” · ${h.letters} ${/\d/.test(tx) ? 'karakter' : 'harf'}${h.words > 1 ? ` · ${h.words} kelime` : ''}`; }
     } else if (ab.id === 'sniff') {
       const n = t.style === 'type' ? 0 : quiz.eliminate(1); p.shieldFor = t.item.id; ok = true;
       msg = n ? 'Kazdım, kokladım: bir şık yanlış! Bu soruda seni koruyorum 🛡️' : 'Bu soruda seni koruyorum, yanlışta canım gitmez 🛡️';
@@ -933,6 +973,9 @@ export function initPet(core, quiz) {
       let dmg = d.kind === 'legacy-miss' ? 5 : d.kind === 'legacy-fail' ? 8 : 14;
       if (p.species === 'owl' && p.ward > 0) dmg = Math.ceil(dmg / 2);
       if (p.species === 'gecko') { const h = now.getHours(); if (h >= 10 && h < 17) dmg = Math.ceil(dmg * 0.7); }
+      if (p.species === 'whale') dmg = Math.ceil(dmg * 0.85);
+      if (p.species === 'doodle') dmg = Math.ceil(dmg * 0.8);
+      if (p.species === 'goat') { dmg = Math.ceil(dmg * 1.25); p.mirrorBonus = true; }
       if (p.shieldFor && p.shieldFor === d.id) { dmg = 0; p.shieldFor = null; react('focus', 1300, 'hop', 'shield'); spawn('✦', 'spark', 1); sayNow('Seni korudum! 🛡️ Açıklamaya bakalım.', 2600); }
       if (dmg > 0) {
         if (p.hp - dmg <= 0 && p.species === 'cat' && p.nineLivesDay !== todayKey()) {

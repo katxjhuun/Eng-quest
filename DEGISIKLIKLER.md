@@ -1,3 +1,16 @@
+# dam-la 2.6.0 — 3B kil petler ve üç yeni pet
+
+Uzaktan güncellemeyle gelir. **Firebase kurallarında yeni türler (balina, doodle, keçi) için Yayınla'ya basılması gerekir.**
+- **Gerçek 3B:** petler artık yumuşak kil gibi 3B modeller (Three.js). Her açıdan görünürler: dururken sana 3/4 döner, ara sıra tam karşıdan bakar; yürürken yana döner; dönüşler gerçek dönüş, baş gövdeden önce döner. Origami/kâğıt hissi yok.
+- **Kayma yok:** yürüyenlerin duruştaki ayağı ekranda yerinde kalır (ölçüldü: ±0,4 px), zıplayanlar yalnızca havadayken ilerler, balina havada süzülür.
+- **Tüm hareketler 3B:** oturma (kedi, köpek), yatma ve uyuma, sevinç, yeme, kızma/ısırma, pati, irkilme, donma, bakınma, baykuşun boynunu çevirmesi, yalanma, gerinme, silkinme, yuvarlanma, eşinme, kuyruk sallama, güneşlenme, yetenek. Ruh hâli kapak, kulak, kuyruk ve baş duruşuna yansır.
+- **36 evre yeniden:** her türün 6 formu 3B'de ayrı (renk, oran, desen, aksesuar; civciv yumurtadan tavus kuşuna, bitki tohumdan ulu ağaca).
+- **Yeni pet: Balina (Derin)** — yalnızlığa uyum; yüzgeçleriyle uçabileceğini sanır, havada süzülür. Pasif: yanlışlarda %15 daha az can kaybı. Yetenek “Bilinmeyene Dal”: soruyu cezasız geçer. Evreler: Yavru Balina → Dalgıç → Şarkıcı → Derin Gezgin → Okyanus Keşişi → Kadim Balina.
+- **Yeni pet: Doodle (Bodur)** — hiçbir canlıyı temsil etmeyen bodur yumru; sıkıntı, monotonluk, nötrlük. Pasif: yanlışlarda %20 daha az can, doğrularda %10 daha az XP. Yetenek “Aynı Satranç”: bu soruda yanlış can götürmez. Evreler: Leke → Yumru → Bodur → Karalama → Ağır Yumru → Sessiz Oda.
+- **Yeni pet: Keçi (Kurban)** — masum görünen, perçemi gözüne düşen günah keçisi; boynuzları evreyle büyür. Pasif: yanlışlarda %25 fazla can kaybı ama sonraki ilk doğru %50 fazla XP. Yetenek “Ayna”: cevabın ilk ve son harfini, uzunluğunu gösterir. Evreler: Oğlak → Kuzucuk → Ak Keçi → Boynuzlu → Dağ Keçisi → Günah Keçisi.
+- Bitkinin yuvası artık raf (3B saksıyla çakışmasın diye).
+
+---
 # dam-la 2.5.1 — Her evrim ayrı bir pet
 
 Uzaktan güncellemeyle gelir.
