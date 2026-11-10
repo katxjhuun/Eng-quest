@@ -3,7 +3,7 @@
 import * as quad from './quad.js';
 import * as bean from './bean.js';
 import * as lizard from './lizard.js';
-import { blend, Spring, EASE, clamp, r1, TAU, pastel } from './anim.js';
+import { blend, Spring, EASE, clamp, r1, TAU, retro } from './anim.js';
 import { propOps } from './props.js';
 import { op } from './face.js';
 
@@ -55,40 +55,84 @@ function str(ops) {
   return s;
 }
 
-// ---------------------------------------------------------------- mürekkep geçişi (logo dili)
-// Uygulamanın logosundaki kedi gibi: düz pastel dolgu, el çizimi siyah kontur, titreyen çizgi (line boil).
-// Rig'ler şekilleri çizer; bu geçiş renkleri pastelleştirir, gölge/parıltı katmanlarını atar ve dolgulara kontur ekler.
+// ---------------------------------------------------------------- editoryal baskı geçişi
+// Naif / outsider art + retro editoryal illüstrasyon: risograf paleti, ince titrek mürekkep kontur,
+// hacim için ışık alan/gölgede kalan iki-üç ton (2B çizim, 3B kütle), kâğıt dokusu ve hafif baskı kayması.
+// Rig'ler şekilleri ve ayrıntıları çizer; bu geçiş renkleri baskı mürekkeplerine çevirir ve dolgulara kontur ekler.
 const FILLS = new Set(['path', 'ellipse', 'circle', 'rect', 'polygon']);
-const NO_INK = /^(e[LR]|mo$|tg|tgt|lk|bl[12]$|shadow|glow|tr1|sw$|mk|hmk|dt\d|cv|sp\d|thorn|ribs|bark|down|fluff|shellD|fs\d|nost|jaw|wh|nz)/;
-function ink(ops, I) {
+const NO_INK = /^(e[LR]|mo$|tg|tgt|lk|bl[12]$|shadow|glow|tr1|sw$|dt\d|cv|sp\d|thorn|ribs|bark|down|fluff|fs\d|nost|wh|nz)/;
+// Naif illüstrasyon dokusu: ana gövde parçalarının üstüne türe özgü el çizimi desen (tüy çizgileri, tüy kıvrımları,
+// pul, yaprak damarı) bindirilir; bacak gibi çizgi-şekillere desen kontur olarak uygulanır.
+const TEX_FILL = /^(body|skull|neck|haunch|belly|ruff|mz|bd|b|head|casque|crest|disc|discL|discR|mound|top|cr|c)$/;
+const TEX_STROKE = /^(tail|neck|lg|leg|legs|ft|tb|ts|arm|wing)/;
+function ink(ops, I, tex) {
   const out = [];
   for (const o of ops) {
     if (!o) continue;
     if (o.t === 'defs' || o.t === 'clipPath' || o.t === 'filter') { out.push(o); continue; }
     const a = o.a ? { ...o.a } : {};
     const opa = a.opacity != null ? Number(a.opacity) : 1;
-    // yumuşak gölge ve parıltılar düz tasarımda yok (göz ve gözyaşı hariç)
-    if (FILLS.has(o.t) && opa < 0.7 && opa > 0 && !/^(e[LR]|tr1|glow|tw$)/.test(o.k)) continue;
-    if (a.fill && a.fill !== 'none') a.fill = pastel(a.fill);
-    if (a.stroke && a.stroke !== 'none') a.stroke = pastel(a.stroke);
-    if (FILLS.has(o.t) && a.fill && a.fill !== 'none' && !a.stroke && !NO_INK.test(o.k)) {
-      a.stroke = I; a['stroke-width'] = 1.25; a['vector-effect'] = 'non-scaling-stroke'; a['stroke-linejoin'] = 'round';
+    if (a.fill && a.fill !== 'none') a.fill = retro(a.fill);
+    if (a.stroke && a.stroke !== 'none') a.stroke = retro(a.stroke);
+    if (FILLS.has(o.t) && a.fill && a.fill !== 'none' && !a.stroke && opa >= 0.7 && !NO_INK.test(o.k)) {
+      a.stroke = I; a['stroke-width'] = 1.05; a['vector-effect'] = 'non-scaling-stroke'; a['stroke-linejoin'] = 'round';
     }
-    out.push(o.kids ? { ...o, a, kids: ink(o.kids, I) } : { ...o, a });
+    out.push(o.kids ? { ...o, a, kids: ink(o.kids, I, tex) } : { ...o, a });
+    if (tex && opa >= 0.7 && FILLS.has(o.t)) {
+      const filled = a.fill && a.fill !== 'none' && TEX_FILL.test(o.k);
+      const stroked = (!a.fill || a.fill === 'none') && a.stroke && Number(a['stroke-width']) > 2.5 && TEX_STROKE.test(o.k);
+      if (filled) out.push({ ...o, k: o.k + 'Tx', a: { ...a, fill: `url(#${tex})`, stroke: null, 'stroke-width': null, 'vector-effect': null } });
+      else if (stroked) out.push({ ...o, k: o.k + 'Tx', a: { ...a, stroke: `url(#${tex})` } });
+    }
   }
   return out;
 }
-// el çizimi kontur + titreme: siluetin dışına mürekkep çizgisi, saniyede ~8 kez değişen hafif dalgalanma
+// türe göre desen (12×12 birimlik, hafif eğik); koyu mürekkep, yarı saydam
+const TEX = {
+  fur: 'M1 2 q1.2 -1.4 2.4 0 M6.5 4.5 q1.2 -1.4 2.4 0 M2.5 8.5 q1.2 -1.4 2.4 0 M8 10.5 q1.2 -1.4 2.4 0',
+  fluff: 'M2 3 q1 -1.6 2 0 q1 1.6 2 0 M7 8 q1 -1.6 2 0 q1 1.6 2 0',
+  feather: 'M1 4 l2 2 l2 -2 M7 4 l2 2 l2 -2 M4 10 l2 2 l2 -2',
+  scale: 'M0 6 a3 3 0 0 1 6 0 a3 3 0 0 1 6 0 M-3 12 a3 3 0 0 1 6 0 a3 3 0 0 1 6 0',
+  vein: 'M1 3 l3 1.5 M6 8 l3 1.5 M3 10.5 l2 1',
+};
+function texDefs(id, kind, I) {
+  return op('texdefs', 'defs', {}, [op('pat', 'pattern', { id, width: 12, height: 12, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(-18)' }, [
+    op('p', 'path', { d: TEX[kind] || TEX.fur, fill: 'none', stroke: I, 'stroke-width': 0.55, 'stroke-linecap': 'round', opacity: 0.42 })])]);
+}
+const HATCH = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="5" height="5"><path d="M-1 4 L4 -1 M1 6 L6 1" stroke="#2A2230" stroke-width=".55" stroke-opacity=".55"/></svg>');
+// 2B çizim + 3B kütle: siluetin bulanık alfasından kabartma ışığı üretilir, üç tona basamaklanır (cel/riso gölge),
+// gövdeyle çarpılır; üstüne kâğıt grenı, dışına titrek mürekkep kontur ve kaymış ikinci baskı rengi.
 function inkFilter(id, I, seed) {
-  return op('inkdefs', 'defs', {}, [op('ink', 'filter', { id, x: '-12%', y: '-12%', width: '124%', height: '124%', 'color-interpolation-filters': 'sRGB' }, [
-    // önce aşındır: ince çizgiler (bıyık, tüy) kontur kazanmaz, yalnızca gövde parçaları çerçevelenir
+  return op('inkdefs', 'defs', {}, [op('ink', 'filter', { id, x: '-14%', y: '-14%', width: '128%', height: '128%', 'color-interpolation-filters': 'sRGB' }, [
+    op('b', 'feGaussianBlur', { in: 'SourceAlpha', stdDeviation: '4', result: 'bl' }),
+    op('l', 'feDiffuseLighting', { in: 'bl', surfaceScale: '7', diffuseConstant: '1.2', 'lighting-color': '#FFFFFF', result: 'lt' }, [op('dl', 'feDistantLight', { azimuth: '225', elevation: '40' })]),
+    // üç ton: gölge / yarı ton / ışık (+ tepe parıltısı)
+    op('q', 'feComponentTransfer', { in: 'lt', result: 'band' }, [
+      op('r', 'feFuncR', { type: 'discrete', tableValues: '0.5 0.74 0.95 1.08' }), op('g', 'feFuncG', { type: 'discrete', tableValues: '0.5 0.73 0.95 1.07' }), op('bb', 'feFuncB', { type: 'discrete', tableValues: '0.62 0.8 0.97 1.04' })]),
+    op('mu', 'feBlend', { in: 'SourceGraphic', in2: 'band', mode: 'multiply', result: 'vol' }),
+    op('vc', 'feComposite', { in: 'vol', in2: 'SourceAlpha', operator: 'in', result: 'v2' }),
+    // gölge bölgesine el çizimi tarama (editoryal illüstrasyon taraması)
+    op('sm', 'feComponentTransfer', { in: 'lt', result: 'smk' }, [op('sa', 'feFuncA', { type: 'discrete', tableValues: '1 0 0 0' }), op('sr', 'feFuncR', { type: 'linear', slope: '0', intercept: '0' })]),
+    op('hi', 'feImage', { href: HATCH, x: '0', y: '0', width: '5', height: '5', result: 'h1' }),
+    op('ht', 'feTile', { in: 'h1', result: 'h2' }),
+    op('hc', 'feComposite', { in: 'h2', in2: 'smk', operator: 'in', result: 'h3' }),
+    op('hk', 'feComposite', { in: 'h3', in2: 'SourceAlpha', operator: 'in', result: 'hatch' }),
+    // kâğıt grenı (ince)
+    op('gn', 'feTurbulence', { type: 'fractalNoise', baseFrequency: '0.9', numOctaves: '1', seed: '7', result: 'gr' }),
+    op('gc', 'feColorMatrix', { in: 'gr', type: 'matrix', values: '0 0 0 0 0.16  0 0 0 0 0.12  0 0 0 0 0.1  0 0 0 0.32 -0.12', result: 'gk' }),
+    op('gi', 'feComposite', { in: 'gk', in2: 'SourceAlpha', operator: 'in', result: 'gm' }),
+    op('gm', 'feMerge', { result: 'tex' }, [op('a', 'feMergeNode', { in: 'v2' }), op('b3', 'feMergeNode', { in: 'hatch' }), op('b2', 'feMergeNode', { in: 'gm' })]),
+    // mürekkep kontur + kaymış ikinci baskı (sıcak kırmızı, hafif sağ-alt)
     op('e', 'feMorphology', { in: 'SourceAlpha', operator: 'erode', radius: '0.7', result: 'er' }),
-    op('d', 'feMorphology', { in: 'er', operator: 'dilate', radius: '2.2', result: 'dl' }),
+    op('d', 'feMorphology', { in: 'er', operator: 'dilate', radius: '1.85', result: 'dl' }),
     op('f', 'feFlood', { 'flood-color': I, result: 'fl' }),
     op('c', 'feComposite', { in: 'fl', in2: 'dl', operator: 'in', result: 'ol' }),
-    op('m', 'feMerge', { result: 'mg' }, [op('a', 'feMergeNode', { in: 'ol' }), op('b', 'feMergeNode', { in: 'SourceGraphic' })]),
-    op('t', 'feTurbulence', { type: 'fractalNoise', baseFrequency: '0.09', numOctaves: '2', seed: String(seed), result: 'n' }),
-    op('x', 'feDisplacementMap', { in: 'mg', in2: 'n', scale: '1.7', xChannelSelector: 'R', yChannelSelector: 'G' }),
+    op('mo', 'feOffset', { in: 'dl', dx: '1.6', dy: '1.2', result: 'mis' }),
+    op('mf', 'feFlood', { 'flood-color': '#C8553D', 'flood-opacity': '0.45', result: 'mfl' }),
+    op('mc', 'feComposite', { in: 'mfl', in2: 'mis', operator: 'in', result: 'reg' }),
+    op('m', 'feMerge', { result: 'mg' }, [op('a', 'feMergeNode', { in: 'reg' }), op('b', 'feMergeNode', { in: 'ol' }), op('c3', 'feMergeNode', { in: 'tex' })]),
+    op('t', 'feTurbulence', { type: 'fractalNoise', baseFrequency: '0.07', numOctaves: '2', seed: String(seed), result: 'n' }),
+    op('x', 'feDisplacementMap', { in: 'mg', in2: 'n', scale: '1.4', xChannelSelector: 'R', yChannelSelector: 'G' }),
   ])]);
 }
 // baş gruplarını (yan görünüş) ayrıca döndürür: dönüşte baş gövdeden önce izleyiciye döner
@@ -118,7 +162,9 @@ function frameOps(rig, S, pose, T, uid, turn) {
   const { F, col, k } = S;
   const front = rig === bean;
   let kids = rig.draw(F, pose, col, T, uid);
-  const I = col.dark ? '#F3EDF6' : '#17131B';
+  const I = col.dark ? '#EFE3CC' : '#2A2230';
+  const tk = rig === lizard ? 'scale' : rig === bean ? (F.kind === 'owl' ? 'feather' : F.kind === 'plant' ? 'vein' : 'fluff') : 'fur';
+  const texId = uid + 'tx';
   const back = [], fr = [], world = [];
   for (const pr of pose.props || []) (pr.world ? world : pr.back ? back : fr).push(pr);
   const f = turn.f * (pose.spin ?? 1);
@@ -126,7 +172,7 @@ function frameOps(rig, S, pose, T, uid, turn) {
   if (!front) kids = headTurn(kids, turn.hf / (Math.abs(f) < 0.05 ? 0.05 * Math.sign(f || 1) : f));
   const sx = (pose.sx ?? 1) * k, sy = (pose.sy ?? 1) * k;
   const root = op('root', 'g', { transform: `translate(${r1(60 + (pose.rx || 0) * k)} ${r1(G + (pose.ry || 0) * k)}) rotate(${r1(pose.rr || 0)}) scale(${r1(sx * 1000) / 1000} ${r1(sy * 1000) / 1000}) translate(-60 -${G})` },
-    ink([...propOps(back, 'pb'), ...kids, ...propOps(fr, 'pf')], I));
+    ink([...propOps(back, 'pb'), ...kids, ...propOps(fr, 'pf')], I, texId));
   // gölge: yerde kalır, yükseldikçe küçülür; dönüşün ortasında gövde izleyiciye döndüğü için kısalmaz
   const fp = rig.footprint(F, pose);
   const alt = clamp(-(pose.ry || 0) / 45, 0, 0.7);
@@ -134,7 +180,7 @@ function frameOps(rig, S, pose, T, uid, turn) {
   const wk = world.length ? [op('world', 'g', { transform: `translate(60 ${G}) scale(${k}) translate(-60 -${G})` }, ink(propOps(world, 'pw'), I))] : [];
   const fs = front ? Math.sign(f || 1) : f;
   const body = op('face', 'g', { transform: Math.abs(fs - 1) < 0.001 ? null : `translate(60 0) scale(${r1(fs * 1000) / 1000} 1) translate(-60 0)` }, [root, ...wk]);
-  return [inkFilter(uid + 'ink', '#17131B', turn.seed), shadow, op('inkG', 'g', { filter: `url(#${uid}ink)` }, [body])];
+  return [inkFilter(uid + 'ink', '#2A2230', turn.seed), texDefs(texId, tk, I), shadow, op('inkG', 'g', { filter: `url(#${uid}ink)` }, [body])];
 }
 
 // ---------------------------------------------------------------- oynatıcı
@@ -294,7 +340,7 @@ export class Puppet {
     if (this.cond) p = { ...p, ...this.cond };
     // dönerken ağırlık aktarımı: hafif yükselip yere geri oturur
     if (yaw) { p = { ...p, ry: (p.ry || 0) - 2.2 * yaw, sy: (p.sy ?? 1) * (1 + 0.035 * yaw) }; }
-    const seed = 1 + (Math.floor(this.t * 7.5) % 4);
+    const seed = 1 + (Math.floor(this.t * 4) % 3);   // retro: yavaş, elle çizilmiş titreme
     sync(this.svg, frameOps(this.rig, this.S, p, this.t, this.uid, { f: this.faceCur, hf, yaw, seed }));
   }
   // anlık durum (yönetici/test için)

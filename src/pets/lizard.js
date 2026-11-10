@@ -10,9 +10,9 @@ const F_ = c => ({ fill: c });
 const S_ = (c, w) => ({ fill: 'none', stroke: c, 'stroke-width': r1(w), 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
 
 // rastgele atanan renk (morf); kullanıcı seçemez
-export const COATS = ['#7FE0D2', '#FF9EC4', '#FFD66B', '#B9A6F5', '#9BE58B', '#86D3F4', '#FFB28A', '#EDE7DC'];
+export const COATS = ['#D9A35C', '#5E9A7A', '#8C5A7E', '#C8553D', '#E2C89A', '#3E6A9E', '#9AA35C', '#D9827A'];
 const IRIS = ['#B88A3E', '#C9A24A', '#D0B070', '#8FA36A', '#B88A3E', '#C9A24A', '#D0B070', '#9DB07A'];
-const ALT = ['#FF9EC4', '#86D3F4', '#9BE58B', '#FFD66B', '#B9A6F5', '#FFB28A', '#7FE0D2', '#F4A3C4'];
+const ALT = ['#C8553D', '#E2A93B', '#E2A93B', '#2F8C86', '#C8553D', '#E2A93B', '#3E6A9E', '#2F8C86'];
 
 const FORMS = [
   { name: 'hatchling', k: 1.02, L: 22, rb: 6.6, hs: 1.42, leg: 1.05, tail: 26, tw: 5.6, fat: 0.25, marks: 'bands' },

@@ -146,3 +146,24 @@ export function pastel(h) {
   v = rgb2hex((R + m) * 255, (G2 + m) * 255, (B + m) * 255);
   pastelCache.set(h, v); return v;
 }
+
+// Retro editoryal baskı paleti (risograf mürekkepleri gibi): her renk tonuna göre en yakın mürekkebe eşlenir,
+// açıklık korunur (krem kâğıda ya da lacivert mürekkebe doğru karıştırılır).
+const RISO = [[8, '#C8553D'], [24, '#D9773F'], [42, '#E2A93B'], [62, '#B5A23C'], [100, '#8FA876'], [150, '#4E9A7A'], [178, '#2F8C86'], [212, '#3E6A9E'], [255, '#5B5B9A'], [300, '#8C5A7E'], [345, '#D9827A']];
+const retroCache = new Map();
+export function retro(h) {
+  if (typeof h !== 'string' || !/^#[0-9a-f]{6}$/i.test(h)) return h;
+  let v = retroCache.get(h); if (v) return v;
+  let [r, g, b] = hex2rgb(h).map(x => x / 255);
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, dd = mx - mn;
+  if (l < 0.2) { retroCache.set(h, h); return h; }
+  let hh = 0; const s = dd ? dd / (1 - Math.abs(2 * l - 1)) : 0;
+  if (dd) { hh = mx === r ? ((g - b) / dd) % 6 : mx === g ? (b - r) / dd + 2 : (r - g) / dd + 4; hh *= 60; if (hh < 0) hh += 360; }
+  let base;
+  if (s < 0.12) base = l > 0.7 ? '#F1E4C8' : l > 0.45 ? '#B9AC98' : '#5A5560';
+  else { let best = RISO[0], bd = 999; for (const c of RISO) { const dh = Math.min(Math.abs(c[0] - hh), 360 - Math.abs(c[0] - hh)); if (dh < bd) { bd = dh; best = c; } } base = best[1]; }
+  // açıklığı koru: açık tonlar kâğıda, koyular lacivert mürekkebe doğru
+  const bl = lum(base);
+  v = l > bl + 0.05 ? mix(base, '#F4E9D2', Math.min(0.75, (l - bl) * 1.5)) : l < bl - 0.05 ? mix(base, '#2A2A3A', Math.min(0.7, (bl - l) * 1.4)) : base;
+  retroCache.set(h, v); return v;
+}

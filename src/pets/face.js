@@ -53,20 +53,29 @@ function eye(fam, k, x, y, r, style, blink, lx, ly, col, d) {
       if (style === 'up') { py -= r * 0.32; }
       const ry = R * open;
       const yy = y + (R - ry) * 0.35;
-      // Logo dili: siyah badem "gözlük" gözler, üstünde iki beyaz eğik parıltı çizgisi. İfade kapakla ve bakışla verilir.
-      const INK = '#141016', slash = (kk, x0, y0, len, w) => op(kk, 'path', { d: `M${P(x0 + len * 0.22, y0 - len * 0.5)} L${P(x0 - len * 0.22, y0 + len * 0.5)}`, fill: 'none', stroke: '#FFFFFF', 'stroke-width': r1(w), 'stroke-linecap': 'round' });
-      const big = fam === 'owl' ? 1.12 : ring ? 1.5 : 1.55;
-      const ax = R * big * (fam === 'owl' ? 1 : 1.12), ay = ry * big * (fam === 'owl' ? 1 : 0.8);
-      const rot = fam === 'owl' ? 0 : -9 * d;   // dışa doğru hafif eğik, logodaki gibi
-      const cx = x + px * 0.18, cy = yy + py * 0.12;
-      if (fam === 'owl') out.push(op(k + 'r', 'ellipse', { cx: r1(x), cy: r1(yy), rx: r1(ax * 1.2), ry: r1(ay * 1.2 + 0.3), fill: col.iris || '#D9A441' }));
-      out.push(op(k + 'w', 'ellipse', { cx: r1(cx), cy: r1(cy), rx: r1(ax), ry: r1(Math.max(0.3, ay)), fill: INK, transform: rot ? `rotate(${rot} ${r1(cx)} ${r1(cy)})` : null, ...(col.dark || col.eyeRing ? { stroke: col.eyeRing || '#F3EDF6', 'stroke-width': r1(R * 0.18) } : {}) }));
-      if (open > 0.45) {
-        // parıltılar bakış yönüne göre kayar; şaşkınlıkta büyür, dalgınken neredeyse kaybolur
-        const sl = style === 'wide' ? 1.15 : style === 'half' || style === 'sad' ? 0.6 : 0.9;
-        const hx = cx - ax * 0.32 + px * 0.5, hy = cy - ay * 0.05 + py * 0.25;
-        out.push(slash(k + 'h', hx, hy, ay * 1.05 * sl, Math.max(0.45, R * 0.17)));
-        out.push(slash(k + 'h2', hx + ax * 0.32, hy - ay * 0.12, ay * 0.55 * sl, Math.max(0.4, R * 0.15)));
+      // Naif / retro editoryal: krem renkli badem göz, renkli iris, siyah göz bebeği, tek beyaz ışık noktası,
+      // kalın üst kapak çizgisi (göz kalemi gibi) ve alt kirpik. İfade kapak eğimi, bakış ve göz bebeği boyutuyla verilir.
+      const INK = '#2A2230', SCL = '#F4EAD6';
+      const big = fam === 'owl' ? 1.2 : ring ? 1.55 : 1.45;
+      const ax = R * big * (fam === 'owl' ? 1 : 1.18), ay = Math.max(0.3, ry * big * (fam === 'owl' ? 1 : 0.86));
+      const rot = fam === 'owl' ? 0 : -6 * d;
+      const T = rot ? `rotate(${rot} ${r1(x)} ${r1(yy)})` : null;
+      const iris = col.iris || (fam === 'dot' ? '#4E6B8A' : '#B8862F');
+      out.push(op(k + 'w', 'ellipse', { cx: r1(x), cy: r1(yy), rx: r1(ax), ry: r1(ay), fill: SCL, stroke: INK, 'stroke-width': r1(Math.max(0.35, R * 0.16)), transform: T }));
+      if (open > 0.3) {
+        const ir = Math.min(ax, ay) * (style === 'wide' ? 0.62 : 0.78);
+        const ix = x + px * 0.55, iy = yy + py * 0.45;
+        out.push(op(k + 'i', 'circle', { cx: r1(ix), cy: r1(iy), r: r1(ir), fill: iris, stroke: INK, 'stroke-width': r1(Math.max(0.25, R * 0.08)) }));
+        // göz bebeği: korkuda/şaşkınlıkta küçülür, sevgide büyür; kedi ve geckoda dikey yarık
+        const pk = style === 'wide' ? 0.32 : style === 'happy-open' ? 0.7 : 0.52;
+        if (col.slit && style !== 'wide') out.push(op(k + 'p', 'ellipse', { cx: r1(ix), cy: r1(iy), rx: r1(ir * 0.24), ry: r1(ir * 0.86), fill: '#141014' }));
+        else out.push(op(k + 'p', 'circle', { cx: r1(ix), cy: r1(iy), r: r1(ir * pk), fill: '#141014' }));
+        out.push(op(k + 'h', 'circle', { cx: r1(ix - ir * 0.36), cy: r1(iy - ir * 0.38), r: r1(Math.max(0.35, ir * 0.24)), fill: '#FFFDF6' }));
+      }
+      // üst kapak çizgisi (göz kalemi) ve dış köşede küçük kirpik
+      if (fam !== 'owl') {
+        const ux = ax * 1.08;
+        out.push(op(k + 'u', 'path', { d: `M${P(x - ux * d, yy + ay * 0.15)} Q${P(x, yy - ay * 1.55)} ${P(x + ux * d, yy - ay * 0.1)} l${r1(ax * 0.32 * d)} ${r1(-ay * 0.3)}`, fill: 'none', stroke: INK, 'stroke-width': r1(Math.max(0.5, R * 0.26)), 'stroke-linecap': 'round', transform: T }));
       }
       if (lid > 0 && open > 0.25) {
         // kapak: gövde renginde bir parça gözün üstünü örter

@@ -1,3 +1,13 @@
+# dam-la 2.4.1 — Naif / retro editoryal petler
+
+Uzaktan güncellemeyle gelir.
+- **Yeni stil: naif (outsider art) + retro editoryal illüstrasyon.** Risograf baskı mürekkepleri gibi sıcak bir palet (tuğla kırmızısı, hardal, petrol yeşili, kobalt, krem kâğıt), ince ve titrek mürekkep kontur, hafif kaymış ikinci baskı rengi ve kâğıt grenı.
+- **2B çizim, 3B kütle:** her pet sol üstten ışık alıyor; gövde üç tonda (ışık, yarı ton, gölge) gölgeleniyor, gölge tarafı el çizimi taramayla dolduruluyor.
+- **Ayrıntılar geri geldi:** gölge ve parıltı katmanları artık silinmiyor; türe özgü desenler eklendi (kedi/köpekte tüy çizgileri, civcivde tüy kıvrımları, baykuşta tüy okları, geckoda pul, bitkide damar). Gerçek tüy renkleri (zencefil, kül, kömür, krem, tarçın) geri döndü.
+- **Gözler:** krem badem göz, renkli iris, siyah göz bebeği (kedi ve geckoda yarık), ışık noktası, göz kalemi gibi üst kapak çizgisi. Korkuda göz bebeği küçülür.
+- **Daha büyük:** dolaşan pet 132 piksel; yuva alanı daha yüksek, puantiyeli duvar kâğıdı ve ahşap zeminli bir oda; yuvalar dikişli, desenli, el çizimi.
+
+---
 # dam-la 2.4.0 — Logo dilinde petler, 3B dönüş, sakin tepkiler
 
 Uzaktan güncellemeyle gelir.

@@ -1,9 +1,9 @@
 /* ---------- pet yuvası (seviye çubuğu ile soru tipi arasında) ---------- */
 .pet-home{display:flex;flex-direction:column;gap:8px;background:#fffdf8;border:1px solid #e6ded3;border-radius:22px;padding:8px 8px 10px;margin:0 0 14px;box-shadow:0 8px 22px rgba(31,28,34,.06);position:relative}
-.pet-hab{position:relative;border-radius:16px;background:linear-gradient(180deg,#f3efff 0%,#fbf6ea 62%,#efe6d6 100%);overflow:hidden;min-height:170px;cursor:pointer;border:1px solid #ece4d7}
+.pet-hab{position:relative;border-radius:16px;background:linear-gradient(180deg,transparent 0 76%,#d9b98f 76% 77.2%,#e9cfa6 77.2% 100%),radial-gradient(circle,#e2a93b55 1.3px,transparent 1.8px) 0 0/16px 16px,radial-gradient(circle,#c8553d33 1px,transparent 1.5px) 8px 8px/16px 16px,#f4ead3;overflow:hidden;min-height:214px;cursor:pointer;border:1px solid #ece4d7}
 .pet-hab:before{content:"";position:absolute;left:0;right:0;bottom:0;height:26px;background:#eadfcd;border-top:1px solid #e0d2bc}
 .pet-hab-bg{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center}
-.pet-hab-bg svg{width:150px;height:150px;margin-bottom:-8px}
+.pet-hab-bg svg{width:190px;height:190px;margin-bottom:2px}
 .pet-away{position:absolute;left:6px;right:6px;top:8px;text-align:center;font-size:10px;font-weight:800;color:#817a80;opacity:0;transition:opacity .3s}
 .pet-away.show{opacity:1}
 body.pet-night .pet-hab{background:radial-gradient(circle at 78% 22%,#fff6c8 0 6px,transparent 7px),radial-gradient(circle at 30% 30%,#fff 0 1px,transparent 1.5px),radial-gradient(circle at 55% 16%,#fff 0 1px,transparent 1.5px),linear-gradient(180deg,#2b2a4a 0%,#4a4570 70%,#5a527a 100%)}
@@ -46,12 +46,12 @@ body.pet-evening .pet-hab{background:linear-gradient(180deg,#f7c9a8 0%,#e9b7c9 5
 .flow-btn.on .flow-ico{animation:shieldPulse 1.8s ease-in-out infinite}
 @keyframes flowBorder{to{background-position:0 0,200% 0}}
 body.pet-flow .quiz-card,body.pet-flow #legacyBlock .challenge{box-shadow:0 0 0 2px rgba(79,59,212,.22),0 18px 40px rgba(79,59,212,.12)}
-@media(max-width:420px){.pet-hab{min-height:156px}.pet-hab-bg svg{width:136px;height:136px}.pet-bars{gap:7px}}
+@media(max-width:420px){.pet-hab{min-height:196px}.pet-hab-bg svg{width:172px;height:172px}.pet-bars{gap:7px}}
 
 /* ---------- dolaşan pet ---------- */
 body{position:relative}
 .pet-layer{position:absolute;inset:0;overflow:hidden;overflow:clip;pointer-events:none;z-index:35}
-.pet-actor{position:absolute;pointer-events:auto;left:0;top:0;width:100px;height:100px;z-index:35;will-change:transform;touch-action:none;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .3s}
+.pet-actor{position:absolute;pointer-events:auto;left:0;top:0;width:132px;height:132px;z-index:35;will-change:transform;touch-action:none;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .3s}
 .pet-actor.hidden{display:block!important;opacity:0;pointer-events:none}
 /* Pet çizimi ve tüm hareketi src/pets/ oynatıcısından gelir (her karede iskelet pozu); burada yalnızca kap kutusu var. */
 .pet-sprite{position:absolute;inset:0}

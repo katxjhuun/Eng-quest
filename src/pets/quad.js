@@ -8,20 +8,20 @@ export const G = 108;
 // ---------------------------------------------------------------- tüy renkleri (rastgele atanır)
 export const COATS = {
   // lo-fi: kırık, tozlu tonlar (doygun turuncu/sarı yok)
-  // logo dili: düz, canlı pasteller (nane, pembe, lila, tereyağı, gök) + mürekkep siyahı
-  cat: ['#95F0BF', '#F4A3C4', '#B9A6F5', '#FFD66B', '#86D3F4', '#23202A', '#FFB28A', '#EDE7DC'],
-  dog: ['#F6C27A', '#9FD8F3', '#EDE7DC', '#C3AEF4', '#8FE6C2', '#2C2830', '#F49AB8', '#FFE07A'],
+  // gerçek tüy renkleri; baskı geçişi bunları retro mürekkeplere çevirir (zencefil, kül, kömür, krem, tarçın...)
+  cat: ['#C9773F', '#8A8890', '#2B2629', '#E2D3B4', '#7A5844', '#EDE4D2', '#55505A', '#D9A35C'],
+  dog: ['#B07A4C', '#6E5040', '#D9B57C', '#E6DAC2', '#8C8E94', '#2B2629', '#A06A4C', '#C99A5E'],
 };
 // göz rengi tüyle eşleşir (kedi: amber/yeşil/gri-mavi; köpek: koyu kahve)
 const IRIS = { cat: ['#C9A24A', '#8FA36A', '#C9A24A', '#7E9AA6', '#B98E45', '#7E9AA6', '#9DB07A', '#B98E45'], dog: ['#6B4A33', '#3A2A22', '#4A3326', '#5A3E2C', '#4A3326', '#5A3E2C', '#3A2A22', '#7A5638'] };
 export function coatColors(b) {
-  const L = lum(b), dark = L < 0.06, light = L > 0.45;
+  const L = lum(b), dark = L < 0.1, light = L > 0.45;
   return {
     b, dark, light,
     far: dark ? shade(b, 0.07) : shade(b, -0.1),
     mark: dark ? shade(b, 0.16) : shade(b, light ? -0.22 : -0.34),
     under: dark ? shade(b, 0.28) : shade(b, 0.5),
-    white: '#FFFFFF', pupil: dark ? '#141116' : '#231d27', line: dark ? '#F3EDF6' : '#17131B', lid: b,
+    white: '#FFFFFF', pupil: dark ? '#141116' : '#231d27', line: dark ? '#EFE3CC' : '#2A2230', lid: b,
     rim: null,
   };
 }
