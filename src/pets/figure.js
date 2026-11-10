@@ -70,8 +70,10 @@ function filterDefs(id) {
 <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="1" seed="3" result="g"/><feColorMatrix in="g" type="matrix" values="0 0 0 0 0.93 0 0 0 0 0.89 0 0 0 0 0.8 0 0 0 0.9 -0.52" result="sp"/>
 <feComposite in="sp" in2="w" operator="in" result="sq"/><feMerge><feMergeNode in="w"/><feMergeNode in="sq"/></feMerge></filter></defs>`;
 }
-function viewOf(def, base) {
+function viewOf(def, base, turning) {
   const v = def.views;
+  // yürürken yön değiştirirken: ortada önden görünüşe geçer (3B dönüş)
+  if (turning && (base === 'walk' || base === 'run') && v.walk && !def.side) return 'sit';
   if ((base === 'walk' || base === 'run') && v.walk) return 'walk';
   if ((base === 'sleep' || base === 'lie' || base === 'dead') && v.sleep) return 'sleep';
   return 'sit';
@@ -210,6 +212,8 @@ function computePose(st) {
     }
   }
 
+  // önden görünüşte dil yalnızca dışarı çıkarken görünür
+  if (!side && st.keys.includes('tongue')) A('tongue', { o: st.flick || ['tongue', 'lick', 'ability', 'eat'].includes(verb) ? 1 : 0 });
   // --- 3B dönüş (yan görünüş): baş gövdeden önce döner
   if (side || view === 'walk') {
     A('root', { sx: st.faceCur });
@@ -239,6 +243,12 @@ function idlePersonality(def, st, A, t, mood, side) {
     A('chest', { sx: 1 + 0.03 * Math.sin(t * 1.5), sy: 1 + 0.03 * Math.sin(t * 1.5) });
     A('head', { r: -7 * cyc(10, 0.3, 0.56), y: -4 * cyc(10, 0.66, 0.9) });
     A('earL', { r: -9 * cyc(6, 0.4, 0.56) }); A('earR', { r: 9 * cyc(6, 0.62, 0.78) });
+  } else if (sp === 'chick' && !side) {
+    // önden: merakla başını yana yatırır, eğilip bakar
+    const tilt = cyc(5, 0.1, 0.4), dip = cyc(3.4, 0.5, 0.72);
+    A('head', { r: 12 * tilt - 8 * cyc(5, 0.55, 0.8), y: 4 * dip });
+    A('jaw', { y: 1.5 * cyc(3.4, 0.58, 0.68) }); A('tuft', { r: 6 * Math.sin(t * 3.7) });
+    A('wingL', { r: 16 * cyc(4.2, 0.1, 0.28) }); A('wingR', { r: -16 * cyc(4.2, 0.12, 0.3) }); A('root', { r: 1.5 * Math.sin(t * 2.2) });
   } else if (sp === 'chick') {
     const pk = cyc(3.4, 0.4, 0.75); A('head', { r: 14 * pk - 6 * cyc(3.4, 0.25, 0.42), x: 3 * pk, y: 2 * pk });
     A('jaw', { r: 16 * cyc(3.4, 0.52, 0.66) }); A('tuft', { r: 6 * Math.sin(t * 3.7) });
@@ -251,9 +261,10 @@ function idlePersonality(def, st, A, t, mood, side) {
   } else if (sp === 'gecko') {
     A('tail', { r: 4 * Math.sin(t * 0.7) });
     A('jaw', { sy: 1 + 0.3 * Math.abs(Math.sin(t * 2.2)) });
-    const tg = cyc(6, 0.3, 0.38); A('tongue', { sx: 1 + 1.2 * (tg > 0.2 ? 1 : 0) });
+    const tg = cyc(6, 0.3, 0.38); A('tongue', side ? { sx: 1 + 1.2 * (tg > 0.2 ? 1 : 0) } : { sy: 1 + 0.4 * (tg > 0.2 ? 1 : 0) }); st.flick = tg > 0.2;
     const lk = cyc(12, 0.86, 0.94); A('lick', { o: lk > 0.05 ? 1 : 0, y: 6 * Math.sin(t * 14) * lk });
-    const turn = cyc(12, 0.62, 0.82); A('head', { r: -9 * turn }); A('pup', { sx: 1 + 1.2 * turn });
+    const turn = cyc(12, 0.62, 0.82); A('head', { r: (side ? -9 : 7) * turn }); A('pup', { sx: 1 + 1.2 * turn });
+    if (!side) { st.lookBias = (st.lookBias || 0) + 0.8 * turn; A('tail', { r: 3 * Math.sin(t * 0.9) }); }
   } else if (sp === 'plant') {
     A('body', { r: 1.4 * Math.sin(t * 0.7) });
     A('wingR', { r: 5 * Math.sin(t * 0.7) }); A('wingL', { r: -2 * Math.sin(t * 0.7) });
@@ -290,7 +301,7 @@ export class Puppet {
   }
   build() {
     if (!this.svg || !this.def) return;
-    const v = viewOf(this.def, this.base);
+    const v = viewOf(this.def, this.base, this.turnT < 1 && Math.abs(this.faceCur) < 0.5);
     if (v === this.view && this.svg.firstChild) return;
     this.view = v;
     const list = this.def.views[v](this.stage);
@@ -363,6 +374,7 @@ export class Puppet {
     this.t += dt;
     if (this.clip) { this.clipT += dt; if (this.clipT * 1000 >= this.clipMs) this.clip = ''; else if (this.clipT >= this.clipDur && this.clipMs > this.clipDur * 1000) this.clipT -= this.clipDur * 0.999; }
     const st = this.state(dt);
+    if (this.def.views.walk && !this.def.side && (this.base === 'walk' || this.base === 'run')) { this.build(); st.view = this.view; st.keys = this.keys; }
     const pose = computePose(st);
     if (st.lookBias) for (const k of this.keys) if (k.startsWith('pup')) { pose[k] = pose[k] || { r: 0, x: 0, y: 0, sx: 1, sy: 1 }; pose[k].x += st.lookBias * 2.5; }
     this.apply(pose);

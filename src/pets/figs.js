@@ -351,6 +351,85 @@ function plantTree() {
       B('M94 124 l4 -4 M104 118 l3 3', 1, C.barkD), ...pFace(96, 104, 112, C.bark, 2.8)], [...pEye(96, 112, C.bark, 2.8), ...pEye(104, 112, C.barkD, 2.8), part('jaw', [100, 120], B('M97 120 H103', 1.2, C.black))])])];
 }
 
+
+// ---------------------------------------------------------------- önden görünüşler (civciv, gecko): dururken izleyiciye bakar
+const eyePair = (xL, xR, y, r, iris, lidC, ring = C.cream) => [
+  part('eyes', [100, y], [O(xL, y, r, ring), O(xR, y, r, ring)]),
+  part('pupL', [xL, y], [O(xL, y, r * 0.66, iris), O(xL, y, r * 0.36, C.black), O(xL - r * 0.25, y - r * 0.3, r * 0.14, C.cream)]),
+  part('pupR', [xR, y], [O(xR, y, r * 0.66, iris), O(xR, y, r * 0.36, C.black), O(xR - r * 0.25, y - r * 0.3, r * 0.14, C.cream)]),
+  part('lidL', [xL, y - r], P(`M${xL - r - 1} ${y - r - 1} L${xL + r + 1} ${y - r - 1} L${xL + r + 1} ${y + r + 1} L${xL - r - 1} ${y + r + 1} Z`, lidC)),
+  part('lidR', [xR, y - r], P(`M${xR - r - 1} ${y - r - 1} L${xR + r + 1} ${y - r - 1} L${xR + r + 1} ${y + r + 1} L${xR - r - 1} ${y + r + 1} Z`, lidC))];
+function chickFront(st) {
+  if (st === 0) return chickEgg();
+  if (st >= 4) return peaFront(st);
+  const inShell = st === 1, big = st >= 3;
+  const scales = [];
+  for (let r = 0; r < 3; r++) for (let i = 0; i < 4 - r; i++) { const x = 82 + i * 12 + r * 6, y = (inShell ? 120 : 132) + r * 10; scales.push(P(`M${x - 5} ${y} A5 5 0 0 0 ${x + 5} ${y}`, 'none', `stroke="${C.ochreD}" stroke-width="1.6"`)); }
+  const by = inShell ? 136 : 140;
+  return [
+    ...(inShell ? [] : [part('legs', [100, 166], B('M90 166 L88 186 M88 186 l-7 0 M88 186 l6 0 M110 166 L112 186 M112 186 l-6 0 M112 186 l7 0', 2.4, C.rust))]),
+    ...(big ? [part('tail', [100, 150], [P('M80 150 L60 126 L72 132 L70 118 L88 140 Z', C.ochreD), P('M120 150 L140 126 L128 132 L130 118 L112 140 Z', C.ochreD)])] : []),
+    part('body', [100, 188], [O(100, by, inShell ? 40 : 36, C.ochre), P(`M100 ${by - 40} A40 40 0 0 1 100 ${by + 40} C122 ${by + 28} 126 ${by - 26} 100 ${by - 40} Z`, C.ochreD), E(100, by + 8, inShell ? 22 : 20, inShell ? 18 : 22, C.cream), ...scales], [
+      part('wingL', [66, by - 8], P(`M68 ${by - 10} C54 ${by - 4} ${big ? 44 : 50} ${by + 14} ${big ? 50 : 56} ${by + 26} C64 ${by + 18} 70 ${by + 4} 70 ${by - 6} Z`, C.ochre)),
+      part('wingR', [134, by - 8], P(`M132 ${by - 10} C146 ${by - 4} ${big ? 156 : 150} ${by + 14} ${big ? 150 : 144} ${by + 26} C136 ${by + 18} 130 ${by + 4} 130 ${by - 6} Z`, C.ochreD))]),
+    ...(inShell ? [part('shell', [100, 188], [P('M52 150 L64 160 L76 148 L88 160 L100 148 L112 160 L124 148 L136 160 L148 150 C146 174 126 188 100 188 C74 188 54 174 52 150 Z', C.cream),
+      P('M124 148 L136 160 L148 150 C146 174 126 188 100 188 C122 178 130 162 124 148 Z', C.sand), ...[[74, 172, 1.8], [94, 180, 1.4], [114, 174, 1.6]].map(([x, y, r]) => O(x, y, r, C.slate))])] : []),
+    part('head', [100, by - 30], [], [
+      part('tuft', [100, 46], big ? [P('M94 50 L88 32 L100 46 Z', C.rust), P('M100 46 L104 28 L108 47 Z', C.rustD)] : [P('M94 52 L88 38 L100 50 Z', C.ochre), P('M100 50 L104 34 L108 51 Z', C.ochreD)]),
+      part('skull', [100, 76], [O(100, 76, big ? 24 : 27, C.ochre), P(`M100 ${big ? 52 : 49} A${big ? 24 : 27} ${big ? 24 : 27} 0 0 1 100 ${big ? 100 : 103} C116 ${big ? 92 : 94} 118 ${big ? 60 : 58} 100 ${big ? 52 : 49} Z`, C.ochreD)]),
+      ...eyePair(89, 111, 72, big ? 6.4 : 7.4, C.slate, C.ochreD),
+      part('nose', [100, 86], P('M93 82 L107 82 L100 92 Z', C.rust)),
+      part('jaw', [100, 90], P('M95 88 L105 88 L100 95 Z', C.rustD))]),
+  ];
+}
+function peaFront(st) {
+  const adult = st >= 5;
+  const body = adult ? '#2E5A8A' : '#B9A47C', bodyD = adult ? '#1F3F66' : '#9E8A62', neck = adult ? '#24585A' : '#6E8A7A';
+  const fan = [], n = adult ? 13 : 7, R = adult ? 78 : 40, cx = 100, cy = 150;
+  for (let i = 0; i < n; i++) {
+    const a = Math.PI * (1.06 + 0.88 * i / (n - 1));
+    const x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R;
+    fan.push(B(`M${cx} ${cy} L${x.toFixed(1)} ${y.toFixed(1)}`, adult ? 7 : 5, adult ? C.teal : C.sandD));
+    fan.push(E(x, y, adult ? 7 : 4.5, adult ? 9 : 5.5, adult ? C.ochre : C.sand), O(x, y + 0.6, adult ? 4.4 : 2.6, adult ? C.teal : C.olive), O(x, y + 1, adult ? 2.2 : 1.3, adult ? '#2E5A8A' : C.oliveD));
+  }
+  return [
+    part('tail', [cx, cy], fan.join('')),
+    part('legs', [100, 164], B('M92 164 L90 186 M90 186 l-7 0 M90 186 l6 0 M108 164 L110 186 M110 186 l-6 0 M110 186 l7 0', 2.4, C.grayD)),
+    part('body', [100, 168], [P('M100 112 C122 120 128 146 120 162 C114 170 86 170 80 162 C72 146 78 120 100 112 Z', body), P('M100 112 C122 120 128 146 120 162 C114 170 100 170 100 170 Z', bodyD)], [
+      part('wingL', [84, 128], P('M84 126 C74 136 72 152 80 162 C86 152 88 140 88 128 Z', bodyD)), part('wingR', [116, 128], P('M116 126 C126 136 128 152 120 162 C114 152 112 140 112 128 Z', bodyD))]),
+    part('head', [100, 116], [], [
+      part('neck', [100, 116], P('M94 118 C94 104 96 92 96 84 L104 84 C104 92 106 104 106 118 Z', neck)),
+      part('tuft', [100, 64], [B('M98 70 L92 52 M100 69 L100 50 M102 70 L108 52', 1.2, neck), ...[[92, 52], [100, 50], [108, 52]].map(([x, y]) => O(x, y, 2.2, adult ? C.teal : C.olive))]),
+      part('skull', [100, 78], [O(100, 78, 11, neck), B('M90 76 Q94 72 97 76 M103 76 Q106 72 110 76', 1.4, C.cream)]),
+      ...eyePair(95, 105, 79, 2.8, C.black, neck),
+      part('nose', [100, 86], P('M97 84 L103 84 L100 91 Z', C.sandD))]),
+  ];
+}
+function geckoFront(st) {
+  const toes = (x, y, s) => [[x - 3 * s, y + 1], [x, y + 3], [x + 3 * s, y + 1]].map(([a, b]) => O(a, b, 2.4, K.gk)).join('');
+  return [
+    part('tail', [100, 150], B('M100 150 C120 146 146 136 150 116 C152 104 142 100 136 106 C132 110 136 116 140 114', 9, K.gkD)),
+    part('legFB', [74, 152], [B('M78 150 L58 160 L52 172', 5.5, K.gkD), toes(52, 172, 1)]),
+    part('legFF', [126, 152], [B('M122 150 L142 160 L148 172', 5.5, K.gkD), toes(148, 172, -1)]),
+    part('body', [100, 160], [E(100, 150, 26, 18, K.gk), P('M100 132 A26 18 0 0 1 100 168 C112 160 114 140 100 132 Z', K.gkD)], [
+      only([3, 4, 5], 'crest', [100, 134], P('M88 140 L92 130 L96 138 L100 126 L104 138 L108 130 L112 140 Z', C.rust)),
+      only([1, 5], 'spots', [100, 150], [[88, 148, 3], [100, 144, 3.6], [112, 148, 3], [94, 158, 2.2], [106, 158, 2.2]].map(([x, y, r]) => O(x, y, r, C.ochre)).join('')),
+      only([2], 'bspots', [100, 150], [[86, 146], [96, 142], [106, 142], [114, 148], [92, 156], [104, 158]].map(([x, y]) => O(x, y, 2.4, C.black)).join('')),
+      only([3], 'bands', [100, 150], B('M80 146 L120 146 M84 156 L116 156', 2.6, MK, 'opacity=".35"')),
+      only([4], 'stripe', [100, 152], B('M78 152 L122 152', 3, C.sand, 'opacity=".7"'))]),
+    part('legNB', [78, 160], [B('M80 158 L64 172 L62 184', 6, K.gk), toes(62, 184, 1)]),
+    part('legNF', [122, 160], [B('M120 158 L136 172 L138 184', 6, K.gk), toes(138, 184, -1)]),
+    part('head', [100, 140], [], [
+      only([4], 'casque', [100, 104], P('M82 116 C84 92 116 92 118 116 L100 108 Z', K.gkD)),
+      only([5], 'horns', [100, 106], [P('M86 112 L80 90 L92 108 Z', C.sand), P('M114 112 L120 90 L108 108 Z', C.sandD)]),
+      part('skull', [100, 124], [P('M72 128 C72 110 86 102 100 102 C114 102 128 110 128 128 C128 140 116 146 100 146 C84 146 72 140 72 128 Z', K.gk), P('M100 102 C114 102 128 110 128 128 C128 140 116 146 100 146 C110 138 112 112 100 102 Z', K.gkD)]),
+      ...eyePair(78, 122, 118, 7.4, C.ochre, K.gk, C.cream),
+      part('jaw', [100, 136], B('M84 134 C94 140 106 140 116 134', 1.6, K.gkD), [only([5], 'beard', [100, 146], P('M86 140 L90 152 L96 144 L100 156 L104 144 L110 152 L114 140 Z', C.rust))]),
+      part('tongue', [100, 138], B('M100 138 L100 150 M100 150 l-3 3 M100 150 l3 3', 2.2, C.slate)),
+      part('nose', [100, 126], [O(96, 126, 0.9, C.black), O(104, 126, 0.9, C.black)])]),
+  ];
+}
+
 // ---------------------------------------------------------------- tür tanımları
 // view: görünüm adı → parça listesi. gait: yürüme türü ('walk' bacaklı, 'hop' sıçrama), leg: bacak boyu (adım uzunluğu buradan).
 // lid: göz kapağı ölçeği (açık / kapalı); owl'un doğal hâli yarı kapalıdır.
@@ -366,14 +445,14 @@ export const FIGS = {
     fur: [K.dog, K.dogD], coats: [['#D8C5A0', '#B9A47C'], ['#B07A4C', '#7A4E2E'], ['#9B9088', '#5F6670'], ['#3A3436', '#1F1B1D'], ['#8C8E94', '#5A5C64'], ['#E6DCC6', '#B5A890'], ['#A06A4C', '#5E3A26'], ['#C99A5E', '#7E5A34']],
     stagePal: { 2: ['#D9B98A', '#9E7A50'], 3: ['#A8A29A', '#5F6670'], 4: ['#9B9088', '#33475B'], 5: ['#4A4448', '#24212A'] },
     form: [{ head: 1.24, leg: 0.7, body: 0.86, ear: 0.72, earRot: 118, tail: 0.7 }, { head: 1.1, leg: 0.86, ear: 0.9, earRot: 28 }, { head: 1.02 }, { head: 0.95, leg: 1.06, body: 0.96 }, {}, { head: 1.04, leg: 1.04, body: 1.08, tail: 1.15 }] },
-  chick: { views: { sit: st => [chickEgg, chickSit, chickStand, chickStand, peafowl, peafowl][st](st) }, side: true, gait: 'hop', hop: 34, food: 'seed',
+  chick: { views: { sit: chickFront, walk: st => [chickEgg, chickSit, chickStand, chickStand, peafowl, peafowl][st](st) }, side: false, walkSide: true, gait: 'hop', hop: 34, food: 'seed',
     form: [{}, {}, {}, {}, {}, {}] },
   owl: { views: { sit: owlSit }, side: false, gait: 'hop', hop: 30, lid: [1, 1.9], food: 'mouse',
     fur: [K.ow, K.owD, K.ds, K.dsD, K.ir],
     stagePal: { 0: ['#C9C1B4', '#A39B8E', '#E6DECF', '#CFC6B5', '#4A6378'], 1: ['#9B9087', '#6F665E', '#D8C5A0', '#B9A47C', '#C99A2E'], 2: ['#8A6A4A', '#6A4E34', '#D8C5A0', '#B9A47C', '#C99A2E'],
       3: ['#C99A5E', '#9E7640', '#F3EBD8', '#E2D6BE', '#1E1B1C'], 4: ['#7A5A3C', '#58402C', '#B9874E', '#9E6E3A', '#D9772E'], 5: ['#2E3B4E', '#1F2A38', '#4A5560', '#36404A', '#E2B13A'] },
     form: [{ ear: 0, head: 1.12, body: 1.06 }, { ear: 0.5 }, { ear: 0 }, { ear: 0 }, { ear: 1.4 }, { ear: 1.1, body: 1.04 }] },
-  gecko: { views: { sit: geckoSide }, side: true, gait: 'walk', leg: 16, amp: 30, food: 'bug',
+  gecko: { views: { sit: geckoFront, walk: geckoSide }, side: false, walkSide: true, gait: 'walk', leg: 16, amp: 30, food: 'bug',
     fur: [K.gk, K.gkD], coats: [['#8FB89A', '#6A947A'], ['#B9AC98', '#8E826E'], ['#B4532A', '#8A3B1E'], ['#4A6378', '#33475A'], ['#C99A2E', '#9E7620'], ['#7A5A7E', '#563E5A'], ['#2E2A2C', '#1E1B1C'], ['#9B9087', '#6F665E']],
     stagePal: { 2: ['#D8B44A', '#B08E2E'], 3: ['#8C7A5A', '#6A5A40'], 4: ['#6E9A4A', '#4E7A32'], 5: ['#24585B', '#173E41'] },
     form: [{ head: 1.25, tail: 0.7, leg: 0.85, body: 0.9 }, { head: 1.08 }, {}, { body: 1.04 }, { tail: 1.12, head: 1.04 }, { head: 1.06, body: 1.06, tail: 1.08 }] },

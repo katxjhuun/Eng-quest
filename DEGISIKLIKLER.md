@@ -1,6 +1,7 @@
 # dam-la 2.5.1 — Her evrim ayrı bir pet
 
 Uzaktan güncellemeyle gelir.
+- **Civciv ve gecko önden de görünür:** dururken, otururken ve uyurken yüzü sana dönük (iki göz, ortada gaga/ağız); yürürken yandan. Yürürken yön değiştirince dönüşün ortasında bir an önden görünür. Civcivin tüm evreleri (tavus kuşu yelpazesiyle) ve geckonun tüm evreleri (miğfer, boynuz, sakal) önden çizildi.
 - **Kedi:** Minnoş (iri başlı, kısa bacaklı yavru) → Tekir (çizgili) → Vaşak (kulak püskülü, yanak yelesi, benek, kısa kuyruk) → Puma (ten rengi, açık ağız) → Leopar (hardal, rozet desen) → Kara Panter (siyah, gölgede seçilen rozetler, uzun gövde).
 - **Köpek:** Tosbik (düşük kulaklı yavru) → Hav (yarı kalkık kulak) → Çoban (siyah maske, çivili tasma) → Genç Kurt → Kurt → Alfa Kurt (koyu post, boyun yelesi, göz yarası).
 - **Civciv:** Yumurtacık (çatlaktan bakan göz) → Pıtırcık (kabukta) → Tombiş (kabuktan çıkmış, ayakta) → Kanatçık (büyük kanat, kuyruk tüyleri) → Tavus Yavrusu (küçük yelpaze) → Tavus Kuşu (göz desenli tam yelpaze, taç).
