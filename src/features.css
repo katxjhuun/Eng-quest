@@ -60,7 +60,10 @@
 .quiz-typed{position:relative}
 .qslots{display:flex;flex-wrap:wrap;gap:5px;padding:12px;border:1.5px dashed #e6ded3;border-radius:16px;background:#fbf8f2;cursor:text;min-height:56px;align-items:center}
 .qslot{width:28px;height:36px;border-radius:9px;border:1.5px solid #e6ded3;background:#fffdf8;display:grid;place-items:center;font-size:17px;font-weight:850;color:#201d23;text-transform:none}
-.qslot.gap{width:10px;border:0;background:transparent}
+.qslot.gap{width:14px;border:0;background:transparent;flex:0 0 14px}
+/* kelime grubu: satır sonunda bölünmez, altındaki ince çizgi tek kelime olduğunu gösterir */
+.qword{display:inline-flex;flex-wrap:nowrap;gap:4px;max-width:100%;padding-bottom:5px;border-bottom:2px solid #d9cfe9;border-radius:0 0 4px 4px}
+.qword .qslot{flex:0 1 28px;min-width:17px}
 .qslot.fixed{border:0;background:transparent;width:auto;min-width:10px;padding:0 1px}
 .qslot.hint{background:#fff0c7;border-color:#efcc6e;color:#72551e}
 .qslot.filled{border-color:#c9bfff;background:#f4efff}

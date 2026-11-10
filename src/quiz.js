@@ -364,6 +364,15 @@ export function initQuiz(core) {
   }
 
   // ---- yazarak (harf kutuları) ----
+  function groupWords(chars, parts, gapCls, wordCls) {
+    let out = '', word = '';
+    chars.forEach((ch, i) => {
+      if (ch === ' ') { if (word) out += `<span class="${wordCls}">${word}</span>`; word = ''; out += `<span class="${gapCls}" aria-hidden="true"></span>`; }
+      else word += parts[i];
+    });
+    if (word) out += `<span class="${wordCls}">${word}</span>`;
+    return out;
+  }
   function renderTyped(item, c) {
     const chars = [...item.a];
     const hintSet = new Set(c.hints);
@@ -377,8 +386,9 @@ export function initQuiz(core) {
       if (v) return `<span class="qslot filled">${esc(v)}</span>`;
       const cls = activeSet ? 'qslot' : 'qslot active'; activeSet = true;
       return `<span class="${cls}"></span>`;
-    }).join('');
-    $('#qzSlots').innerHTML = html;
+    });
+    // kelimeler bölünmez: her kelime tek parça kalır, kelime araları belirgin boşlukla ayrılır
+    $('#qzSlots').innerHTML = groupWords(chars, html, 'qslot gap', 'qword');
     const left = MAX_TRIES - (c.tries || 0);
     $('#qzTries').textContent = c.done ? '' : `${left} deneme hakkın var · ipucu ${c.hints.length}/${maxHints(item)}`;
     $('#qzHint').disabled = c.done || c.hints.length >= maxHints(item);

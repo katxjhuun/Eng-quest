@@ -83,7 +83,7 @@ const tts = {
     const wantTr = /^tr/i.test(lang);
     if (!wantTr && String(voiceId).startsWith('kokoro:')) {
       try { await tts.stop(); return await kokoroSpeak(text, voiceId, rate); }
-      catch (e) { console.warn('[kokoro] cihaz sesine geçiliyor', e); }
+      catch (e) { console.warn('[kokoro] cihaz sesine geçiliyor', e); try { window.dispatchEvent(new CustomEvent('dl:kokoro-fallback', { detail: String(e?.message || e) })); } catch {} }
     }
     const list = await tts.voices();
     const langRe = wantTr ? /^tr([_-]|$)/i : /^en([_-]|$)/i;
