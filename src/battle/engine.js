@@ -1,8 +1,16 @@
 // dam-la — sıra tabanlı savaş motoru (arayüzden bağımsız, saf mantık).
 // İki takım (A: oyuncu, B: rakip). Her tur hızlı olan önce oynar. Oyuncu kendi birimlerinin hamlesini seçer, B'yi yapay zekâ oynar.
 // Hasar = saldırı × güç × savunma çarpanı × tip üstünlüğü (taş-kâğıt-makas döngüsü) × rastgelelik.
-// Hilebaz rolü saldırmaz: rakibin o turdaki tavrına (şüpheci/kibirli/kırılgan) uyan argümanla iradesini kırar; iradesi biten ikna olur ve savaştan çekilir.
-import { ROLES, SIGNATURE, STANCES, SPECIES_TYPE, typeMult, battleStats, BASE } from '../pets/codex.js';
+// Hilebaz rolü saldırmaz, ikna eder:
+//  · Her birimin bir mizacı vardır; her tur bir tavır takınır (şüpheci/kibirli/kırılgan/öfkeli). Tavır doğrudan görünmez,
+//    yalnızca söylediği sözden anlaşılır; güçlü rakipler bazen blöf yapar (başka tavrın sözünü söyler). “Oku” gerçeği ve sonraki turu gösterir.
+//  · Her tavrın işleyen bir argümanı (×) ve ters tepen bir argümanı vardır. İşleyen argüman güven (rapor) biriktirir, güven sonraki argümanları
+//    güçlendirir; ters tepen argüman güveni sıfırlar, rakip inatlaşır (irade toplar) ve hilebaza laf sokar. Aynı argümanı üst üste kullanmak zayıflar,
+//    farklı isabetli argümanları art arda kullanmak zincir bonusu verir. “Son Söz” biriken güveni tek seferde harcar.
+//  · Boss’lar güven en az 2 olmadan tam etkilenmez ve her hamlede biraz irade toplar.
+//  · İsabetli argüman rakibi tereddüde düşürür (saldırısı 1 tur zayıflar).
+//  · Güven 2+ iken iradesi biten rakip savaştan çekilmek yerine 2 hamle boyunca hilebazın safına geçer, sonra ayrılır.
+import { ROLES, SIGNATURE, STANCES, ARGS, SPECIES_TYPE, typeMult, battleStats, BASE } from '../pets/codex.js';
 import { MONSTERS } from './monsters.js';
 
 const STANCE_IDS = Object.keys(STANCES);
@@ -26,7 +34,7 @@ export function makeUnit(def, side) {
     uid: `u${++uidSeq}`, side, kind: def.kind, species: def.species, mon: def.mon, boss: !!(m && m.boss), name: def.name || (m ? m.name : def.species),
     type: isMon ? m.type : (def.type || SPECIES_TYPE[def.species]), role, stage: def.stage || 0, shiny: !!def.shiny, coat: def.coat, owner: def.owner || '',
     maxHp: st.hp, hp: st.hp, maxWill: Math.round(st.hp * (role === 'tank' ? 0.9 : 0.7) + 20), will: 0, atk: st.atk, def: st.def, spd: st.spd,
-    moves, cds: {}, fx: {}, alive: true, out: null, stance: pickOne(STANCE_IDS),
+    moves, cds: {}, fx: {}, alive: true, out: null, stance: null, nextStance: null, tell: '', bluff: false, temper: pickOne(STANCE_IDS), rap: {}, hist: {}, seen: {}, convert: 0,
   };
 }
 
@@ -42,10 +50,18 @@ const alive = (b, side) => b.units.filter(u => u.alive && (!side || u.side === s
 const foes = (b, u) => alive(b, u.side === 'A' ? 'B' : 'A');
 const allies = (b, u) => alive(b, u.side);
 
+// mizaç ağırlıklı tavır: yarı yarıya mizacı, kalanı rastgele
+const rollStance = u => (Math.random() < 0.5 ? u.temper : pickOne(STANCE_IDS));
 function newRound(b) {
   b.round++;
   for (const u of alive(b)) {
-    u.stance = pickOne(STANCE_IDS);
+    u.stance = u.nextStance || rollStance(u);
+    u.nextStance = rollStance(u);
+    // söylediği söz: güçlüler (boss, ileri evre) bazen başka tavrın sözünü söyler
+    const bluffP = u.boss ? 0.35 : u.stage >= 3 ? 0.25 : 0.1;
+    u.bluff = Math.random() < bluffP;
+    const shown = u.bluff ? pickOne(STANCE_IDS.filter(x => x !== u.stance)) : u.stance;
+    u.tell = pickOne(STANCES[shown].tells);
     // süreli etkiler
     for (const k of ['taunt', 'defDown', 'atkUp', 'atkDown', 'spdUp', 'ward', 'dot']) if (u.fx[k] > 0) u.fx[k]--;
   }
@@ -72,6 +88,7 @@ export function targetKind(move) {
   if (!move) return 'none';
   if (move.kind === 'attack' || move.kind === 'talk') return move.aoe ? 'none' : 'foe';
   if (move.kind === 'dive') return 'none';
+  if (move.kind === 'read' || move.kind === 'confuse') return 'foe';
   if (move.kind === 'heal') return move.ally ? 'ally' : 'none';
   if (move.kind === 'buff') return move.ally ? 'ally' : 'none';
   return 'none';
@@ -110,7 +127,7 @@ function dmgCalc(b, a, t, move, ev) {
 }
 
 function hit(b, a, t, move, events) {
-  const ev = { type: 'hit', from: a.uid, to: t.uid, move: move.name };
+  const ev = { type: 'hit', from: a.uid, to: t.uid, move: move.name, id: move.id, role: a.role, utype: a.type };
   if (t.fx.dodge && !move.sure) { t.fx.dodge = 0; ev.miss = true; events.push(ev); return; }
   if (t.fx.counterReady && !t.fx.dive) ev.countered = true;
   const d = dmgCalc(b, a, t, move, ev);
@@ -125,13 +142,60 @@ function hit(b, a, t, move, events) {
   if (move.recoil) { const r = Math.round(a.maxHp * move.recoil); a.hp = Math.max(1, a.hp - r); events.push({ type: 'recoil', to: a.uid, dmg: r }); }
 }
 
+// bir tarafın o tur rakibin tavrını görüp görmediği
+// Oku: o turun ve bir sonraki turun tavrını gösterir (iki tur geçerli)
+export function stanceSeen(b, side, t) { return t.side === side || (t.seen[side] != null && b.round - t.seen[side] <= 1); }
+export function rapportOf(t, side) { let m = 0; for (const [uid, v] of Object.entries(t.rap)) if (v > m && uid.startsWith(side + ':')) m = v; return m; }
+const rk = a => `${a.side}:${a.uid}`;
+
 function talk(b, a, t, move, events) {
   const st = STANCES[t.stance];
-  const good = st.weak === move.arg;
-  const amt = Math.round(t.maxWill * (good ? 0.36 : 0.12) * rnd(0.9, 1.1) * (t.boss ? 0.7 : 1));
+  const key = rk(a);
+  const rap = t.rap[key] | 0;
+  const hist = (t.hist[key] ||= []);
+  const ev = { type: 'talk', from: a.uid, to: t.uid, stance: t.stance, arg: move.arg, move: move.name, id: move.id, before: rap };
+  let amt;
+  if (move.closing) {
+    ev.closing = true;
+    if (!rap) {
+      ev.rel = 'backfire'; amt = 0;
+      const back = Math.round(a.maxWill * 0.12); a.will = Math.max(1, a.will - back);
+      t.will = Math.min(t.maxWill, t.will + Math.round(t.maxWill * 0.08));
+      events.push(ev); events.push({ type: 'retort', to: a.uid, amt: back, from: t.uid, text: 'Önce beni ikna et, sonra nutuk at.' });
+      return;
+    }
+    amt = t.maxWill * (0.12 + 0.13 * rap);
+    if (t.boss) amt *= 0.8;
+    t.rap[key] = 0; ev.rel = 'closing';
+  } else {
+    const rel = st.weak === move.arg ? 'weak' : st.resist === move.arg ? 'resist' : 'neutral';
+    ev.rel = rel;
+    amt = t.maxWill * ({ weak: 0.3, neutral: 0.1, resist: 0.02 }[rel]) * (1 + 0.3 * rap);
+    const last = hist.at(-1), prev = hist.at(-2);
+    if (last && last.arg === move.arg) { amt *= 0.55; ev.repeat = true; }
+    if (rel === 'weak' && last?.rel === 'weak' && last.arg !== move.arg) { amt *= prev?.rel === 'weak' && prev.arg !== last.arg ? 1.8 : 1.4; ev.chain = true; }
+    if (t.boss && rap < 2) { amt *= 0.6; ev.resolve = true; }
+    if (rel === 'weak') { t.rap[key] = Math.min(4, rap + 1); t.fx.atkDown = Math.max(t.fx.atkDown | 0, 2); ev.doubt = true; }
+    if (rel === 'resist') {
+      t.rap[key] = 0;
+      const regain = Math.round(t.maxWill * 0.06); t.will = Math.min(t.maxWill, t.will + regain); ev.regain = regain;
+    }
+    hist.push({ arg: move.arg, rel }); if (hist.length > 3) hist.shift();
+  }
+  amt = Math.max(1, Math.round(amt * rnd(0.92, 1.08)));
+  ev.amt = amt; ev.rap = t.rap[key] | 0;
   t.will = Math.max(0, t.will - amt);
-  events.push({ type: 'talk', from: a.uid, to: t.uid, amt, good, stance: t.stance, arg: move.arg, move: move.name });
-  if (!good && Math.random() < 0.4) { const back = Math.round(a.maxWill * 0.06); a.will = Math.max(1, a.will - back); events.push({ type: 'retort', to: a.uid, amt: back }); }
+  events.push(ev);
+  if (ev.rel === 'resist') { const back = Math.round(a.maxWill * 0.08); a.will = Math.max(1, a.will - back); events.push({ type: 'retort', to: a.uid, amt: back, from: t.uid }); }
+  // güven yüksekken ikna olan, hilebazın safına geçer
+  if (t.will <= 0 && !t.boss && rap >= 2) {
+    t.side = a.side; t.convert = 2; t.will = Math.round(t.maxWill * 0.35); t.rap = {}; t.hist = {}; t.fx.taunt = 0;
+    events.push({ type: 'convert', to: t.uid, side: a.side });
+  }
+}
+function read(b, a, t, events) {
+  t.seen[a.side] = b.round;
+  events.push({ type: 'read', from: a.uid, to: t.uid, stance: t.stance, next: t.nextStance, bluff: t.bluff });
 }
 
 function settle(b, events) {
@@ -155,6 +219,18 @@ export function act(b, u, moveId, targetUid) {
   // tur başı: yanma
   if (u.fx.dot > 0 && u.fx.dotAmt) { u.hp = Math.max(0, u.hp - u.fx.dotAmt); events.push({ type: 'dot', to: u.uid, dmg: u.fx.dotAmt }); settle(b, events); if (!u.alive || b.over) return events; }
   let move = movesOf(u).find(m => m.id === moveId) || movesOf(u)[0];
+  if (u.boss && u.will < u.maxWill) { const g = Math.round(u.maxWill * 0.04); u.will = Math.min(u.maxWill, u.will + g); }
+  // kafası karışık: yarı yarıya boşa gider ya da kendi takımından birine vurur
+  if (u.fx.confused) {
+    u.fx.confused = 0;
+    if (Math.random() < 0.5) {
+      const mates = allies(b, u).filter(x => x !== u);
+      events.push({ type: 'use', from: u.uid, move: move.name, id: move.id, kind: move.kind, role: u.role, utype: u.type });
+      if (move.kind === 'attack' && mates.length) { const t = pickOne(mates); events.push({ type: 'confused', to: u.uid, text: 'kafası karıştı, kendi takımına vurdu!' }); hit(b, u, t, { ...move, aoe: false }, events); }
+      else events.push({ type: 'confused', to: u.uid, text: 'kafası karıştı, ne yapacağını şaşırdı' });
+      afterAct(b, u, events); settle(b, events); return events;
+    }
+  }
   if (move.kind === 'replay') {
     const src = b.last[u.side];
     events.push({ type: 'say', from: u.uid, text: src ? `“${src.name}” hamlesini bir kez daha oynuyor.` : 'Tekrarlanacak bir hamle yok; bekliyor.' });
@@ -163,10 +239,10 @@ export function act(b, u, moveId, targetUid) {
     move = { ...src, cd: 0 };
     if (targetKind(move) !== 'none' && !validTargets(b, u, move).some(x => x.uid === targetUid)) targetUid = (validTargets(b, u, move)[0] || {}).uid;
   }
-  events.push({ type: 'use', from: u.uid, move: move.name, kind: move.kind });
   const tk = targetKind(move);
   let target = tk === 'none' ? null : b.units.find(x => x.uid === targetUid && x.alive);
   if (tk !== 'none' && (!target || !validTargets(b, u, move).includes(target))) target = validTargets(b, u, move)[0] || null;
+  events.push({ type: 'use', from: u.uid, move: move.name, id: move.id, kind: move.kind, role: u.role, utype: u.type, to: target?.uid, aoe: !!move.aoe, team: !!move.team });
 
   if (move.id === 'surface') { u.fx.dive = 0; const t = target || pickOne(foes(b, u)); if (t) hit(b, u, t, move, events); }
   else if (move.kind === 'attack') {
@@ -175,6 +251,8 @@ export function act(b, u, moveId, targetUid) {
     if (move.then === 'dodge') u.fx.dodge = 1;
     if (move.guardAlly) { const w = allies(b, u).filter(x => x !== u).sort((x, y) => x.hp / x.maxHp - y.hp / y.maxHp)[0]; if (w) { w.fx.dodge = 1; events.push({ type: 'buff', to: w.uid, text: 'korunuyor' }); } }
   } else if (move.kind === 'talk') { if (target) talk(b, u, target, move, events); }
+  else if (move.kind === 'read') { if (target) read(b, u, target, events); }
+  else if (move.kind === 'confuse') { if (target) { target.fx.confused = 1; events.push({ type: 'buff', to: target.uid, text: 'kafası karıştı', bad: true }); } }
   else if (move.kind === 'heal') {
     const list = move.team ? allies(b, u) : move.ally ? (target ? [target] : []) : [u];
     const k = move.team || move.ally || move.self || 0.2;
@@ -196,8 +274,13 @@ export function act(b, u, moveId, targetUid) {
 
   if (move.cd) u.cds[move.id] = move.cd + 1;
   if (move.kind !== 'replay' && move.id !== 'surface' && move.kind !== 'dive') b.last[u.side] = { ...move };
+  afterAct(b, u, events);
   settle(b, events);
   return events;
+}
+// safa geçen birimin süresi
+function afterAct(b, u, events) {
+  if (u.convert > 0 && u.alive) { u.convert--; if (!u.convert) { u.alive = false; u.out = 'persuaded'; events.push({ type: 'leave', to: u.uid }); } }
 }
 
 // rakip yapay zekâsı
@@ -209,10 +292,21 @@ export function aiChoose(b, u) {
   const heal = ms.find(m => m.kind === 'heal');
   if (heal && weakAlly && (heal.ally || heal.team || weakAlly === u)) return { move: heal.id, target: weakAlly.uid };
   if (!f.length) { const m = ms.find(x => targetKind(x) !== 'foe') || ms[0]; return { move: m.id, target: targetKind(m) === 'ally' ? (weakAlly || al[0]).uid : null }; }
-  const talkMs = ms.filter(m => m.kind === 'talk');
+  const talkMs = ms.filter(m => m.kind === 'talk' && !m.closing);
   if (talkMs.length) {
+    const key = `${u.side}:${u.uid}`;
     const t = f.sort((x, y) => x.will / x.maxWill - y.will / y.maxWill)[0];
-    const smart = Math.random() < 0.55 ? talkMs.find(m => m.arg === STANCES[t.stance].weak) : null;
+    const rap = t.rap[key] | 0;
+    const close = ms.find(m => m.closing);
+    if (close && rap >= 3) return { move: close.id, target: t.uid };
+    const seen = stanceSeen(b, u.side, t);
+    const readM = ms.find(m => m.kind === 'read');
+    if (!seen && readM && Math.random() < 0.3) return { move: readM.id, target: t.uid };
+    const conf = ms.find(m => m.kind === 'confuse');
+    if (conf && Math.random() < 0.15) return { move: conf.id, target: (f.find(x => x.role !== 'support') || t).uid };
+    // gördüyse doğru argüman; görmediyse söze güvenir (blöfe kanabilir) ya da tahmin eder
+    const guess = seen ? t.stance : (Math.random() < 0.6 ? (Object.keys(STANCES).find(k => STANCES[k].tells.includes(t.tell)) || t.stance) : null);
+    const smart = guess ? talkMs.find(m => m.arg === STANCES[guess].weak) : null;
     return { move: (smart || pickOne(talkMs)).id, target: t.uid };
   }
   const atk = ms.filter(m => m.kind === 'attack' || m.kind === 'dive');

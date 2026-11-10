@@ -1,0 +1,118 @@
+/* ===== Savaş efektleri ===== */
+.bt-art{position:relative}
+#btArena.shake1{animation:bxShake1 .35s ease}#btArena.shake2{animation:bxShake2 .42s ease}
+@keyframes bxShake1{25%{transform:translate(-3px,2px)}50%{transform:translate(3px,-2px)}75%{transform:translate(-2px,1px)}}
+@keyframes bxShake2{15%{transform:translate(-7px,3px)}30%{transform:translate(6px,-4px)}45%{transform:translate(-5px,2px)}60%{transform:translate(4px,-1px)}80%{transform:translate(-2px,1px)}}
+.bt-fx{z-index:6;overflow:visible}
+.bx{position:absolute;display:block;pointer-events:none;transform:translate(-50%,-50%)}
+/* mermiler */
+.bx.shot{width:14px;height:14px;border-radius:50%;background:var(--c);box-shadow:0 0 14px var(--c);z-index:2}
+.bx.shot.arrow{width:30px;height:4px;border-radius:2px;background:linear-gradient(90deg,transparent,#e8dcc6 30%,#fff);box-shadow:none}
+.bx.shot.arrow::after{content:"";position:absolute;right:-5px;top:-4px;border:6px solid transparent;border-left:8px solid #fff;border-right:0}
+.bx.shot.orb{width:20px;height:20px;background:radial-gradient(circle,#fff 0 25%,var(--c) 60%,transparent 72%);box-shadow:0 0 22px var(--c)}
+.bx.shot.orb.heal{--c:#8be0a4}.bx.shot.orb.hex{background:radial-gradient(circle,#fff 0 15%,#9b59d0 50%,#3a1a52 70%,transparent 74%);box-shadow:0 0 18px #9b59d0}
+.bx.shot.note::before{content:"♪";color:var(--c);font-size:20px;font-weight:900;text-shadow:0 0 8px var(--c)}.bx.shot.note{background:none;box-shadow:none}
+.bx.shot.trail::before{content:"🐾";font-size:16px}.bx.shot.trail{background:none;box-shadow:none}
+.bx.shot.spiral::before{content:"🌀";font-size:22px}.bx.shot.spiral{background:none;box-shadow:none}
+.bx.shot.word{width:auto;height:auto;padding:3px 7px;border-radius:9px;background:#f4f0ff;color:#3a2d7a;font-weight:950;font-size:13px;font-style:normal;box-shadow:0 2px 8px #0005}
+.bx.shot.zap{width:22px;height:4px;border-radius:2px;background:#e5534b;box-shadow:0 0 10px #e5534b}
+.bx.trailp{width:7px;height:7px;border-radius:50%;background:var(--c);opacity:.6;animation:bxFade .38s ease-out forwards}
+@keyframes bxFade{to{transform:translate(-50%,-50%) scale(.2);opacity:0}}
+/* yağmur ve dalga */
+.bx.rain{width:3px;height:22px;background:linear-gradient(#fff0,#fff);border-radius:2px;animation:bxRain .4s ease-in both;animation-delay:var(--d)}
+.bx.rain::after{content:"";position:absolute;bottom:-5px;left:-3px;border:4.5px solid transparent;border-top:7px solid #fff}
+@keyframes bxRain{from{transform:translate(-50%,-50%) translateY(-30px);opacity:0}30%{opacity:1}to{transform:translate(-50%,-50%) translateY(var(--fall));opacity:1}}
+.bx.sweep{transform:translate(0,-50%);width:var(--w);height:var(--h);background:linear-gradient(90deg,transparent,var(--c) 45%,#fff 50%,var(--c) 55%,transparent);opacity:.55;border-radius:30px;animation:bxSweep .65s ease-in-out forwards;mix-blend-mode:screen}
+@keyframes bxSweep{from{clip-path:inset(0 100% 0 0)}50%{clip-path:inset(0 0 0 0);opacity:.7}to{clip-path:inset(0 0 0 100%);opacity:0}}
+.bx.beam{transform-origin:0 50%;transform:translate(0,-50%) rotate(var(--ang));width:var(--len);height:5px;background:linear-gradient(90deg,#b9a9f200,#f2cf72);box-shadow:0 0 12px #f2cf72;border-radius:3px;animation:bxBeam .8s ease-out forwards}
+@keyframes bxBeam{0%{width:0}40%{width:var(--len);opacity:1}100%{width:var(--len);opacity:0}}
+/* kullananın üstünde */
+.bx.self{width:var(--w);height:var(--h);border-radius:50%;animation:bxSelf 1.1s ease-out forwards}
+@keyframes bxSelf{0%{transform:translate(-50%,-50%) scale(.4);opacity:0}25%{opacity:1}100%{transform:translate(-50%,-50%) scale(1.1);opacity:0}}
+.bx.self.shield{border:3px solid #7fb5e8;background:radial-gradient(circle,#7fb5e822 55%,#7fb5e866 70%,transparent 72%);box-shadow:0 0 20px #7fb5e888}
+.bx.self.aura{background:radial-gradient(circle,transparent 30%,var(--ac) 65%,transparent 75%)}.bx.self.aura.gold{--ac:#f2cf7299}.bx.self.aura.red{--ac:#e5534baa;animation-duration:.8s}
+.bx.self.cross{border-radius:0;background:linear-gradient(#f2cf72,#f2cf72) center/2px 100% no-repeat,linear-gradient(#f2cf72,#f2cf72) center/100% 2px no-repeat;width:calc(var(--w) * .7);height:calc(var(--h) * .7);animation:bxCross 1s ease-out forwards}
+.bx.self.cross::after{content:"";position:absolute;inset:22%;border:2px solid #f2cf72;border-radius:50%}
+@keyframes bxCross{0%{transform:translate(-50%,-50%) scale(1.8) rotate(45deg);opacity:0}40%{transform:translate(-50%,-50%) scale(1) rotate(0);opacity:1}100%{opacity:0}}
+.bx.self.smoke{background:radial-gradient(circle at 30% 60%,#cfc8dccc 0 18%,transparent 19%),radial-gradient(circle at 60% 40%,#cfc8dcaa 0 22%,transparent 23%),radial-gradient(circle at 50% 70%,#cfc8dc99 0 20%,transparent 21%);animation:bxSmoke 1s ease-out forwards}
+@keyframes bxSmoke{0%{transform:translate(-50%,-50%) scale(.3);opacity:1}100%{transform:translate(-50%,-60%) scale(1.5);opacity:0}}
+.bx.self.ring{border:4px solid var(--rc,#8be0a4);animation:bxRing .9s ease-out forwards}.bx.self.ring.heal{--rc:#8be0a4}
+@keyframes bxRing{0%{transform:translate(-50%,-50%) scale(.2);opacity:1}100%{transform:translate(-50%,-50%) scale(1.6);opacity:0}}
+.bx.self.waves{border:3px solid #f2cf72;animation:bxRing .8s ease-out 3 forwards}
+.bx.self.chess,.bx.self.knight{border-radius:0;display:grid;place-items:center;font-size:30px;color:#f2cf72;text-shadow:0 0 12px #f2cf72;font-style:normal;animation:bxRise 1.1s ease-out forwards}
+.bx.self.knight{animation:bxSpin 1s ease-out forwards}
+@keyframes bxRise{0%{transform:translate(-50%,-10%) scale(.5);opacity:0}40%{opacity:1}100%{transform:translate(-50%,-110%) scale(1.1);opacity:0}}
+@keyframes bxSpin{0%{transform:translate(-50%,-50%) rotateY(0) scale(.5);opacity:0}40%{opacity:1;transform:translate(-50%,-50%) rotateY(360deg) scale(1.2)}100%{opacity:0}}
+.bx.self.eyes{border-radius:0;display:flex;gap:16px;justify-content:center;align-items:center;animation:bxEyes 1.1s ease forwards}
+.bx.self.eyes b{width:12px;height:7px;border-radius:50%;background:#f2cf72;box-shadow:0 0 12px #f2cf72}
+@keyframes bxEyes{0%,100%{opacity:0}20%,70%{opacity:1}}
+.bx.self.splash{border-radius:50% 50% 10% 10%;background:radial-gradient(ellipse at 50% 100%,#5bb8e6cc 0 30%,transparent 62%);animation:bxSplash .9s ease-out forwards}
+@keyframes bxSplash{0%{transform:translate(-50%,-30%) scaleY(.2);opacity:1}60%{transform:translate(-50%,-55%) scaleY(1.2);opacity:.9}100%{transform:translate(-50%,-60%) scaleY(1.3);opacity:0}}
+.bx.self.mirror{border-radius:12px;width:calc(var(--w) * .55);background:linear-gradient(120deg,#ffffff11 30%,#ffffffcc 45%,#ffffff11 60%);border:2px solid #dfe8ff;animation:bxMirror 1s ease-out forwards}
+@keyframes bxMirror{0%{opacity:0;background-position:-80px 0}30%{opacity:1}100%{opacity:0}}
+/* hedefte iz */
+.bx.hitm{width:var(--w);height:var(--h)}
+.bx.hitm.slash,.bx.hitm.impact,.bx.hitm.crack,.bx.hitm.xslash,.bx.hitm.pin,.bx.hitm.burst,.bx.hitm.vines,.bx.hitm.shards,.bx.hitm.whoosh{animation:bxMark .6s ease-out forwards}
+@keyframes bxMark{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.05)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+.bx.hitm.slash{background:linear-gradient(135deg,transparent 42%,#fff 46%,#fff 48%,transparent 52%),linear-gradient(135deg,transparent 28%,#fff9 31%,#fff9 32.5%,transparent 36%),linear-gradient(135deg,transparent 58%,#fff9 61%,#fff9 62.5%,transparent 66%)}
+.bx.hitm.slash.big{background:linear-gradient(135deg,transparent 40%,#fff 44%,#ffd2c2 50%,transparent 56%),linear-gradient(45deg,transparent 44%,#fff 48%,#fff 50%,transparent 54%);filter:drop-shadow(0 0 8px #e5534b)}
+.bx.hitm.slash.dark{background:linear-gradient(135deg,transparent 42%,#b48ce8 46%,#2a1a3a 49%,transparent 53%),linear-gradient(135deg,transparent 56%,#b48ce8aa 59%,transparent 63%);filter:drop-shadow(0 0 6px #6b3fa0)}
+.bx.hitm.xslash{background:linear-gradient(135deg,transparent 44%,#ff5a4f 47%,#ff5a4f 50%,transparent 53%),linear-gradient(45deg,transparent 44%,#ff5a4f 47%,#ff5a4f 50%,transparent 53%);filter:drop-shadow(0 0 8px #e5534b)}
+.bx.hitm.impact{background:radial-gradient(circle,#fff 0 8%,#f2cf72 9% 16%,transparent 17%);clip-path:polygon(50% 0,60% 35%,100% 30%,68% 55%,90% 100%,50% 72%,10% 100%,32% 55%,0 30%,40% 35%)}
+.bx.hitm.crack{background:linear-gradient(100deg,transparent 47%,#fff 48% 50%,transparent 51%),linear-gradient(60deg,transparent 47%,#fff 48% 49.5%,transparent 50%),linear-gradient(150deg,transparent 47%,#fffc 48% 49%,transparent 50%);filter:drop-shadow(0 0 4px #7fb5e8)}
+.bx.hitm.pin{background:linear-gradient(160deg,transparent 46%,#e8dcc6 47%,#fff 50%,transparent 51%) 0 0/60% 60% no-repeat,radial-gradient(circle at 60% 60%,#f2cf72 0 6%,transparent 7%)}
+.bx.hitm.burst{background:radial-gradient(circle,#fff 0 10%,var(--c) 22%,transparent 50%);animation-duration:.55s;mix-blend-mode:screen}
+.bx.hitm.flames{background:radial-gradient(ellipse at 50% 80%,#9b59d0cc 0 25%,transparent 50%);animation:bxFlame .7s ease-out forwards}
+@keyframes bxFlame{0%{transform:translate(-50%,-30%) scaleY(.3);opacity:0}40%{opacity:1;transform:translate(-50%,-55%) scaleY(1.1)}100%{opacity:0;transform:translate(-50%,-70%) scaleY(1.2)}}
+.bx.hitm.vines{background:radial-gradient(ellipse at 20% 80%,transparent 30%,#6fb36a 32% 36%,transparent 38%),radial-gradient(ellipse at 80% 80%,transparent 30%,#6fb36a 32% 36%,transparent 38%),radial-gradient(ellipse at 50% 100%,transparent 40%,#8bc77e 42% 45%,transparent 47%)}
+.bx.hitm.splash{background:radial-gradient(circle,#5bb8e6aa 0 30%,transparent 55%);animation:bxRing .6s ease-out forwards;border-radius:50%}
+.bx.hitm.shards{background:conic-gradient(from 0deg,#dfe8ff 0 5%,transparent 5% 20%,#dfe8ff 20% 24%,transparent 24% 45%,#dfe8ff 45% 49%,transparent 49% 70%,#dfe8ff 70% 74%,transparent 74%);border-radius:50%}
+.bx.hitm.whoosh{background:linear-gradient(90deg,transparent 20%,#ffffff55 45%,transparent 70%);animation:bxWhoosh .5s ease-out forwards}
+@keyframes bxWhoosh{from{transform:translate(-90%,-50%);opacity:1}to{transform:translate(-10%,-50%);opacity:0}}
+.bx.hitm.paws,.bx.hitm.dizzy{display:grid;place-items:center;font-size:26px;font-style:normal;animation:bxMark .7s ease-out forwards}
+.bx.hitm.dizzy{animation:bxSpinZ 1s linear forwards}@keyframes bxSpinZ{0%{transform:translate(-50%,-90%) rotate(0);opacity:1}100%{transform:translate(-50%,-90%) rotate(360deg);opacity:0}}
+.bx.star{width:70px;height:70px;background:radial-gradient(circle,#fff 0 10%,#f2cf72 11% 22%,transparent 23%);clip-path:polygon(50% 0,58% 38%,100% 50%,58% 62%,50% 100%,42% 62%,0 50%,42% 38%);animation:bxStar .6s ease-out forwards}
+@keyframes bxStar{0%{transform:translate(-50%,-50%) scale(.2) rotate(0)}50%{transform:translate(-50%,-50%) scale(1.3) rotate(45deg)}100%{transform:translate(-50%,-50%) scale(1.5) rotate(90deg);opacity:0}}
+.bx.ring{width:var(--w);height:var(--w);border-radius:50%;border:4px solid var(--c);animation:bxRing .6s ease-out forwards}
+/* parçacıklar */
+.bx.pt{font-style:normal;font-weight:950;font-size:16px;color:var(--c);text-shadow:0 0 6px var(--c);animation:bxPt .9s ease-out both;animation-delay:var(--d)}
+@keyframes bxPt{0%{transform:translate(-50%,-50%) scale(.4);opacity:0}20%{opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1);opacity:0}}
+.bx.ember{width:6px;height:6px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);animation:bxPt .8s ease-out both;animation-delay:var(--d)}
+.bx.glow{width:var(--w);height:var(--h);border-radius:40%;animation:bxGlow .8s ease-out forwards}
+.bx.glow.heal{background:radial-gradient(circle,#8be0a466,transparent 65%)}.bx.glow.buff{background:radial-gradient(circle,#f2cf7255,transparent 65%)}.bx.glow.bad{background:radial-gradient(circle,#e5534b55,transparent 65%)}.bx.glow.convert{background:radial-gradient(circle,#f29bb688,transparent 65%);animation-duration:1.2s}
+@keyframes bxGlow{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}30%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.2)}}
+/* ikna */
+.bx.spot{width:calc(var(--w) * 1.4);height:calc(var(--h) * 2.2);transform:translate(-50%,-62%);background:radial-gradient(ellipse at 50% 100%,#fff6c866 0 30%,transparent 60%),linear-gradient(180deg,#fff6c800,#fff6c822);clip-path:polygon(40% 0,60% 0,100% 100%,0 100%);animation:bxSpot 1.3s ease forwards}
+@keyframes bxSpot{0%,100%{opacity:0}20%,75%{opacity:1}}
+.bx.eye,.bx.bulb,.bx.storm,.bx.shrug,.bx.dove{font-style:normal;font-size:28px}
+.bx.eye{animation:bxEye 1.1s ease forwards}@keyframes bxEye{0%{transform:translate(-50%,-90%) scaleY(0);opacity:0}25%{transform:translate(-50%,-90%) scaleY(1);opacity:1}80%{opacity:1}100%{opacity:0}}
+.bx.bulb{animation:bxBulb .9s ease forwards}@keyframes bxBulb{0%{transform:translate(-50%,-80%) scale(.2);opacity:0}30%{transform:translate(-50%,-110%) scale(1.3);opacity:1;filter:drop-shadow(0 0 10px #f2cf72)}100%{transform:translate(-50%,-130%) scale(1);opacity:0}}
+.bx.storm{animation:bxStorm 1s ease forwards}@keyframes bxStorm{0%{transform:translate(-50%,-100%) scale(.4);opacity:0}25%{transform:translate(-50%,-110%) scale(1.15);opacity:1}40%,60%{transform:translate(-48%,-110%)}50%{transform:translate(-52%,-110%)}100%{opacity:0}}
+.bx.shrug{animation:bxBulb .8s ease forwards}
+.bx.dove{animation:bxDove 1.4s ease-in forwards}@keyframes bxDove{0%{transform:translate(-50%,-50%) scale(.4);opacity:0}20%{opacity:1;transform:translate(-50%,-80%) scale(1)}100%{transform:translate(40px,-220px) scale(.7) rotate(-15deg);opacity:0}}
+.bx.dust{width:var(--w);height:calc(var(--h) * .5);transform:translate(-50%,10%);background:radial-gradient(ellipse at 30% 70%,#a99fb4aa 0 20%,transparent 22%),radial-gradient(ellipse at 70% 70%,#a99fb499 0 22%,transparent 24%),radial-gradient(ellipse at 50% 60%,#cfc8dcaa 0 26%,transparent 28%);animation:bxDust .9s ease-out forwards}
+@keyframes bxDust{0%{transform:translate(-50%,10%) scale(.4);opacity:1}100%{transform:translate(-50%,-10%) scale(1.5);opacity:0}}
+.bx.tag{font-style:normal;font-weight:950;font-size:14px;padding:3px 9px;border-radius:999px;animation:bxTag 1s cubic-bezier(.3,1.6,.5,1) forwards}
+.bx.tag.chain{background:#f2cf72;color:#3a2600;box-shadow:0 0 14px #f2cf72aa}.bx.tag.rep{background:#3b354d;color:#b9b2c6}
+@keyframes bxTag{0%{transform:translate(-50%,-40%) scale(.3);opacity:0}25%{transform:translate(-50%,-130%) scale(1.15);opacity:1}80%{opacity:1}100%{transform:translate(-50%,-150%) scale(1);opacity:0}}
+/* kartlar */
+.bt-card.blink .bt-art svg{animation:bxBlink .5s steps(2) 1}
+@keyframes bxBlink{0%{opacity:1}50%{opacity:.15}100%{opacity:1}}
+.bt-card.down .bt-art svg{animation:bxDown .6s ease-in forwards}
+@keyframes bxDown{to{transform:translateY(14px) rotate(-14deg) scale(.9)}}
+.bt-card.persuaded .bt-art svg{animation:none}
+.bt-card.convert{border-color:#f29bb6;box-shadow:0 0 0 3px #f29bb633}
+.bt-card.convert::after{content:"🤝 " attr(data-conv);position:absolute;top:-9px;right:-6px;background:#f29bb6;color:#3a1020;font-size:10px;font-weight:950;padding:2px 6px;border-radius:999px}
+.bt-st{gap:4px}
+.bt-stance s{text-decoration:none;opacity:.8}
+.bt-rap{display:flex;gap:2px}.bt-rap i{width:6px;height:6px;border-radius:50%;background:#3b354d}.bt-rap i.on{background:#f29bb6;box-shadow:0 0 5px #f29bb6}
+.bt-tell{font-size:10px;font-style:italic;color:#d9d0ec;line-height:1.25;margin-top:3px;min-height:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.bt-tell:empty{display:none}
+.bt-tip{font-size:11px;line-height:1.4;color:#d9d0ec;background:#312c41;border-radius:10px;padding:7px 9px;margin:0 0 8px}
+.bt-moves.trick{grid-template-columns:repeat(2,minmax(0,1fr))}
+.bt-moves.trick .bt-move{min-height:48px;padding:7px 9px}.bt-moves.trick .bt-move small{font-size:10px}
+.bt-move.k-read{border-color:#5d6fb0}.bt-move.k-confuse{border-color:#8a5db0}.bt-move.closing{border-color:#c9a24a;background:#3a3226}
+.bt-panel{max-height:52vh;overflow:auto}
+.bt-float.bad{color:#ff8a80}
+.bt-bub.hard{background:#ffe9e6;color:#8a2a22}
+@media(prefers-reduced-motion:reduce){.bx{display:none}}

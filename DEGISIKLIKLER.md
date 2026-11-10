@@ -1,3 +1,17 @@
+# dam-la 2.9.0 — Yeni hilebaz, savaş animasyonları, yenilenen mini oyunlar
+
+Uzaktan güncellemeyle gelir.
+- **Hilebaz artık bir ikna düellosu:** rakibin tavrı (şüpheci, kibirli, kırılgan, öfkeli) doğrudan görünmez, söylediği sözden anlaşılır; güçlü rakipler blöf yapabilir. Her tavrın işleyen ve ters tepen bir argümanı var (Mantık, Övgü, Duygu, Şaka).
+  - İsabetli argüman güven biriktirir ve rakibi tereddüde düşürür. Ters tepen argüman güveni sıfırlar, rakip inatlaşır.
+  - Aynı sözü üst üste söylemek zayıflar; farklı isabetli argümanlar zincir bonusu verir.
+  - Yeni hamleler: **Oku** (gerçek tavrı ve sonraki turu gösterir), **Kafa Karıştır**, **Son Söz** (biriken güveni tek seferde harcar).
+  - En az 2 güvenle ikna edilen rakip 2 hamle boyunca senin safında savaşır. Boss'lar daha zor ikna olur.
+- **Her yeteneğin kendi animasyonu:** kesikler, oklar, büyü küreleri, element dalgası, kalkan, duman, iyileşme parçacıkları, ayna, dalış sıçraması, konuşma ve ikna efektleri, yere serilme ve uçan güvercin.
+- **Mini oyunlar:** Wordle kaldırıldı. Şeker'de kayan takas, düşme, patlama ve uçan puan; Tetris tam ekran ve düğmeler oyunun içinde; Uniwords'te harfleri sürükleyerek bağlama; Trace'te her bölüm tek olay (1180 olay); Stack, Sudoku ve oyun merkezinde yeni animasyonlar.
+- **Soru ekranı kaymıyor:** cevap verip sonraki soruya geçince ekran yerinde kalır.
+- Pet alanı artık metin alanı gibi seçilmiyor.
+
+---
 # dam-la 2.8.0 — Pet savaşları, mini oyunlar, ansiklopedi
 
 Uzaktan güncellemeyle gelir.

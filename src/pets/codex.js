@@ -59,20 +59,26 @@ export const ROLES = {
       { id: 'wave', name: 'Element Dalgası', kind: 'attack', power: 0.7, aoe: true, typeBoost: true, cd: 2, desc: 'Bütün düşmanlara; tip üstünlüğü iki kat etkili.' },
       { id: 'hex', name: 'Lanet', kind: 'attack', power: 0.4, debuff: 'atk', dot: 0.06, desc: 'Hedefin saldırısını düşürür, 3 tur yakar.' },
     ] },
-  trickster: { name: 'Hilebaz', icon: '🎭', desc: 'Saldırmaz; rakibiyle konuşur, onu ikna etmeye çalışır. Doğru argümanla rakibin iradesini kırar.', mult: { hp: 1.0, atk: 0, def: 1.0, spd: 1.2 },
+  trickster: { name: 'Hilebaz', icon: '🎭', desc: 'Saldırmaz; rakibini okur, güvenini kazanır ve ikna eder. Doğru argüman güven biriktirir, yanlışı rakibi inatlaştırır. İsabetli argüman rakibi tereddüde düşürür. Güven en az 2 iken ikna olan rakip bir süre senin safında savaşır.', mult: { hp: 1.1, atk: 0, def: 1.05, spd: 1.2 },
     moves: [
-      { id: 'logic', name: 'Mantık', kind: 'talk', arg: 'logic', desc: 'Kanıt ve çelişki. Şüpheci rakibe karşı en etkili.' },
-      { id: 'flatter', name: 'Övgü', kind: 'talk', arg: 'flatter', desc: 'Gururu okşar. Kibirli rakibe karşı en etkili.' },
-      { id: 'feel', name: 'Duygu', kind: 'talk', arg: 'feel', desc: 'İçine dokunur. Kırılgan rakibe karşı en etkili.' },
+      { id: 'logic', name: 'Mantık', kind: 'talk', arg: 'logic', desc: 'Kanıt ve çelişki. Şüpheciye işler, kibirli bunu hakaret sayar.' },
+      { id: 'flatter', name: 'Övgü', kind: 'talk', arg: 'flatter', desc: 'Gururu okşar. Kibirliye işler, öfkeli bunu alay sanar.' },
+      { id: 'feel', name: 'Duygu', kind: 'talk', arg: 'feel', desc: 'İçine dokunur. Kırılgana işler, şüpheci bunu oyun sanar.' },
+      { id: 'humor', name: 'Şaka', kind: 'talk', arg: 'humor', desc: 'Gerginliği kırar. Öfkeliye işler, kırılgan bunu ciddiye alınmamak sanar.' },
+      { id: 'read', name: 'Oku', kind: 'read', desc: 'Rakibin gerçek tavrını ve bir sonraki turdaki tavrını görür (2 tur geçerli). Blöfü bozar.' },
+      { id: 'confuse', name: 'Kafa Karıştır', kind: 'confuse', cd: 3, desc: 'Rakibin bir sonraki hamlesi yarı yarıya boşa gider ya da kendi takımına döner.' },
+      { id: 'close', name: 'Son Söz', kind: 'talk', closing: true, cd: 3, desc: 'Biriken güveni tek seferde harcar: güven ne kadar yüksekse o kadar ağır. Güven yoksa geri teper.' },
     ] },
 };
 export const ROLE_IDS = Object.keys(ROLES);
 // hilebazın karşısındaki rakibin o turdaki tavrı → hangi argüman işler
 export const STANCES = {
-  skeptic: { name: 'Şüpheci', icon: '🤨', weak: 'logic', line: 'Kanıtla bakalım.' },
-  proud: { name: 'Kibirli', icon: '😤', weak: 'flatter', line: 'Benden üstün kimse yok.' },
-  fragile: { name: 'Kırılgan', icon: '🥺', weak: 'feel', line: 'Kimse beni anlamıyor…' },
+  skeptic: { name: 'Şüpheci', icon: '🤨', weak: 'logic', resist: 'feel', line: 'Kanıtla bakalım.', tells: ['Kanıtla bakalım.', 'Bunu nereden çıkardın?', 'Hiç inandırıcı değil.'] },
+  proud: { name: 'Kibirli', icon: '😤', weak: 'flatter', resist: 'logic', line: 'Benden üstün kimse yok.', tells: ['Benden üstün kimse yok.', 'Sen kim oluyorsun?', 'Bana ders mi vereceksin?'] },
+  fragile: { name: 'Kırılgan', icon: '🥺', weak: 'feel', resist: 'humor', line: 'Kimse beni anlamıyor…', tells: ['Kimse beni anlamıyor…', 'Hep ben mi suçluyum?', 'Bırak beni…'] },
+  angry: { name: 'Öfkeli', icon: '😠', weak: 'humor', resist: 'flatter', line: 'Sabrımı zorlama!', tells: ['Sabrımı zorlama!', 'Yeter artık!', 'Daha fazla dayanamam!'] },
 };
+export const ARGS = { logic: 'Mantık', flatter: 'Övgü', feel: 'Duygu', humor: 'Şaka' };
 
 // ---- türlerin temel savaş değerleri (evre, yıldız, rol ve parlaklıkla çarpılır) ----
 export const BASE = {
