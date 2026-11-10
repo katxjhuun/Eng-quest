@@ -1,3 +1,15 @@
+# dam-la 2.5.1 — Her evrim ayrı bir pet
+
+Uzaktan güncellemeyle gelir.
+- **Kedi:** Minnoş (iri başlı, kısa bacaklı yavru) → Tekir (çizgili) → Vaşak (kulak püskülü, yanak yelesi, benek, kısa kuyruk) → Puma (ten rengi, açık ağız) → Leopar (hardal, rozet desen) → Kara Panter (siyah, gölgede seçilen rozetler, uzun gövde).
+- **Köpek:** Tosbik (düşük kulaklı yavru) → Hav (yarı kalkık kulak) → Çoban (siyah maske, çivili tasma) → Genç Kurt → Kurt → Alfa Kurt (koyu post, boyun yelesi, göz yarası).
+- **Civciv:** Yumurtacık (çatlaktan bakan göz) → Pıtırcık (kabukta) → Tombiş (kabuktan çıkmış, ayakta) → Kanatçık (büyük kanat, kuyruk tüyleri) → Tavus Yavrusu (küçük yelpaze) → Tavus Kuşu (göz desenli tam yelpaze, taç).
+- **Baykuş:** Tüy Yumağı (kulaksız, kabarık, mavi bebek gözleri) → Yavru Baykuş → Kukumav (beyaz benekli) → Peçeli (kalp yüz, kara gözler) → Puhu (büyük kulak tüyleri, turuncu göz) → Gece Bekçisi (gece mavisi, parlayan gözler).
+- **Gecko:** Kıpır (iri başlı yavru) → Duvar Gezgini → Benekli (sarı-siyah benek) → Taş Kertenkelesi (bant desen, sırt dikeni) → Bukalemun (yeşil, miğfer) → Sessiz Ejder (boynuz, sakal, diken sırtı).
+- **Bitki:** Tohumcuk (toprakta yüzü olan tohum) → Filizcik → Papatya (yüzü çiçeğin ortasında) → Lale → Kaktüs → Ulu Ağaç (bir yanı yapraklı ve meyveli, öbür yanı çıplak dallı).
+- Kedi ve köpek ilk iki evrede seçilen tüy rengini taşır, sonra türün kendi rengine döner. Her evre kendi bacak boyuna göre adım atar; ayaklar yine kaymaz.
+
+---
 # dam-la 2.5.0 — Yeni petler ve sıfırdan animasyon
 
 Uzaktan güncellemeyle gelir.

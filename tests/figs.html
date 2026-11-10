@@ -13,6 +13,13 @@ const mode = new URLSearchParams(location.search).get('m') || 'grid';
 const all = [];
 for (const sp of SP) {
   const row = document.createElement('div'); row.className = 'row'; app.appendChild(row);
+  if (mode === 'stages') {
+    for (let stg = 0; stg < 6; stg++) for (const view of ['idle', 'walk']) {
+      const c = document.createElement('div'); c.className = 'cell'; c.innerHTML = `<span>${sp} ${stg}${view === 'walk' ? ' y' : ''}</span>`; row.appendChild(c);
+      const p = new Puppet(c); p.setForm(sp, stg, 0); p.setBase(view); all.push({ p, walkInPlace: view === 'walk' });
+    }
+    continue;
+  }
   if (mode === 'walk') {
     row.style.height = '200px';
     for (const [i, m] of [['walk',0],['run',1]]) {
@@ -37,7 +44,8 @@ function loop(now) {
     if (a.mv) {
       const step = a.v * dt; a.x += step; if (a.x > 900) a.v = -Math.abs(a.v); if (a.x < 20) a.v = Math.abs(a.v);
       a.mv.style.left = a.x + 'px'; a.p.face(a.v); a.p.travel(Math.abs(step), a.run ? 'run' : 'walk', 96, Math.sign(a.v), 0);
-    } else if (a.clip && !a.p.playing) a.p.play(a.clip, 0);
+    } else if (a.walkInPlace) a.p.travel(40 * dt, 'walk', 96, 1, 0);
+    else if (a.clip && !a.p.playing) a.p.play(a.clip, 0);
     a.p.tick(dt);
   }
   requestAnimationFrame(loop);

@@ -35,10 +35,14 @@ const DUR = { hop: 1.2, eat: 1.6, sad: 2, cry: 2.2, doze: 2.6, lunge: 0.9, bite:
 export const clipNames = () => Object.keys(VERB);
 
 // ---------------------------------------------------------------- çizim
-function coatSwap(s, def, coat) {
-  if (!def.fur || !def.coats || !coat) return s;
-  const c = def.coats[coat % def.coats.length];
-  return s.split(def.fur[0]).join(c[0]).split(def.fur[1]).join(c[1]);
+// tüy kodlarını evreye özgü renge (yoksa seçilen tüy rengine) çevirir; desen saydamlığını evreye göre yazar
+function coatSwap(s, def, coat, stage) {
+  if (s.includes('{{RO}}')) s = s.split('{{RO}}').join(String(def.ro?.[stage] ?? 0.45));
+  if (!def.fur) return s;
+  const pal = def.stagePal?.[stage] || (def.coats ? def.coats[(coat | 0) % def.coats.length] : null);
+  if (!pal) return s;
+  def.fur.forEach((tok, i) => { if (pal[i]) s = s.split(tok).join(pal[i]); });
+  return s;
 }
 function tf(p, ch) {
   if (!ch) return '';
@@ -54,9 +58,9 @@ function tf(p, ch) {
 function partsHTML(list, stage, def, coat, pose) {
   let out = '';
   for (const pt of list) {
-    if (pt.min > stage) continue;
+    if (Array.isArray(pt.min) ? !pt.min.includes(stage) : pt.min > stage) continue;
     const ch = pose?.[pt.k], t = tf(pt.p, ch);
-    out += `<g data-k="${pt.k}"${t ? ` transform="${t}"` : ''}${ch?.o != null ? ` opacity="${r2(ch.o)}"` : ''}>${coatSwap(pt.s, def, coat)}${partsHTML(pt.kids, stage, def, coat, pose)}</g>`;
+    out += `<g data-k="${pt.k}"${t ? ` transform="${t}"` : ''}${ch?.o != null ? ` opacity="${r2(ch.o)}"` : ''}>${coatSwap(pt.s, def, coat, stage)}${partsHTML(pt.kids, stage, def, coat, pose)}</g>`;
   }
   return out;
 }
@@ -90,6 +94,15 @@ function computePose(st) {
   const asleep = base === 'sleep' || base === 'dead' || mood === 'sleep';
   const frozen = verb === 'freeze' || base === 'dead';
   let outer = { x: 0, y: 0 };
+  // evre oranları (yavru iri başlı, kısa bacaklı; yetişkin uzun)
+  const fm = st.form || {};
+  if (fm.head) A('head', { sx: fm.head, sy: fm.head });
+  if (fm.body) A('body', { sx: fm.body });
+  if (fm.tail) A('tail', { sx: fm.tail, sy: fm.tail });
+  if (fm.ear != null) { const e = Math.max(0.001, fm.ear); A('earL', { sx: e, sy: e }); A('earR', { sx: e, sy: e }); }
+  if (fm.earRot) { if (side) A('earR', { r: fm.earRot }); else { A('earL', { r: -fm.earRot }); A('earR', { r: fm.earRot }); } }
+  const legK = fm.leg || 1;
+  if (legK !== 1) { for (const k of st.keys) if (k.startsWith('leg')) A(k, { sy: legK }); if (view === 'walk') A('root', { y: def.leg * (1 - legK) }); }
 
   // --- göz kapağı (ruh hâli + göz kırpma)
   const LID = { idle: 0, happy: 0.3, love: 0.35, sad: 0.45, hungry: 0.35, cry: 0.55, groggy: 0.65, sleepy: 0.65, focus: 0.3, angry: 0.4, surprised: 0, full: 0.5, sleep: 1, dead: 1, bored: 0.4 };
@@ -115,7 +128,7 @@ function computePose(st) {
     if (def.gait === 'walk') {
       // duruş/salınım döngüsü: duruşta ayak yerde sabit (gövde hızıyla geriye kayar), bacak boyu açıya göre uzar;
       // salınımda ayak kalkar ve öne gelir.
-      const g = gaitDims(def, run), L = def.leg;
+      const g = gaitDims(def, run, legK), L = def.leg * legK;
       const offs = run ? { legNB: 0, legFB: 0.1, legNF: 0.5, legFF: 0.6 } : { legNB: 0, legFF: 0, legNF: 0.5, legFB: 0.5 };
       for (const [k, o] of Object.entries(offs)) {
         const q = (ph + o) % 1;
@@ -208,9 +221,9 @@ function computePose(st) {
 }
 
 // yürüyüş ölçüleri: S = duruşta ayağın gövdeye göre süpürdüğü yol, beta = duruş oranı, D = bir döngüde gövdenin aldığı yol
-function gaitDims(def, run) {
+function gaitDims(def, run, legK = 1) {
   const amp = (def.amp || 22) * (run ? 1.45 : 1) * Math.PI / 180, beta = run ? 0.45 : 0.62;
-  const S = 2 * def.leg * Math.sin(amp);
+  const S = 2 * def.leg * legK * Math.sin(amp);
   return { S, beta, D: S / beta };
 }
 // kişiliğe göre bekleme hareketleri (tasarım animasyonlarından)
@@ -280,7 +293,7 @@ export class Puppet {
     const v = viewOf(this.def, this.base);
     if (v === this.view && this.svg.firstChild) return;
     this.view = v;
-    const list = this.def.views[v]();
+    const list = this.def.views[v](this.stage);
     this.parts = {};
     const walk = l => l.forEach(p => { this.parts[p.k] = p; walk(p.kids); });
     walk(list);
@@ -316,7 +329,7 @@ export class Puppet {
     const units = px * 200 / spritePx;           // dış koordinat birimi
     const run = mode === 'run';
     let cycle;
-    if (this.def.gait === 'walk') cycle = gaitDims(this.def, run).D * this.k;   // ayak yerde sabit kalır
+    if (this.def.gait === 'walk') cycle = gaitDims(this.def, run, this.def.form?.[this.stage]?.leg || 1).D * this.k;   // ayak yerde sabit kalır
     else cycle = (run ? 1.4 : 1) * this.def.hop * this.k;
     this.ph = (this.ph + units / Math.max(1, cycle)) % 1;
   }
@@ -342,7 +355,7 @@ export class Puppet {
     const hf = this.turnT >= 1 ? this.facing : side(hu, this.turnFrom, this.facing, 0.45);
     return { def: this.def, species: this.species, view: this.view, keys: this.keys, t: this.t, base: this.base, mood: this.mood,
       clip: this.clip, clipT: this.clipT, clipDur: this.clipDur, ph: this.ph, faceCur: this.faceCur, hf, yaw: this.turnT < 1 ? Math.sin(u * Math.PI) : 0,
-      blink, look: this.look, k: this.k, dir: this.dir };
+      blink, look: this.look, k: this.k, dir: this.dir, form: this.def.form?.[this.stage] };
   }
   tick(dt) {
     if (!this.def || !this.svg) return;
@@ -385,10 +398,10 @@ export function staticSVG(species, stage, opts = {}) {
   const mood = opts.mood || 'idle';
   const base = mood === 'dead' ? 'dead' : mood === 'sleep' ? 'sleep' : (opts.pose === 'lie' || opts.pose === 'flat' || mood === 'full') ? 'lie' : 'idle';
   const view = viewOf(def, base);
-  const list = def.views[view]();
+  const list = def.views[view](stage);
   const keys = []; const walk = l => l.forEach(p => { keys.push(p.k); walk(p.kids); }); walk(list);
   const k = STAGE_K[stage];
-  const pose = computePose({ def, species, view, keys, t: opts.t || 0.6, base, mood, clip: '', clipT: 0, clipDur: 1, ph: 0, faceCur: opts.face || 1, hf: opts.face || 1, yaw: 0, blink: 0, look: 0, k, dir: [1, 0] });
+  const pose = computePose({ def, species, view, keys, t: opts.t || 0.6, base, mood, clip: '', clipT: 0, clipDur: 1, ph: 0, faceCur: opts.face || 1, hf: opts.face || 1, yaw: 0, blink: 0, look: 0, k, dir: [1, 0], form: def.form?.[stage] });
   const root = pose.root || {};
   const id = 'fs' + (++staticSeq);
   const rt = `translate(${MIDX} ${GROUND}) scale(${r2((root.sx ?? 1) * k * 1000) / 1000} ${r2((root.sy ?? 1) * k * 1000) / 1000}) translate(${-MIDX} ${-GROUND})`;
