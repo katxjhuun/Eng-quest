@@ -14,9 +14,11 @@ export function loadFacts() {
   return factsP || (factsP = import('./facts/index.js').then(m => { FACTS = m.FACTS; factsListeners.forEach(f => { try { f(); } catch {} }); return true; }).catch(e => { factsP = null; console.warn('[facts]', e); return false; }));
 }
 export const onFactsLoaded = fn => { factsListeners.add(fn); if (FACTS) fn(); };
-export const factsPending = cat => FACT_CATS.includes(cat) && !FACTS;
+// kalıp sorularını bilgi tablolarıyla tamamlayan konular (kalıplar tek başına hedefe yetmiyorsa)
+const MIXED = ['kim'];
+export const factsPending = cat => (FACT_CATS.includes(cat) || MIXED.includes(cat)) && !FACTS;
 
-const TARGET = 1000;
+const TARGET = 5000;
 
 function rng(seed) {
   let a = seed >>> 0;
@@ -147,7 +149,8 @@ export function generated(cat) {
   if (FACT_CATS.includes(cat)) { if (!FACTS) { loadFacts(); return []; } return (cache[cat] = buildFacts(cat, FACTS[cat], TARGET)); }
   const T = TEMPLATES[cat]; if (!T) return (cache[cat] = []);
   const out = [], seen = new Set();
-  for (let i = 0; out.length < TARGET && i < TARGET * 8; i++) {
+  const maxTries = MIXED.includes(cat) ? 10000 : TARGET * 8; // kalıpları zor doyan konularda kalanı bilgi tabloları tamamlar
+  for (let i = 0, lastNew = 0; out.length < TARGET && i < maxTries && i - lastNew < 4000; i++) {
     const t = T[i % T.length], r = rng(hash(`${cat}:${i}`)), x = R(r);
     let row; try { row = t.f(x, r); } catch { continue; }
     if (!row) continue;
@@ -157,8 +160,12 @@ export function generated(cat) {
     const tidy = q => neg(q).replace(/(^|[^\d,.])1x/g, '$1x').replace(/ [+−] 0x(?![\d²])/g, '');
     row = [tidy(row[0]), neg(row[1]), row[2].map(neg), tidy(row[3]), row[4]];
     if (seen.has(row[0]) || row[2].length < 3 || row[2].includes(row[1]) || new Set(row[2]).size < 3) continue;
-    seen.add(row[0]);
+    seen.add(row[0]); lastNew = i;
     out.push({ n: i, d: t.d, row });
+  }
+  if (MIXED.includes(cat) && out.length < TARGET) {
+    if (!FACTS) { loadFacts(); return out; } // tablolar gelince önbellek kurulur
+    out.push(...buildFacts(cat, FACTS[cat], TARGET - out.length));
   }
   return (cache[cat] = out);
 }

@@ -181,16 +181,16 @@ Göğüs basısı yetişkinde göğsün neresine uygulanır?|Göğüs kemiğinin
 `);
 
 export const ILK = {
-  eylem: { k: 'pair', d: 1, src: BOTH, rows: ACT,
+  eylem: { k: 'pair', lbl: 'durum — doğru uygulama', d: 1, src: BOTH, rows: ACT,
     q: a => `İlk yardımda şu durumda doğru uygulama hangisidir: ${a}?`, r: b => `“${b}” hangi durumda yapılması gereken ilk yardım uygulamasıdır?`, e: (a, b) => `${a} → ${b}.` },
-  dogru: { k: 'pick', d: 1, n: 230, src: BOTH, rows: RIGHT_WRONG,
+  dogru: { k: 'pick', crit: 'ilk yardımda doğruluğu', d: 1, n: 230, src: BOTH, rows: RIGHT_WRONG,
     has: g => (g === 'Yanlış uygulama' ? 'Aşağıdakilerden hangisi ilk yardımda YANLIŞ bir uygulamadır?' : 'Aşağıdakilerden hangisi ilk yardımda DOĞRU bir uygulamadır?'),
     e: (a, g) => `“${a}” ${g === 'Yanlış uygulama' ? 'yanlıştır; zarar verebilir' : 'doğru bir uygulamadır'}.`, eOthers: w => `Diğer şıklar: ${w.map(x => `${x[0]} (${x[1].toLocaleLowerCase('tr')})`).join('; ')}.` },
-  belirti: { k: 'pair', d: 2, src: BOTH, rows: SIGNS,
+  belirti: { k: 'pair', lbl: 'belirtiler — durum', d: 2, src: BOTH, rows: SIGNS,
     q: a => `“${a}” belirtileri en çok hangi durumu düşündürür?`, r: b => `Aşağıdakilerden hangisi ${b.toLocaleLowerCase('tr')} belirtisidir?`, e: (a, b) => `${b}: ${a.charAt(0).toLocaleLowerCase('tr') + a.slice(1)}.` },
   kavram: { k: 'pair', d: 2, src: SB, rows: TERMS,
     q: a => `İlk yardımda “${a}” neyi ifade eder?`, r: b => `“${b}” tanımı hangi kavrama aittir?`, e: (a, b) => `${a}: ${b}.` },
-  triyaj: { k: 'pick', d: 3, n: 300, src: `${SB} · START triyaj yöntemi`, rows: TRIAGE,
+  triyaj: { k: 'pick', lbl: 'yaralı — START etiketi', crit: 'START triyaj etiketi', d: 3, n: 300, src: `${SB} · START triyaj yöntemi`, rows: TRIAGE,
     has: g => `Çok sayıda yaralının olduğu bir olayda START triyajına göre aşağıdakilerden hangisi ${TRI_Q[g]} olarak etiketlenir?`,
     e: (a, g) => `START: ${TRI_WHY[g]}. “${a}” → ${g}.`, eOthers: w => `Diğerleri: ${w.map(x => `${x[0].charAt(0).toLocaleLowerCase('tr') + x[0].slice(1)} → ${x[1]}`).join('; ')}.` },
   durum: { k: 'pick', d: 2, n: 150, src: BOTH, rows: ACT.map(([a, b, n]) => [b, a, n]),

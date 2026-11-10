@@ -1,6 +1,7 @@
 # dam-la 2.8.0 — Pet savaşları, ansiklopedi, daha hafif uygulama
 
 Uzaktan güncellemeyle gelir.
+- **Her konuda 5000 soru:** 13 konunun her biri 5000 soruya çıktı. Yeni soru türleri: doğru/yanlış eşleştirme (ör. ülke — başkent) ve “hangisi diğerlerinden farklıdır?”. Kimyaya element, bileşik formülü, asit-baz, pH, laboratuvar malzemesi, ayırma yöntemleri ve bilim insanları tabloları eklendi.
 - **Sıra tabanlı pet savaşı:** 6 tip (🔥 Ateş › 🌿 Doğa › 💧 Su › 🔥, 🪨 Taş › 🌪️ Rüzgâr › 👁️ Ruh › 🪨) ve 7 rol: tank, yakın dövüşçü, nişancı, suikastçı, destek, büyücü, hilebaz. Hilebaz saldırmaz; rakibin o turdaki tavrına (şüpheci/kibirli/kırılgan) uyan argümanla (mantık/övgü/duygu) iradesini kırıp ikna eder. Rol, pet ilk seçildiğinde ve her evrimde rastgele değişir; her türün kendi imza hamlesi var.
 - **Arena:** 3 kişilik takım: kendi petin + yendiğin canavarlar ya da arkadaş kodu (DL-XXXXX) ile ödünç aldığın arkadaş petleri. Antrenman (bot canavarlar), oyunculara meydan okuma.
 - **Evrim kapısında boss:** seviye atlayınca evrim için önce boss yenilmeli. Erken evrelerde kaybedersen bir soru bilip yeniden denersin; ileri evrelerde kazandığın seviyenin XP'si sıfırlanır.

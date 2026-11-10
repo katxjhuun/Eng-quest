@@ -226,9 +226,9 @@ Anaksagoras|Sonsuz küçük tohumlar (spermata)
 `);
 
 export const FEL = {
-  eser: { k: 'pair', d: 2, src: SEP, rows: WORKS,
+  eser: { k: 'pair', lbl: 'düşünür — eser', d: 2, src: SEP, rows: WORKS,
     q: a => `Aşağıdaki eserlerden hangisi ${a} tarafından yazılmıştır?`, r: b => `“${b}” adlı eserin yazarı kimdir?`, e: (a, b) => `“${b}” → ${a}.` },
-  akim: { k: 'group', d: 2, src: `${MEB} · ${SEP}`, rows: SCHOOL,
+  akim: { k: 'group', lbl: 'düşünür — akım', crit: 'bağlı olduğu akım', d: 2, src: `${MEB} · ${SEP}`, rows: SCHOOL,
     q: a => `${a} hangi felsefi akım ya da okulla anılır?`, has: g => `Aşağıdaki düşünürlerden hangisi ${g} ile anılır?`, not: g => `Aşağıdaki düşünürlerden hangisi ${g} ile anılmaz?`,
     e: (a, g) => `${a} → ${g}.`, notE: g => `${g} ile anılır` },
   akimp: { k: 'pick', d: 3, n: 260, src: `${MEB} · ${SEP}`, rows: SCHOOL,
@@ -237,15 +237,15 @@ export const FEL = {
     q: a => `Felsefede “${a}” ne demektir?`, r: b => `“${b}” tanımı hangi kavrama aittir?`, e: (a, b) => `${a}: ${b}.` },
   safsata: { k: 'pair', d: 3, src: `${MEB} · mantık ünitesi`, rows: FALLACY,
     q: a => `${a} Bu ifadede hangi safsata vardır?`, r: b => `Aşağıdakilerden hangisi “${b}” safsatasına örnektir?`, e: (a, b) => `${b}: ${a}` },
-  soz: { k: 'pair', d: 2, src: SEP, rows: QUOTES,
+  soz: { k: 'pair', lbl: 'söz — düşünür', d: 2, src: SEP, rows: QUOTES,
     q: a => `“${a}” sözü hangi düşünüre aittir?`, r: b => `Aşağıdaki sözlerden hangisi ${b} ile özdeşleşir?`, e: (a, b) => `“${a}” → ${b}.` },
-  donem: { k: 'group', d: 2, src: `${MEB} (felsefenin dönemleri)`, rows: ERA,
+  donem: { k: 'group', lbl: 'düşünür — dönem', crit: 'yaşadığı dönem', d: 2, src: `${MEB} (felsefenin dönemleri)`, rows: ERA,
     q: a => `${a} felsefe tarihinin hangi döneminde yer alır?`, has: g => `Aşağıdaki düşünürlerden hangisi “${g}” felsefesi döneminde yer alır?`, not: g => `Aşağıdaki düşünürlerden hangisi “${g}” döneminde yer ALMAZ?`,
     e: (a, g) => `${a} → ${g} felsefesi.`, notE: g => `“${g}” dönemindedir` },
   donemp: { k: 'pick', d: 2, n: 280, src: `${MEB} (felsefenin dönemleri)`, rows: ERA,
     has: g => `Aşağıdaki filozoflardan hangisi “${g}” döneminde yaşamıştır?`, e: (a, g) => `${a} → ${g}.`, eOthers: w => `Diğerleri: ${w.map(x => `${x[0]} (${x[1]})`).join(', ')}.` },
-  dal: { k: 'pair', d: 1, src: MEB, rows: BRANCH,
+  dal: { k: 'pair', lbl: 'felsefe dalı — temel soru', d: 1, src: MEB, rows: BRANCH,
     q: a => `${a} hangi temel soruyu sorar?`, r: b => `“${b}” sorusu hangi felsefe dalının temel sorusudur?`, e: (a, b) => `${a}: ${b}` },
-  arkhe: { k: 'pair', d: 2, src: `${MEB} · İlk Çağ doğa filozofları`, rows: ARKHE,
+  arkhe: { k: 'pair', lbl: 'düşünür — arkhe', d: 2, src: `${MEB} · İlk Çağ doğa filozofları`, rows: ARKHE,
     q: a => `${a} evrenin ana maddesini (arkhe) ne olarak görmüştür?`, r: b => `Arkheyi “${b.charAt(0).toLocaleLowerCase('tr') + b.slice(1)}” olarak açıklayan düşünür kimdir?`, e: (a, b) => `${a}: arkhe = ${b.charAt(0).toLocaleLowerCase('tr') + b.slice(1)}.` },
 };

@@ -144,15 +144,70 @@ export function buildFacts(cat, tables, target) {
     lists.push(sample(items, items.length, rng(hash(`${cat}:${key}:mix`))));
   }
   const out = [], seen = new Set();
-  for (let i = 0; out.length < target; i++) {
-    let any = false;
-    for (const l of lists) {
-      if (i >= l.length) continue; any = true;
-      const it = l[i], k = it.row[0] + '|' + it.row[1] + '|' + it.u;
-      if (seen.has(k)) continue; seen.add(k); delete it.u; out.push(it);
-      if (out.length >= target) break;
+  const drain = ls => {
+    for (let i = 0; out.length < target; i++) {
+      let any = false;
+      for (const l of ls) {
+        if (i >= l.length) continue; any = true;
+        const it = l[i], k = it.row[0] + '|' + it.row[1] + '|' + it.u;
+        if (seen.has(k)) continue; seen.add(k); delete it.u; out.push(it);
+        if (out.length >= target) break;
+      }
+      if (!any) break;
     }
-    if (!any) break;
+  };
+  drain(lists);
+  if (out.length < target) {
+    // ikinci aşama: aynı bilgiden eşleştirme ve "farklı olanı bul" soruları (her tablo kendi payı kadar)
+    const need = target - out.length;
+    const ex = Object.entries(tables).filter(([, t]) => t.lbl || t.crit);
+    const weight = ex.reduce((s, [, t]) => s + Math.min(60, t.rows.length), 0) || 1;
+    const xl = ex.map(([key, t]) => {
+      const n = Math.ceil(need * Math.min(60, t.rows.length) / weight * 1.6) + 20;
+      const r = rng(hash(`${cat}:${key}:x`));
+      return extras(t, key, r, n).filter(x => x.o.length === 3 && !x.o.includes(x.a) && new Set(x.o).size === 3)
+        .map(x => ({ n: x.id, d: Math.min(5, (t.d || 2) + 1), u: x.o.slice().sort().join('|'), row: [x.q, x.a, x.o, x.e, t.src] }));
+    });
+    drain(xl);
+  }
+  return out;
+}
+
+// eşleştirme (doğru/yanlış eşleşme) ve farklı olanı bulma soruları
+const SEP = ' — ';
+function extras(t, key, r, n) {
+  const out = [], seen = new Set();
+  const rows = t.rows.filter(x => String(x[0]).length + String(x[1]).length < 90);
+  if (rows.length < 5) return out;
+  const one = a => a[Math.floor(r() * a.length)];
+  const exp = (row) => (t.e ? t.e(row[0], row[1], row[2]) : `${row[0]}${SEP}${row[1]}.`);
+  const wrongB = (row, avoid) => { const c = rows.filter(y => y[1] !== row[1] && !avoid.has(y[1])); return c.length ? one(c)[1] : null; };
+  for (let i = 0, tries = 0; out.length < n && tries < n * 10; tries++) {
+    const kind = t.k === 'group' || t.k === 'pick' ? (r() < 0.5 ? 'odd' : r() < 0.5 ? 'match' : 'miss') : (r() < 0.5 ? 'match' : 'miss');
+    if (kind === 'odd') {
+      if (!t.crit) continue;
+      const G = [...new Set(rows.map(x => x[1]))].filter(g => rows.filter(x => x[1] === g).length >= 3);
+      if (G.length < 2) continue;
+      const g = one(G), same = sample(rows.filter(x => x[1] === g), 3, r), odd = one(rows.filter(x => x[1] !== g));
+      const sig = 'o' + g + odd[0] + same.map(x => x[0]).sort().join('|'); if (seen.has(sig)) continue; seen.add(sig);
+      out.push({ id: `${key}x${i++}`, q: `Aşağıdakilerden hangisi ${t.crit} bakımından diğerlerinden farklıdır?`, a: odd[0], o: same.map(x => x[0]),
+        e: `${odd[0]} → ${odd[1]}; diğerleri → ${g}.` });
+      continue;
+    }
+    if (!t.lbl) continue;
+    const pick4 = sample(rows, 4, r); if (pick4.length < 4 || new Set(pick4.map(x => x[0])).size < 4) continue;
+    const [x, ...ys] = pick4;
+    if (kind === 'match') {
+      const used = new Set(); const wrongs = ys.map(y => { const b = wrongB(y, used); if (b) used.add(b); return b && `${y[0]}${SEP}${b}`; });
+      if (wrongs.some(w => !w)) continue;
+      const a = `${x[0]}${SEP}${x[1]}`, sig = 'm' + a + wrongs.slice().sort().join('|'); if (seen.has(sig)) continue; seen.add(sig);
+      out.push({ id: `${key}x${i++}`, q: `Aşağıdaki eşleştirmelerden hangisi doğrudur? (${t.lbl})`, a, o: wrongs, e: `Doğrusu: ${exp(x)}` });
+    } else {
+      const b = wrongB(x, new Set(ys.map(y => y[1]))); if (!b) continue;
+      const a = `${x[0]}${SEP}${b}`, rights = ys.map(y => `${y[0]}${SEP}${y[1]}`);
+      const sig = 'w' + a + rights.slice().sort().join('|'); if (seen.has(sig)) continue; seen.add(sig);
+      out.push({ id: `${key}x${i++}`, q: `Aşağıdaki eşleştirmelerden hangisi YANLIŞTIR? (${t.lbl})`, a, o: rights, e: `Yanlış olan “${a}”. Doğrusu: ${exp(x)}` });
+    }
   }
   return out;
 }
