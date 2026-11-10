@@ -1,31 +1,33 @@
 import { C, P, B, O, E, wrap } from './common.js';
-// Gecko — üstten görünüş, sıcak taşta güneşleniyor; geometrik benek deseni, yuvarlak parmak uçları.
+// Gecko — profil, taşta güneşleniyor, başı güneşe kalkık; sırtta üçgen diken dizisi, halka göz, sarmal kuyruk.
 export function gecko(id = 'gecko') {
   const b = [];
-  // taş: düz kum lekesi, gölge düzlemi
-  b.push(P('M30 120 C30 70 80 40 120 44 C166 48 184 92 176 132 C168 170 120 186 80 176 C44 168 30 150 30 120 Z', C.sand));
-  b.push(P('M120 44 C166 48 184 92 176 132 C168 170 120 186 80 176 C130 168 160 110 120 44 Z', C.sandD));
-  // kuyruk: sarmal, incelen
-  b.push(B('M100 132 C102 152 92 166 76 166 C62 166 56 154 62 146 C66 140 74 142 74 148', 9, C.teal));
-  b.push(B('M74 148 C74 152 70 152 69 150', 5, C.teal));
-  // bacaklar + yuvarlak parmaklar
-  const leg = (d, toes) => { b.push(B(d, 6, C.tealD)); for (const [x, y] of toes) b.push(O(x, y, 2.6, C.tealD)); };
-  leg('M88 82 L74 74 L68 62', [[62, 60], [66, 56], [72, 57]]);
-  leg('M112 82 L126 74 L132 62', [[128, 57], [134, 56], [138, 60]]);
-  leg('M90 122 L76 132 L70 144', [[64, 146], [68, 150], [74, 149]]);
-  leg('M110 122 L124 132 L130 144', [[126, 149], [132, 150], [136, 146]]);
-  // gövde: elips + baş
-  b.push(E(100, 102, 16, 30, C.teal));
-  b.push(P('M100 72 A16 30 0 0 1 100 132 C108 116 108 88 100 72 Z', C.tealD));
-  b.push(P('M86 64 C86 48 92 40 100 40 C108 40 114 48 114 64 C114 72 108 76 100 76 C92 76 86 72 86 64 Z', C.teal));
-  b.push(P('M100 40 C108 40 114 48 114 64 C114 72 108 76 100 76 C106 66 106 50 100 40 Z', C.tealD));
-  // gözler: yanlarda altın, yarık
-  for (const x of [87, 113]) b.push(O(x, 54, 4, C.ochre), P(`M${x} 50.5 Q${x + 1} 54 ${x} 57.5 Q${x - 1} 54 ${x} 50.5 Z`, C.black));
-  // sırt deseni: hardal daireler + pas kamalar
-  for (const [y, r] of [[84, 3.4], [96, 4], [108, 3.6], [120, 3]]) b.push(O(100, y, r, C.ochre));
-  for (const y of [90, 102, 114]) b.push(P(`M88 ${y} L93 ${y - 3} L93 ${y + 3} Z`, C.rust), P(`M112 ${y} L107 ${y - 3} L107 ${y + 3} Z`, C.rust));
-  b.push(O(100, 140, 2.4, C.ochre), O(96, 150, 2, C.ochre));
-  // güneş: köşede düz daire
-  b.push(O(170, 30, 16, C.ochre), O(170, 30, 10, C.ochreD, 'opacity=".35"'));
+  // taş
+  b.push(P('M10 186 C14 160 50 146 100 146 C150 146 186 160 190 186 Z', C.sand));
+  b.push(P('M100 146 C150 146 186 160 190 186 L120 186 C132 170 124 154 100 146 Z', C.sandD));
+  // güneş
+  b.push(O(168, 34, 18, C.ochre), O(168, 34, 11, C.ochreD, 'opacity=".4"'));
+  // kuyruk: sarmal bant
+  b.push(B('M58 140 C34 140 22 126 28 112 C32 102 46 102 48 112 C49 118 42 120 40 116', 10, C.teal));
+  // uzak bacaklar
+  b.push(B('M70 142 L62 150 L56 148', 5, C.tealD), B('M128 136 L138 146 L146 146', 5, C.tealD));
+  // gövde
+  b.push(P('M52 136 C60 120 92 114 124 116 C140 118 148 124 150 132 C146 142 126 146 100 146 C78 146 60 144 52 136 Z', C.teal));
+  b.push(P('M56 138 C72 146 112 148 148 134 C144 144 124 150 100 150 C80 150 64 146 56 138 Z', C.tealD));
+  // diken dizisi
+  b.push(P('M64 124 L70 112 L76 122 L82 110 L88 120 L94 108 L100 118 L106 108 L112 118 L118 110 L124 118 L130 112 L134 120 Z', C.rust));
+  // benekler
+  for (const [x, y, r] of [[74, 132, 3.6], [92, 128, 4.2], [110, 130, 3.6], [126, 128, 3], [84, 140, 2.2], [102, 141, 2.4]]) b.push(O(x, y, r, C.ochre));
+  // yakın bacaklar + yuvarlak parmaklar
+  b.push(B('M86 144 L80 158 L70 160', 6, C.teal)); for (const [x, y] of [[66, 157], [65, 162], [70, 164]]) b.push(O(x, y, 2.6, C.teal));
+  b.push(B('M134 140 L140 156 L150 158', 6, C.teal)); for (const [x, y] of [[154, 154], [155, 159], [151, 163]]) b.push(O(x, y, 2.6, C.teal));
+  // baş: güneşe kalkık geniş kama
+  b.push(P('M136 124 C138 104 152 92 170 94 C182 96 188 104 186 112 C182 122 166 130 148 132 Z', C.teal));
+  b.push(P('M148 132 C166 130 182 122 186 112 C180 126 166 134 150 136 Z', C.tealD));
+  b.push(B('M154 124 C164 124 176 120 184 113', 1.4, C.tealD));
+  // göz: halka, dikey yarık, gözü kırpmayan
+  b.push(O(160, 106, 8, C.cream), O(160.5, 106, 6, C.ochre), P('M160.5 100.5 Q162.5 106 160.5 111.5 Q158.5 106 160.5 100.5 Z', C.black), O(158, 103.5, 0.9, C.cream));
+  // dil: mavi
+  b.push(B('M186 110 L196 106', 2.2, C.slate));
   return wrap(id, b.join(''));
 }
