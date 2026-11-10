@@ -1,3 +1,13 @@
+# dam-la 2.2.7 — Ödül şarkılarının tamamı YouTube'dan
+
+Uzaktan güncellemeyle gelir.
+- Şarkı seçimi aynı: Apple/Deezer popüler listeleri. ▶'a basınca şarkının YouTube videosu bulunur ve **tamamı** uygulamanın içinde, pet kartının altındaki çalarda çalar (YouTube kuralları gereği video alanı görünür durur).
+- Duraklat, durdur, sar, ileri-geri ve Mix (yumuşak geçiş) YouTube şarkılarında da çalışır.
+- Bulunan videolar cihazda hatırlanır; aynı şarkı tekrar aranmaz. Gömülemeyen video olursa sıradaki uygun video denenir.
+- YouTube'un ücretsiz günlük arama sınırı (tüm kullanıcılar için ~100 yeni şarkı) dolarsa o gün yeni şarkılar 30 saniyelik ön dinlemeyle çalar; sınır her gün TR saatiyle 11:00'de sıfırlanır.
+
+---
+
 # dam-la 2.2.6 — Müzik ödülü pet kartının altında
 
 Uzaktan güncellemeyle gelir.

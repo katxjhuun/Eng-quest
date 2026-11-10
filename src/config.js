@@ -32,4 +32,4 @@ export const FIREBASE_CONFIG = {
 // Şarkı seçimi yine Apple/Deezer listelerinden gelir; anahtar yalnızca o şarkının YouTube videosunu bulmak için kullanılır.
 // Boşsa çalar 30 saniyelik ön dinlemeyle çalışır. Anahtar gizli değildir (istemcide görünür); Google Cloud'da yalnızca
 // YouTube Data API v3 ile sınırlandırılmıştır, en kötü ihtimalle günlük kotası tükenir.
-export const YOUTUBE_API_KEY = '';
+export const YOUTUBE_API_KEY = 'AIzaSyB3Ru6YTiGQV-JnjM5ejoxhA8hBaX_PR30';
