@@ -20,3 +20,12 @@ export function wrap(id, body) {
     <feMerge><feMergeNode in="w"/><feMergeNode in="sp"/></feMerge>
   </filter></defs><g filter="url(#${id}g)">${body}</g></svg>`;
 }
+
+// ---- animasyon: parçalar <g class="..."> ile gruplanır; CSS keyframes kökeni SVG birimleriyle verir (transform-box: view-box)
+export const G = (cls, ...items) => `<g class="${cls}">${items.flat().join('')}</g>`;
+export function wrapA(id, body, css) {
+  const svg = wrap(id, body);
+  // keyframe adları belge genelidir: her pete önek ver
+  css = css.replace(/@keyframes (\w+)/g, `@keyframes ${id}_$1`).replace(/animation:(\w+)/g, `animation:${id}_$1`);
+  return svg.replace('<defs>', `<defs><style>#${id} g,#${id} path,#${id} ellipse,#${id} circle{transform-box:view-box}${css.replace(/\.(?=[a-z])/g, `#${id} .`)}</style>`).replace('<svg ', `<svg id="${id}" `);
+}
