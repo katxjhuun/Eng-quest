@@ -5,6 +5,9 @@
 // ders kitaplarının standart problem türlerine göre seçildi. Zorluk 1 (temel) → 5 (ileri).
 // Kimlikler: "<konu>-g<numara>". Kalıp listesinin SONUNA ekle; sıra değişirse kayıtlı ilerleme başka soruya kayar.
 
+import { buildFacts } from './facts/engine.js';
+import { FACTS } from './facts/index.js';
+
 const TARGET = 1000;
 
 function rng(seed) {
@@ -133,6 +136,7 @@ const cache = {};
 // Bir konunun üretilen soruları: zorluk sırasıyla dengeli dağılır, tekrar eden soru metni atlanır.
 export function generated(cat) {
   if (cache[cat]) return cache[cat];
+  if (FACTS[cat]) return (cache[cat] = buildFacts(cat, FACTS[cat], TARGET));
   const T = TEMPLATES[cat]; if (!T) return (cache[cat] = []);
   const out = [], seen = new Set();
   for (let i = 0; out.length < TARGET && i < TARGET * 8; i++) {
@@ -150,4 +154,4 @@ export function generated(cat) {
   }
   return (cache[cat] = out);
 }
-export const GENERATED_CATS = Object.keys(TEMPLATES);
+export const GENERATED_CATS = [...Object.keys(TEMPLATES), ...Object.keys(FACTS)];

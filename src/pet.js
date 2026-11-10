@@ -124,7 +124,9 @@ export function initPet(core, quiz) {
   const $ = s => document.querySelector(s);
   const esc = core.esc;
   const A = () => core.app;
-  const P = () => A().pet;
+  // kullanıcı pet özelliğini kapattıysa her yer 'pet yok' gibi davranır; pet donar (zaman işlemez), kaydı silinmez
+  const off = () => A().profile?.petOff === true;
+  const P = () => (off() ? null : A().pet);
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const notifyAvailable = () => { try { return Capacitor.isNativePlatform() && Capacitor.isPluginAvailable('LocalNotifications'); } catch { return false; } };
 
@@ -220,6 +222,7 @@ export function initPet(core, quiz) {
     return o;
   }
   function checkLevels() {
+    if (off()) return 0;
     const app = A(), p = P(); const now = levelsNow();
     if (!app.petLevels) { app.petLevels = now; save(); return 0; }
     let gains = 0;
@@ -329,9 +332,13 @@ export function initPet(core, quiz) {
   const setGrid = document.querySelector('#settingsOverlay .settings-grid');
   if (setGrid) {
     const sec = document.createElement('section'); sec.className = 'setting-section'; sec.id = 'petSettings';
-    sec.innerHTML = `<h3>Petin</h3><p>Ad, dolaşma, bildirimler ve evrim çizgisi.</p><button class="secondarybtn" id="openPetInfo" style="width:100%">🐾 Pet bilgisi ve ayarları</button>`;
+    sec.innerHTML = `<h3>Petin</h3><label class="toggle-row"><span>Pet özelliği<small>Kapatınca pet, can/enerji ve pet yetenekleri gizlenir; petin donar ve açtığında kaldığı yerden devam eder.</small></span><input type="checkbox" id="petEnabled"></label><p id="petSetLead">Ad, dolaşma, bildirimler ve evrim çizgisi.</p><button class="secondarybtn" id="openPetInfo" style="width:100%">🐾 Pet bilgisi ve ayarları</button>`;
     setGrid.insertBefore(sec, setGrid.children[1] || null);
     sec.querySelector('#openPetInfo').addEventListener('click', () => openInfo());
+    const tg = sec.querySelector('#petEnabled');
+    const syncSet = () => { tg.checked = !off(); sec.querySelector('#openPetInfo').classList.toggle('hidden', off()); sec.querySelector('#petSetLead').classList.toggle('hidden', off()); };
+    syncSet(); document.querySelector('#settingsBtn')?.addEventListener('click', syncSet);
+    tg.addEventListener('change', () => { setEnabled(tg.checked); syncSet(); core.toast(tg.checked ? '🐾 Pet özelliği açıldı.' : 'Pet özelliği kapatıldı. Ayarlar’dan tekrar açabilirsin.'); });
   }
 
   // ---------- çizim ----------
@@ -415,7 +422,7 @@ export function initPet(core, quiz) {
   function renderPanel() {
     const p = P();
     home.classList.toggle('hidden', !p);
-    if (!p) return;
+    if (!p) { skillBtns.forEach(b => b.classList.add('hidden')); document.body.classList.remove('pet-flow'); return; }
     const sp = PET_SPECS[p.species], mx = maxes(p);
     $('#petName').textContent = p.name;
     $('#petStars').textContent = p.stars ? '⭐'.repeat(Math.min(5, p.stars)) + (p.stars > 5 ? `×${p.stars}` : '') : '';
@@ -1212,9 +1219,23 @@ export function initPet(core, quiz) {
   }
   function ensure() {
     normalize();
-    if (!A().calibrated) return;
+    if (!A().calibrated || off()) return;
     if (!P()) { if (!chooser.classList.contains('show') && !deathEl.classList.contains('show')) openChooser(); return; }
     renderPanel();
+  }
+  function setEnabled(on) {
+    const app = A(); app.profile = app.profile || {};
+    if (on === !off()) return;
+    app.profile.petOff = !on;
+    if (!on) {
+      cancelNotes(); deathPending = false;
+      [chooser, deathEl, infoEl].forEach(el => el.classList.remove('show'));
+      core.saveLocal(false); renderPanel(); return;
+    }
+    // kapalıyken geçen süre petten düşmesin
+    const raw = app.pet; if (raw) { raw.lastTick = raw.lastSeen = Date.now(); }
+    core.saveLocal(false); reload(); checkLevels();
+    if (!raw) setTimeout(() => { document.querySelector('#settingsOverlay.show') && document.querySelector('#closeSettings')?.click(); ensure(); }, 300);
   }
   function reload() { normalize(); tick(); artKey = ''; if (P() && !P().alive) { deathPending = true; setTimeout(openDeath, 600); } renderPanel(); }
 
@@ -1355,7 +1376,7 @@ export function initPet(core, quiz) {
   }
 
   return {
-    ensure, reload, render: renderPanel, openChooser, openInfo, xpMod, snapshot, admin,
+    ensure, reload, setEnabled, enabled: () => !off(), render: renderPanel, openChooser, openInfo, xpMod, snapshot, admin,
     onPause() { const p = P(); if (p) { tick(); p.lastSeen = Date.now(); save(); schedule(); } },
     onResume() { cancelNotes(); tick(); greetIfAway(); renderPanel(); },
     debug: { die: () => { const p = P(); if (p) { p.hp = 1; } }, evolve: n => evolveBy(n || 1), phase, react, say, tick, emote, setAnim, baseNow, puppet, ability: useAbility, tap, pet, mischief: () => catMischief(), bored: v => { catBored = v; }, isSleeping, mood: currentMood, guard: () => guardUntil },

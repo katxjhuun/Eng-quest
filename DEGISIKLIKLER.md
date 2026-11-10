@@ -1,3 +1,10 @@
+# dam-la 2.7.0 — Her konuda 1000 soru, pet isteğe bağlı
+
+Uzaktan güncellemeyle gelir.
+- **Her konu 1000+ soru:** Biyoloji, Coğrafya, Tarih, İlk Yardım, Ehliyet, Bilim, Moda, Sanat, Hayat ve Felsefe artık doğrulanmış bilgi tablolarından üretilen 1000'er soruyla geliyor (Matematik, Fizik, Kimya zaten 1000'di). Sorular resmî kaynaklara dayanır (MEB, ERC 2021, Karayolları Trafik Yönetmeliği, BIPM, DSÖ, müze kayıtları…), her birinin açıklaması ve kaynağı vardır; yanlış şıklar aynı türden seçilir.
+- **Pet isteğe bağlı:** ilk kurulumda “Pet arkadaşı ister misin?” adımı; Ayarlar › Petin bölümünden her an açılıp kapatılabilir. Kapalıyken pet, can/enerji ve pet yetenekleri gizlenir, pet donar; açınca kaldığı yerden devam eder.
+
+---
 # dam-la 2.6.3 — Gerçekçi balina, çizimdeki doodle
 
 Uzaktan güncellemeyle gelir.
