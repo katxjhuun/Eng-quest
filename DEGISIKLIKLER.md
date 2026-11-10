@@ -1,3 +1,18 @@
+# dam-la 2.8.0 — Pet savaşları, ansiklopedi, daha hafif uygulama
+
+Uzaktan güncellemeyle gelir.
+- **Sıra tabanlı pet savaşı:** 6 tip (🔥 Ateş › 🌿 Doğa › 💧 Su › 🔥, 🪨 Taş › 🌪️ Rüzgâr › 👁️ Ruh › 🪨) ve 7 rol: tank, yakın dövüşçü, nişancı, suikastçı, destek, büyücü, hilebaz. Hilebaz saldırmaz; rakibin o turdaki tavrına (şüpheci/kibirli/kırılgan) uyan argümanla (mantık/övgü/duygu) iradesini kırıp ikna eder. Rol, pet ilk seçildiğinde ve her evrimde rastgele değişir; her türün kendi imza hamlesi var.
+- **Arena:** 3 kişilik takım: kendi petin + yendiğin canavarlar ya da arkadaş kodu (DL-XXXXX) ile ödünç aldığın arkadaş petleri. Antrenman (bot canavarlar), oyunculara meydan okuma.
+- **Evrim kapısında boss:** seviye atlayınca evrim için önce boss yenilmeli. Erken evrelerde kaybedersen bir soru bilip yeniden denersin; ileri evrelerde kazandığın seviyenin XP'si sıfırlanır.
+- **Yeni canavarlar:** Erteleme, Unutkan Güve, Dağınık, Kibir, Şüphe Sisi, Kaygı, Ezberci, Gürültü, Sahte Bilgi, Yorgunluk, Karmaşa, Kıskançlık ve 6 boss.
+- **Pet ansiklopedisi** (Ayarlar › Pet): tip, rol, savaş değerleri, imza hamlesi, evreler, günlük.
+- **Günlük:** petin ruh yazısı her evrimde bir parça olarak açılır.
+- **Nadir (parlak) form:** evrimde ~%8 şansla; farklı renk, parıltı, ek bonuslar.
+- **İpucu balonları:** petler kendi bakışlarından, cevabı vermeden ipucu verir.
+- **Pet seçme ekranı** sığacak şekilde yeniden düzenlendi; **Ayarlar sekmeli** oldu.
+- **Performans:** ilk açılışta yüklenen kod yarıya indi (Firebase, savaş ekranı ve soru tabloları gerektiğinde yüklenir); pet animasyonu dururken daha az işlemci kullanır, ekran dışındayken çizilmez.
+
+---
 # dam-la 2.7.0 — Her konuda 1000 soru, pet isteğe bağlı
 
 Uzaktan güncellemeyle gelir.

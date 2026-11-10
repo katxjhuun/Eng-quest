@@ -17,12 +17,15 @@ await mkdir(path.join(out, 'assets'), { recursive: true });
 await build({
   entryPoints: [path.join(root, 'src/app.js')],
   bundle: true,
-  format: 'iife',
+  // ESM + parçalama: Firebase, savaş ekranı ve bilgi tabloları ilk açılışta değil, gerektiğinde yüklenir
+  format: 'esm',
+  splitting: true,
+  chunkNames: 'chunks/[name]-[hash]',
   target: ['es2020', 'safari15', 'chrome90'],
   minify: true,
   sourcemap: false,
   legalComments: 'none',
-  outfile: path.join(out, 'assets/app.js'),
+  outdir: path.join(out, 'assets'),
   define: { __APP_VERSION__: JSON.stringify(version), __BUILD_TIME__: JSON.stringify(buildTime) },
   logLevel: 'warning'
 });

@@ -2,6 +2,7 @@ import { Platform } from './platform.js';
 import { initPet } from './pet.js';
 import { initSettingsTabs } from './settings-tabs.js';
 import { initQuiz, flyXp, deptOptions, CATS } from './quiz.js';
+import { loadFacts } from './data/gen.js';
 import { THEMES } from './themes.js';
 import { initCloud, localUserId, cloudConfigured } from './cloud.js';
 import { applyBirthday, scheduleBirthdayCheck, flushPendingIcon, isBirthday } from './birthday.js';
@@ -213,7 +214,7 @@ loadLocal();
 if(!app.calibrated){try{if(localStorage.getItem('dl-calibrated')==='1')app.calibrated=true}catch{}}
 applyTheme(app.profile.theme||(()=>{try{return localStorage.getItem('dl-theme')}catch{return null}})()||'krem',false);
 renderProgress();renderQuestion();
-quiz=initQuiz(core);quiz.render();pet=initPet(core,quiz);initSettingsTabs();musicDeck=initMusicDeck({toast,stopOtherAudio:()=>{try{stopAudio()}catch{}}});try{if(localStorage.getItem('dl-debug')==='1')window.__dl={get app(){return app},pet,quiz,core}}catch{}
+quiz=initQuiz(core);quiz.render();pet=initPet(core,quiz);initSettingsTabs();setTimeout(()=>loadFacts(),1200);musicDeck=initMusicDeck({toast,stopOtherAudio:()=>{try{stopAudio()}catch{}}});try{if(localStorage.getItem('dl-debug')==='1')window.__dl={get app(){return app},pet,quiz,core}}catch{}
 applyBirthday({toast});scheduleBirthdayCheck({toast});
 cloud=initCloud(core);cloud.onState(()=>{if($('#settingsOverlay').classList.contains('show'))renderIdentity()});
 loadDurable().then(changed=>{if(changed){if(app.calibrated)closeOverlay('#calibrationOverlay');applyTheme(app.profile.theme||'krem',false);renderProgress();renderQuestion();quiz.render();pet?.reload()}else if(!localStorage.getItem(STORAGE)&&app.updatedAt){saveLocal(false)}else{durablePending=true;flushDurable()}let calFlag=null;try{calFlag=localStorage.getItem('dl-calibrated')}catch{}if(app.calibrated){try{localStorage.setItem('dl-calibrated','1')}catch{}if(!IS_STANDALONE_PREVIEW)pet?.ensure()}else if(!IS_STANDALONE_PREVIEW&&calFlag!=='1')openCalibration(false)});

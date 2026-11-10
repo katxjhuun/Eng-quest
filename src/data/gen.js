@@ -6,7 +6,15 @@
 // Kimlikler: "<konu>-g<numara>". Kalıp listesinin SONUNA ekle; sıra değişirse kayıtlı ilerleme başka soruya kayar.
 
 import { buildFacts } from './facts/engine.js';
-import { FACTS } from './facts/index.js';
+// Sözel konuların bilgi tabloları ayrı parça olarak (ilk açılıştan sonra) yüklenir
+export const FACT_CATS = ['bio', 'cog', 'tar', 'ilk', 'ehl', 'bil', 'mod', 'san', 'hay', 'fel'];
+let FACTS = null, factsP = null;
+const factsListeners = new Set();
+export function loadFacts() {
+  return factsP || (factsP = import('./facts/index.js').then(m => { FACTS = m.FACTS; factsListeners.forEach(f => { try { f(); } catch {} }); return true; }).catch(e => { factsP = null; console.warn('[facts]', e); return false; }));
+}
+export const onFactsLoaded = fn => { factsListeners.add(fn); if (FACTS) fn(); };
+export const factsPending = cat => FACT_CATS.includes(cat) && !FACTS;
 
 const TARGET = 1000;
 
@@ -136,7 +144,7 @@ const cache = {};
 // Bir konunun üretilen soruları: zorluk sırasıyla dengeli dağılır, tekrar eden soru metni atlanır.
 export function generated(cat) {
   if (cache[cat]) return cache[cat];
-  if (FACTS[cat]) return (cache[cat] = buildFacts(cat, FACTS[cat], TARGET));
+  if (FACT_CATS.includes(cat)) { if (!FACTS) { loadFacts(); return []; } return (cache[cat] = buildFacts(cat, FACTS[cat], TARGET)); }
   const T = TEMPLATES[cat]; if (!T) return (cache[cat] = []);
   const out = [], seen = new Set();
   for (let i = 0; out.length < TARGET && i < TARGET * 8; i++) {
@@ -154,4 +162,4 @@ export function generated(cat) {
   }
   return (cache[cat] = out);
 }
-export const GENERATED_CATS = [...Object.keys(TEMPLATES), ...Object.keys(FACTS)];
+export const GENERATED_CATS = [...Object.keys(TEMPLATES), ...FACT_CATS];

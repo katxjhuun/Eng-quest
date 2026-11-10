@@ -4,9 +4,6 @@ import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { petSVG, homeSVG, stageName, PET_SPECIES, randomCoat, shinyFilter } from './pet-art.js';
 import { Puppet } from './pets/figure.js';
-import { initBattleUI } from './battle/ui.js';
-import { MONSTERS, monsterSVG } from './battle/monsters.js';
-const monsterArt = id => monsterSVG(id), monsterName = id => MONSTERS[id]?.name || id;
 import { TYPES, SPECIES_TYPE, ROLES, SIGNATURE, SHINY, SHINY_CHANCE, HINT_VOICE, loreParts, randomRole, battleStats, BEATS } from './pets/codex.js';
 import { CAT_XP_STEP, catLabel } from './quiz.js';
 import { SUBJECT_ORDER } from './data/subjects.js';
@@ -428,8 +425,8 @@ export function initPet(core, quiz) {
     if (force) artKey = '';
     const key = `${mood}|${baseNow()}`;
     if (key !== artKey) { artKey = key; sprite.dataset.mood = mood; sprite.dataset.pose = baseNow(); }
-    const f = p.shiny ? shinyFilter(p.species) : '';
-    if (sprite.style.filter !== f) { sprite.style.filter = f; actorEl.classList.toggle('is-shiny', !!p.shiny); }
+    const sk = p.shiny ? p.species : '';
+    if (sprite._shiny !== sk) { sprite._shiny = sk; sprite.style.filter = sk ? shinyFilter(sk) : ''; actorEl.classList.toggle('is-shiny', !!sk); }
   }
   function statusText(p) {
     if (!p.alive) return '🕊️ Öldü';
@@ -548,18 +545,31 @@ export function initPet(core, quiz) {
   const pos = { x: -200, y: -200 }, target = { x: 0, y: 0 };
   let awayShown = false;
   let mode = 'home', moving = false, speed = 70, facing = 1, nextThink = 0, lastTs = 0, onArrive = null, visible = false;
-  function homeAnchor() {
+  // performans: yuva konumu her karede ölçülmez (zorunlu yerleşim hesabı), kısa aralıklarla ya da kaydırma/boyut değişince yenilenir
+  let anchorAt = 0, anchorCache = { x: -300, y: -300 };
+  const dirtyAnchor = () => { anchorAt = 0; };
+  window.addEventListener('resize', dirtyAnchor, { passive: true });
+  function homeAnchor(force = false) {
+    const t = performance.now();
+    if (!force && t - anchorAt < 250) return anchorCache;
+    anchorAt = t;
     const r = $('#petHab')?.getBoundingClientRect();
-    if (!r || !r.width) return { x: -300, y: -300 };
-    return { x: r.left + SX() + r.width / 2 - W / 2, y: r.bottom + SY() - H - 6 };
+    anchorCache = (!r || !r.width) ? { x: -300, y: -300 } : { x: r.left + SX() + r.width / 2 - W / 2, y: r.bottom + SY() - H - 6 };
+    return anchorCache;
   }
+  // yuva ekranda değilse ve pet evdeyse çizim durdurulur
+  let habOnScreen = true;
+  if ('IntersectionObserver' in window) new IntersectionObserver(es => { habOnScreen = es[es.length - 1].isIntersecting; dirtyAnchor(); }, { rootMargin: '80px' }).observe(home);
   // pos sayfa koordinatıdır; ekran (viewport) hesapları için dönüştürücüler
   const vy = y => y - SY();
   function inView(m = 0) { const y = vy(pos.y); return y + H > -m && y < window.innerHeight + m; }
   function pageH() { return layerEl.offsetHeight || document.documentElement.scrollHeight; }
   function habVisible() { const r = $('#petHab')?.getBoundingClientRect(); return r && r.bottom > 40 && r.top < window.innerHeight - 40 && !home.classList.contains('hidden'); }
+  let blockedAt = 0, blockedVal = false;
   function blocked() {
-    return !!document.querySelector('.overlay.show, .pet-overlay.show') || document.visibilityState === 'hidden';
+    const t = performance.now();
+    if (t - blockedAt > 200) { blockedAt = t; blockedVal = !!document.querySelector('.overlay.show, .pet-overlay.show, .bt-overlay.show') || document.visibilityState === 'hidden'; }
+    return blockedVal;
   }
   function busyRects() {
     return [...document.querySelectorAll('button, input, select, textarea, .quiz-opt, .slot-tray, .level-card, .cat-tab')]
@@ -723,20 +733,24 @@ export function initPet(core, quiz) {
     puppet.face(facing);
     // pencere küçülürse ekranda kalsın
     if (mode === 'roam' && !moving) { pos.x = clamp(pos.x, 0, window.innerWidth - W); pos.y = clamp(pos.y, 40, pageH() - H - 6); }
-    actorEl.style.transform = `translate3d(${pos.x.toFixed(1)}px, ${pos.y.toFixed(1)}px, 0)`;
-    actorEl.style.setProperty('--face', facing);
+    const tr = `translate3d(${pos.x.toFixed(1)}px, ${pos.y.toFixed(1)}px, 0)`;
+    if (tr !== lastTr) { lastTr = tr; actorEl.style.transform = tr; }
+    if (facing !== lastFace) { lastFace = facing; actorEl.style.setProperty('--face', facing); }
     const walking = moving && mode !== 'home';
     if (mode === 'exit' || mode === 'walkHome') actorEl.classList.add('leaving'); else actorEl.classList.remove('leaving');
     if (walking) { if (!sprite.classList.contains('a-walk') && !sprite.classList.contains('a-flee')) sprite.className = 'pet-sprite a-walk'; }
     else if (animCls && now > animUntil) { animCls = ''; sprite.className = 'pet-sprite ' + (isSleeping() ? 'a-sleep' : 'a-idle'); }
     else if (!animCls && !/a-(idle|sleep)/.test(sprite.className)) sprite.className = 'pet-sprite ' + (isSleeping() ? 'a-sleep' : 'a-idle');
-    actorEl.classList.toggle('at-home', mode === 'home');
+    if ((mode === 'home') !== lastHomeCls) { lastHomeCls = mode === 'home'; actorEl.classList.toggle('at-home', lastHomeCls); }
     const away = mode !== 'home';
     if (away !== awayShown) { awayShown = away; $('#petAway').classList.toggle('show', away); }
-    drawSprite();
-    puppet.tick(dt);
+    // evde ve ekran dışındaysa çizme; dururken 30 fps yeter (yürürken/oynarken tam hız)
+    const offscreen = mode === 'home' && !habOnScreen;
+    accDt += dt; skipFrame = !skipFrame;
+    if (!offscreen && (moving || puppet.playing || !skipFrame)) { drawSprite(); puppet.tick(accDt); accDt = 0; }
     if (now > nextThink && !moving && p) think(now);
   }
+  let lastTr = '', lastFace = null, lastHomeCls = null, accDt = 0, skipFrame = false;
 
   // ---------- etkileşim ----------
   let pressTimer = 0, pressed = false;
@@ -1103,7 +1117,18 @@ export function initPet(core, quiz) {
   });
 
   // ---------- savaş ve evrim kapısındaki boss ----------
-  const battle = initBattleUI({ core, petSVG, getPet: P, onChange: (ev, d) => { if (ev === 'battle-end') { renderPanel(); publishCard(); } } });
+  // savaş modülü ilk kullanımda yüklenir (ayrı parça)
+  let battleMod = null;
+  async function getBattle() {
+    if (!battleMod) {
+      const m = await import('./battle/ui.js');
+      battleMod = m.initBattleUI({ core, petSVG, getPet: P, onChange: (ev) => { if (ev === 'battle-end') { renderPanel(); publishCard(); } } });
+      battleMod.monsters = m.monsterApi;
+    }
+    return battleMod;
+  }
+  setTimeout(() => import('./battle/ui.js').catch(() => {}), 9000); // çevrimdışı da açılabilsin diye önceden önbelleğe al
+  const battle = { openArena: () => getBattle().then(b => b.openArena()), boss: st => getBattle().then(b => b.boss(st)) };
   // arena kartı: arkadaşlar petini ödünç alabilsin, oyuncular meydan okuyabilsin
   function publishCard() {
     if (!core.arena?.ready?.()) return;
@@ -1119,8 +1144,8 @@ export function initPet(core, quiz) {
     if (p.bossNeedQ) { if (force) core.toast('Önce bir soruyu doğru cevapla, sonra boss’a yeniden meydan okuyabilirsin.'); return; }
     if (evolving || deathPending || document.querySelector('.pet-overlay.show, .overlay.show, .bt-overlay.show')) { if (!force) return setTimeout(() => bossPrompt(), 4000); }
     const stageTo = Math.min(6, p.stage + 1), id = ['bossSayfa', 'bossSaat', 'bossSinav', 'bossGolge', 'bossBilinmez', 'bossSonsuz'][Math.min(5, stageTo - 1)];
-    $('#bossArt').innerHTML = monsterArt(id);
-    $('#bossTitle').textContent = `${monsterName(id)} yolunu kesti!`;
+    getBattle().then(b => { $('#bossArt').innerHTML = b.monsters.svg(id); $('#bossTitle').textContent = `${b.monsters.name(id)} yolunu kesti!`; });
+    $('#bossTitle').textContent = 'Bir boss yolunu kesti!';
     $('#bossLead').textContent = `${p.name} seviye atladı; evrimleşmek için bu bossu yenmesi gerekiyor. ${p.stage < 3 ? 'Kaybedersen bir soruyu doğru cevaplayıp yeniden deneyebilirsin.' : 'Dikkat: bu evrede kaybedersen kazandığın seviyenin XP’si sıfırlanır.'} Takımını Arena’dan kurabilirsin.`;
     bossEl.classList.add('show');
   }

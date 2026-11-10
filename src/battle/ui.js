@@ -14,6 +14,8 @@ const MAX_ROSTER = 12;
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
+export const monsterApi = { svg: id => monsterSVG(id), name: id => MONSTERS[id]?.name || id };
+
 export function initBattleUI({ core, petSVG, getPet, onChange }) {
   const $ = s => document.querySelector(s);
   const esc = core.esc;

@@ -1,6 +1,6 @@
 // dam-la — konu sekmeleri, öğrenme biçimi döngüsü, pop quiz (çoktan seçmeli / yazarak / dinleyerek / karışık)
 import { SUBJECTS, SUBJECT_ORDER } from './data/subjects.js';
-import { generated } from './data/gen.js';
+import { generated, factsPending, loadFacts, onFactsLoaded } from './data/gen.js';
 import { DEPARTMENTS, DEPARTMENT_ORDER } from './data/departments.js';
 
 export const MODES = [
@@ -119,15 +119,18 @@ export function initQuiz(core) {
 
   // ---- soru havuzları ----
   const subjectCache = {};
+  onFactsLoaded(() => { for (const k of Object.keys(subjectCache)) delete subjectCache[k]; try { render(); } catch {} });
   function subjectItems(cat) {
     // elle yazılmış sorular (6. alan zorluk, yoksa 2) + kalıptan üretilen sorular (zorluk 1–5)
     const mk = (id, it, d) => ({ id, cat, d, q: it[0], a: it[1], opts: it[2], exp: it[3], src: it[4],
       lang: 'tr', optLang: 'tr', speak: { text: it[0], lang: 'tr' }, typeable: typeable(it[1]) });
-    if (!subjectCache[cat]) subjectCache[cat] = [
+    if (subjectCache[cat]) return subjectCache[cat];
+    const list = [
       ...SUBJECTS[cat].items.map((it, i) => mk(`${cat}-${i}`, it, it[5] || 2)),
       ...generated(cat).map(g => mk(`${cat}-g${g.n}`, g.row, g.d)),
     ];
-    return subjectCache[cat];
+    if (!factsPending(cat)) subjectCache[cat] = list; // tablolar yüklenmeden önbelleğe alma
+    return list;
   }
   let enCache = null;
   const LV = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
@@ -254,6 +257,8 @@ export function initQuiz(core) {
     const mode = A().profile.mode;
     if (cat === 'en' && mode === 'type' && c && !c.legacy && !c.done) c = q.cur[cat] = { legacy: true };
     if (cat === 'en' && mode !== 'type' && mode !== 'mix' && c?.legacy) c = q.cur[cat] = newCur(cat);
+    // bilgi tabloları henüz yüklenmediyse yarım kalan soruyu silme; yüklenince kaldığı yerden sürer
+    if (c && !c.legacy && factsPending(cat) && /-g/.test(c.id || '') && !findItem(c.id)) return c;
     if (!c || (!c.legacy && !findItem(c.id))) c = q.cur[cat] = newCur(cat);
     return c;
   }
@@ -327,6 +332,7 @@ export function initQuiz(core) {
     if (c.legacy) { showLegacy(true); core.renderLegacy(); core.renderProgress(); notifyLive(null); return; }
     showLegacy(false);
     const item = findItem(c.id), q = Q();
+    if (!item) { $('#qzTitle').textContent = 'Sorular yükleniyor…'; $('#qzOptions').innerHTML = ''; loadFacts(); return; }
     if (shownId !== c.id && !c.done) { shownId = c.id; setTimeout(() => window.dispatchEvent(new CustomEvent('dl:question', { detail: { id: c.id, cat: item.cat, style: c.style } })), 0); }
     const catOfItem = item.cat, catInfo = CATS.find(x => x.id === catOfItem);
     const m = MODES.find(x => x.id === c.style);
