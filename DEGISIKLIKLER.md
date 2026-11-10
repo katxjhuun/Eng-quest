@@ -1,4 +1,4 @@
-# dam-la 2.8.0 — Pet savaşları, ansiklopedi, daha hafif uygulama
+# dam-la 2.8.0 — Pet savaşları, mini oyunlar, ansiklopedi
 
 Uzaktan güncellemeyle gelir.
 - **Her konuda 5000 soru:** 13 konunun her biri 5000 soruya çıktı. Yeni soru türleri: doğru/yanlış eşleştirme (ör. ülke — başkent) ve “hangisi diğerlerinden farklıdır?”. Kimyaya element, bileşik formülü, asit-baz, pH, laboratuvar malzemesi, ayırma yöntemleri ve bilim insanları tabloları eklendi.
@@ -11,6 +11,10 @@ Uzaktan güncellemeyle gelir.
 - **Nadir (parlak) form:** evrimde ~%8 şansla; farklı renk, parıltı, ek bonuslar.
 - **İpucu balonları:** petler kendi bakışlarından, cevabı vermeden ipucu verir.
 - **Pet seçme ekranı** sığacak şekilde yeniden düzenlendi; **Ayarlar sekmeli** oldu.
+- **Mini oyunlar (🎮):** 8 oyun, her biri 1000 bölüm. Zorluk ayarı yok; orta zorlukta başlar, bölüm ilerledikçe zorlaşır. Kelime oyunları Türkçe ve İngilizce oynanır, ilerleme dil başına ayrı tutulur.
+  - **Wordle:** 5 → 7 harf, kelimeler giderek nadirleşir. **Stack:** 16 kelime 4 gizli tema → 24 kelime 6 tema. **Uniwords:** 6 → 8 harfle çengel bulmaca doldurma. **Cross Up:** bota karşı sırayla harf yerleştirme; doğru harf ve çözülen kelime ayrı puan.
+  - **Trace:** 641 tarihî olay; kart sayısı artar, olaylar giderek aynı döneme sıkışır. **Sudoku**, **Tetris** (hız ve hazır çöp satırlar artar), **Şeker** (tamamen rastgele bölümler; puan, toplama, jöle hedefleri).
+  - Kelime listeleri: an-array-of-english-words ve an-array-of-turkish-words (MIT); yaygınlık sırası hermitdave/FrequencyWords (CC BY-SA 4.0).
 - **Performans:** ilk açılışta yüklenen kod yarıya indi (Firebase, savaş ekranı ve soru tabloları gerektiğinde yüklenir); pet animasyonu dururken daha az işlemci kullanır, ekran dışındayken çizilmez.
 
 ---
