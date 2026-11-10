@@ -10,6 +10,7 @@ Uzaktan güncellemeyle gelir.
 - **Geniş yuva, ince barlar:** can, açlık ve enerji tek satırda küçük barlar; yuva alanı tam genişlikte. Flow düğmesi ismin yanına taşındı.
 - **Evrimler sürpriz:** seçim ekranı ve bilgi sayfası gelecek formları göstermez.
 - **Kutucuklu sorular:** uzun cevaplarda kelimeler bölünmeden alt satıra geçer; her kelimenin altında ince bir çizgi, kelimeler arasında boşluk var.
+- **Matematik, Fizik, Kimya: 1000’er soru, zorluk geçişli.** Sorular MEB ortaöğretim öğretim programlarının kazanımları ve OpenStax (Rice Üniversitesi, açık lisanslı) ders kitaplarının standart problem türleri üzerine kurulu kalıplardan üretilir; cevaplar hesaplandığı için hatasızdır, yanlış şıklar öğrencilerin tipik hatalarından gelir ve her sorunun adım adım açıklaması ile kaynağı var. 5 zorluk kademesi: konunun seviyesi her 2 seviyede bir kademe yükselir; sorular çoğunlukla bulunduğun kademeden, bazen bir alttan (pekiştirme), ara sıra bir üstten (meydan okuma) gelir. Kayıtlı ilerleme korunur.
 - **AI sesi:** seçtiğin ses hemen kaydedilir ve "Sesi dene" seçili sesle okur (önceden ses listesi yenilenince seçim eski sese dönüyordu). AI sesi çalışmazsa sessizce cihaz sesine geçmek yerine haber verir. Telefonda ses adları kısaldı (ör. "Heart · US ♀").
 
 ---

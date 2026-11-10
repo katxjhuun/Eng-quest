@@ -1,5 +1,6 @@
 // dam-la — konu sekmeleri, öğrenme biçimi döngüsü, pop quiz (çoktan seçmeli / yazarak / dinleyerek / karışık)
 import { SUBJECTS, SUBJECT_ORDER } from './data/subjects.js';
+import { generated } from './data/gen.js';
 import { DEPARTMENTS, DEPARTMENT_ORDER } from './data/departments.js';
 
 export const MODES = [
@@ -119,10 +120,13 @@ export function initQuiz(core) {
   // ---- soru havuzları ----
   const subjectCache = {};
   function subjectItems(cat) {
-    if (!subjectCache[cat]) subjectCache[cat] = SUBJECTS[cat].items.map((it, i) => ({
-      id: `${cat}-${i}`, cat, q: it[0], a: it[1], opts: it[2], exp: it[3], src: it[4],
-      lang: 'tr', optLang: 'tr', speak: { text: it[0], lang: 'tr' }, typeable: typeable(it[1]),
-    }));
+    // elle yazılmış sorular (6. alan zorluk, yoksa 2) + kalıptan üretilen sorular (zorluk 1–5)
+    const mk = (id, it, d) => ({ id, cat, d, q: it[0], a: it[1], opts: it[2], exp: it[3], src: it[4],
+      lang: 'tr', optLang: 'tr', speak: { text: it[0], lang: 'tr' }, typeable: typeable(it[1]) });
+    if (!subjectCache[cat]) subjectCache[cat] = [
+      ...SUBJECTS[cat].items.map((it, i) => mk(`${cat}-${i}`, it, it[5] || 2)),
+      ...generated(cat).map(g => mk(`${cat}-g${g.n}`, g.row, g.d)),
+    ];
     return subjectCache[cat];
   }
   let enCache = null;
@@ -196,8 +200,18 @@ export function initQuiz(core) {
   }
 
   // ---- seçim (aralıklı tekrar) ----
-  function pickFrom(pool) {
+  // Zorluk geçişi: konunun seviyesi yükseldikçe daha zor sorular gelir (her 2 seviyede bir kademe, en çok 5).
+  // Yeni sorular çoğunlukla bulunduğun kademeden, bazen bir alttan (pekiştirme) ve ara sıra bir üstten (meydan okuma) seçilir.
+  function tierFor(cat) { const lv = Math.floor(catXp(cat) / CAT_XP_STEP) + 1; return Math.min(5, 1 + Math.floor((lv - 1) / 2)); }
+  function pickFrom(pool, cat) {
     const q = Q(), now = Date.now(), recent = new Set(q.recent.slice(-6));
+    if (cat && SUBJECTS[cat] && pool.length > 60) {
+      const tier = tierFor(cat), roll = Math.random();
+      const want = roll < 0.15 ? Math.min(5, tier + 1) : roll < 0.4 ? Math.max(1, tier - 1) : tier;
+      const band = pool.filter(it => (it.d || 2) === want && !q.items[it.id] && !recent.has(it.id));
+      const dueAny = pool.some(it => q.items[it.id] && q.items[it.id].due <= now);
+      if (band.length && !(dueAny && Math.random() < 0.5)) return band[Math.floor(Math.random() * band.length)];
+    }
     const cand = pool.filter(it => !recent.has(it.id));
     const list = cand.length ? cand : pool;
     const due = list.filter(it => q.items[it.id] && q.items[it.id].due <= now).sort((x, y) => q.items[x.id].due - q.items[y.id].due);
@@ -216,7 +230,7 @@ export function initQuiz(core) {
       const usePool = Math.random() < 0.5 ? vocabPool() : englishItems();
       return pickFrom(usePool.length ? usePool : poolFor('en'));
     }
-    return pickFrom(poolFor(cat));
+    return pickFrom(poolFor(cat), cat);
   }
   function resolveStyle(item, mode) {
     if (mode !== 'mix') return mode === 'type' && !item.typeable ? 'quiz' : mode;
