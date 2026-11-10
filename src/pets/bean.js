@@ -1,7 +1,7 @@
 // Civciv, bitki ve damla (5. tür): öne bakan yuvarlak gövdeli karakterler.
 // Aynı düz renk dili: çizgisiz şekiller, yumuşak tonlar, büyük ifadeli gözler.
 // Gövde zeminde (60, 108) oturur; yaslanma ve ezilip uzama gövdenin altından yapılır, ayaklar yerde kalır.
-import { K, EASE, seg, bump, blend, clamp, lerp, rad, r1, P, smoothPath, shade, wob, TAU } from './anim.js';
+import { K, EASE, seg, bump, blend, clamp, lerp, rad, r1, P, smoothPath, shade, mix, wob, TAU } from './anim.js';
 import { op, eyes, mouth, blush, MOOD_EYE } from './face.js';
 
 export const G = 108;
@@ -9,25 +9,34 @@ const F_ = c => ({ fill: c });
 const S_ = (c, w) => ({ fill: 'none', stroke: c, 'stroke-width': r1(w), 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
 
 // ---------------------------------------------------------------- formlar
-const ORANGE = '#F2994A';
+const ORANGE = '#C98A57';
 const CHICK = [
-  { name: 'egg', w: 44, h: 46, body: '#FFD54A', belly: '#FFE58C', shell: true, feet: ORANGE, eyeY: 0.6, eyeGap: 7.2, eyeR: 2.7, beak: 0.8, blush: 0.5, arms: null, top: 'cap' },
-  { name: 'chick', w: 52, h: 50, body: '#FFD54A', belly: '#FFE58C', feet: ORANGE, eyeY: 0.56, eyeGap: 8.8, eyeR: 3.1, beak: 1, blush: 0.55, arms: 'wing', armCol: '#F5C232', top: 'tuft' },
-  { name: 'chubby', w: 60, h: 54, body: '#FFD54A', belly: '#FFE58C', feet: ORANGE, eyeY: 0.56, eyeGap: 9.6, eyeR: 3.2, beak: 1.05, blush: 0.55, arms: 'wing', armCol: '#F5C232', top: 'tuft2' },
-  { name: 'fledge', w: 56, h: 56, body: '#FFD54A', belly: '#FFE58C', feet: ORANGE, eyeY: 0.57, eyeGap: 9.2, eyeR: 3.1, beak: 1, blush: 0.5, arms: 'wing', armCol: '#F5C232', armTip: '#3FA3B5', top: 'crest', crest: ['#2F8F9A', '#3FA3B5'], back: 'fan', fanN: 5, fanR: 42, fanCol: '#3BA55C' },
-  { name: 'peachick', w: 40, h: 50, legH: 8, body: '#4A86DA', belly: '#6A9FE6', feet: '#8C8C98', eyeFam: 'ring', eyeY: 0.6, eyeGap: 7, eyeR: 3, beak: 0.85, arms: 'wing', armCol: '#C29858', top: 'crest', crest: ['#2E6FB8', '#3FA3B5'], back: 'fan', fanN: 7, fanR: 38, fanCol: '#3BA55C' },
-  { name: 'peacock', w: 42, h: 56, legH: 9, body: '#2E6FD1', belly: '#4A8BE0', feet: '#8C8C98', eyeFam: 'ring', eyeY: 0.62, eyeGap: 7.2, eyeR: 3, beak: 0.9, arms: 'wing', armCol: '#B88A4A', top: 'crest', crest: ['#1E5DB8', '#2F9FC8'], back: 'fan', fanN: 11, fanR: 46, fanCol: '#3BA55C' },
+  { name: 'egg', w: 44, h: 46, body: '#E4CD92', belly: '#EEDFB8', shell: true, feet: ORANGE, eyeY: 0.6, eyeGap: 7.2, eyeR: 3.1, beak: 0.8, arms: null, top: 'cap' },
+  { name: 'chick', w: 52, h: 50, body: '#E4CD92', belly: '#EEDFB8', feet: ORANGE, eyeY: 0.56, eyeGap: 8.6, eyeR: 3.3, beak: 1, arms: 'wing', armCol: '#D6BC7A', top: 'tuft', fluff: true },
+  { name: 'chubby', w: 60, h: 54, body: '#E2C98A', belly: '#EDDDB3', feet: ORANGE, eyeY: 0.56, eyeGap: 9.4, eyeR: 3.4, beak: 1.05, arms: 'wing', armCol: '#D3B873', top: 'tuft2', fluff: true },
+  { name: 'fledge', w: 56, h: 56, body: '#DCC488', belly: '#EAD9B0', feet: ORANGE, eyeY: 0.57, eyeGap: 9.2, eyeR: 3.3, beak: 1, arms: 'wing', armCol: '#CDB273', armTip: '#5E8E96', top: 'crest', crest: ['#4E7C80', '#5E8E96'], back: 'fan', fanN: 5, fanR: 42, fanCol: '#5E8466' },
+  { name: 'peachick', w: 40, h: 50, legH: 8, body: '#5F7FA2', belly: '#7893B2', feet: '#8E8A90', eyeFam: 'ring', eyeY: 0.6, eyeGap: 7, eyeR: 2.7, beak: 0.85, arms: 'wing', armCol: '#A88B62', top: 'crest', crest: ['#4E6C90', '#638E9E'], back: 'fan', fanN: 7, fanR: 38, fanCol: '#5E8466' },
+  { name: 'peacock', w: 42, h: 56, legH: 9, body: '#4E6F98', belly: '#6886AA', feet: '#8E8A90', eyeFam: 'ring', eyeY: 0.62, eyeGap: 7.2, eyeR: 2.7, beak: 0.9, arms: 'wing', armCol: '#9E8058', top: 'crest', crest: ['#435F86', '#5D8A9E'], back: 'fan', fanN: 11, fanR: 46, fanCol: '#5E8466' },
 ];
 const PLANT = [
-  { name: 'seed', w: 36, h: 42, body: '#B07A4A', belly: '#C9935F', feet: null, hopper: true, mound: true, eyeFam: 'ring', eyeY: 0.48, eyeGap: 6.6, eyeR: 2.7, mouthCol: '#5a3a1e', top: 'sprout0' },
-  { name: 'sprout', w: 46, h: 52, body: '#EFE7C8', belly: '#F7F1DC', feet: '#D6CCA6', foot: 'stub', eyeY: 0.48, eyeGap: 7.6, eyeR: 2.6, blush: 0.6, arms: 'stub', armCol: '#E3D9B4', top: 'sprout', smile: true },
-  { name: 'daisy', w: 46, h: 50, body: '#D6E8B4', belly: '#E6F1CF', feet: '#B9CF8E', foot: 'stub', eyeY: 0.5, eyeGap: 7.8, eyeR: 2.7, blush: 0.5, arms: 'leaf', armCol: '#7DB872', top: 'daisy', smile: true },
-  { name: 'tulip', w: 46, h: 52, body: '#AED696', belly: '#C4E2B0', feet: '#8FBF78', foot: 'stub', eyeY: 0.5, eyeGap: 7.8, eyeR: 2.7, blush: 0.5, arms: 'leaf', armCol: '#5C9A5A', top: 'tulip', smile: true },
-  { name: 'cactus', w: 40, h: 60, body: '#6BAF6E', belly: '#7CBD7E', feet: '#5A9A5D', foot: 'stub', ribs: true, eyeY: 0.62, eyeGap: 7, eyeR: 2.7, blush: 0.45, arms: 'cactus', armCol: '#6BAF6E', top: 'bloom', smile: true },
-  { name: 'tree', w: 44, h: 46, body: '#9A6B44', belly: '#A97A52', feet: '#7E5434', foot: 'root', bark: true, eyeFam: 'ring', eyeY: 0.48, eyeGap: 7.4, eyeR: 2.8, mouthCol: '#4a2c14', arms: 'branch', armCol: '#8A5E3A', top: 'crown', crownR: 30 },
+  { name: 'seed', w: 36, h: 42, body: '#9C7552', belly: '#AA8460', feet: null, hopper: true, mound: true, eyeFam: 'ring', eyeY: 0.48, eyeGap: 6.6, eyeR: 2.4, mouthCol: '#5a3a1e', top: 'sprout0' },
+  { name: 'sprout', w: 46, h: 52, body: '#DED6BE', belly: '#E8E1CD', feet: '#C7BE9F', foot: 'stub', eyeY: 0.48, eyeGap: 7.6, eyeR: 2.4, arms: 'stub', armCol: '#D1C7A8', top: 'sprout' },
+  { name: 'daisy', w: 46, h: 50, body: '#C3CFA9', belly: '#D2DABD', feet: '#A6B486', foot: 'stub', eyeY: 0.5, eyeGap: 7.8, eyeR: 2.5, arms: 'leaf', armCol: '#86A070', top: 'daisy' },
+  { name: 'tulip', w: 46, h: 52, body: '#A9BF92', belly: '#BACBA6', feet: '#8CA476', foot: 'stub', eyeY: 0.5, eyeGap: 7.8, eyeR: 2.5, arms: 'leaf', armCol: '#6E8A5E', top: 'tulip' },
+  { name: 'cactus', w: 40, h: 60, body: '#7E9A72', belly: '#89A57D', feet: '#6C8762', foot: 'stub', ribs: true, eyeY: 0.62, eyeGap: 7, eyeR: 2.5, arms: 'cactus', armCol: '#7E9A72', top: 'bloom' },
+  { name: 'tree', w: 44, h: 46, body: '#86684E', belly: '#937458', feet: '#70553F', foot: 'root', bark: true, eyeFam: 'ring', eyeY: 0.48, eyeGap: 7.4, eyeR: 2.5, mouthCol: '#4a2c14', arms: 'branch', armCol: '#7A5D44', top: 'crown', crownR: 30 },
 ];
-const TABLE = { chick: CHICK, plant: PLANT };
-const FOOD = { chick: 'seed', plant: 'water' };
+// Baykuş: gece onun gündüzü. Öne bakan gövde, açık renkli yüz diski, iri amber gözler.
+const OWL = [
+  { name: 'owlet', w: 46, h: 48, body: '#CFC7BB', belly: '#E0D9CE', disc: '#E6E0D6', feet: '#A7987C', eyeFam: 'owl', eyeY: 0.6, eyeGap: 8, eyeR: 4.2, iris: '#C9A24A', beak: 0.62, beakCol: '#A8987A', arms: 'wing', armCol: '#BDB4A8', down: true },
+  { name: 'young', w: 48, h: 52, body: '#A8957F', belly: '#C9B9A2', disc: '#D6CABA', feet: '#A28E6C', eyeFam: 'owl', eyeY: 0.6, eyeGap: 8.4, eyeR: 4.3, iris: '#C9A24A', beak: 0.66, beakCol: '#9E8C70', arms: 'wing', armCol: '#8F7C66', chev: true },
+  { name: 'scops', w: 44, h: 54, body: '#958670', belly: '#B6A790', disc: '#BDAF98', feet: '#9C8A6A', eyeFam: 'owl', eyeY: 0.6, eyeGap: 7.6, eyeR: 4, iris: '#D0A848', beak: 0.62, beakCol: '#857660', arms: 'wing', armCol: '#7C6E5C', chev: true, top: 'tufts', tuft: 0.7 },
+  { name: 'barn', w: 48, h: 58, body: '#C2A07A', belly: '#ECE3D3', disc: '#F0E8DC', discHeart: true, feet: '#B2A288', eyeFam: 'owl', eyeY: 0.62, eyeGap: 7.6, eyeR: 3.6, iris: '#2A2224', rimCol: '#3a3030', beak: 0.6, beakCol: '#D8C8B2', arms: 'wing', armCol: '#AE8C68', dots: true },
+  { name: 'eagle', w: 54, h: 62, body: '#836A50', belly: '#B39A78', disc: '#A08668', feet: '#9A8564', eyeFam: 'owl', eyeY: 0.62, eyeGap: 9.2, eyeR: 4.6, iris: '#D4843A', beak: 0.72, beakCol: '#4A3E36', arms: 'wing', armCol: '#6E5844', chev: true, top: 'tufts', tuft: 1.25 },
+  { name: 'warden', w: 56, h: 64, body: '#5A5763', belly: '#7A7682', disc: '#8E8A96', feet: '#7E786E', eyeFam: 'owl', eyeY: 0.62, eyeGap: 9.4, eyeR: 4.8, iris: '#D9B45A', glowEye: true, beak: 0.72, beakCol: '#CFC4A8', arms: 'wing', armCol: '#4A4752', chev: true, top: 'tufts', tuft: 1 },
+];
+const TABLE = { chick: CHICK, plant: PLANT, owl: OWL };
+const FOOD = { chick: 'seed', plant: 'water', owl: 'mouse' };
 
 export function form(kind, stage) {
   const f = (TABLE[kind] || CHICK)[clamp(stage | 0, 0, 5)];
@@ -39,8 +48,9 @@ export const food = F => F.food;
 export function colors(F) {
   const ring = F.eyeFam === 'ring';
   return {
-    b: F.body, white: F.glow || '#FFFFFF', pupil: ring ? '#16131a' : '#2b2230', line: ring ? (F.glow || '#FFFFFF') : '#2b2230', lid: F.body,
-    mouth: '#5a2a34', beak: ORANGE, beak2: '#D9773A', smile: !!F.smile, smileLine: F.mouthCol || '#3a2a30',
+    b: F.body, white: F.glow || '#EFE7DA', pupil: '#2a2428', line: ring ? '#EFE7DA' : '#2a2428', lid: F.body,
+    iris: F.iris || (ring ? '#D8CDB8' : null), rimCol: F.rimCol || (F.kind === 'owl' ? shade(F.body, -0.55) : undefined), lidLine: ring || F.kind !== 'plant' ? null : shade(F.body, -0.38), glint: false,
+    mouth: '#4a2a30', beak: F.beakCol || ORANGE, beak2: shade(F.beakCol || ORANGE, -0.16), smile: false, smileLine: F.mouthCol || '#3a2a30',
   };
 }
 
@@ -317,6 +327,24 @@ export const CLIPS = {
     p.spin = Math.cos(u * TAU * 2 * env); p.eye = 'happy';
     return p;
   } },
+  // baykuş: kahve — kanadıyla fincanı tutar, yudumlar, kısa bir titreme, sonra yine yorgun (kısır döngü)
+  coffee: { dur: 4, f: (u, c) => {
+    const p = { ...c.B.stand };
+    const hold = K(u, [[0, 0], [0.12, 1, 'io'], [0.82, 1], [1, 0]]);
+    const sip = bump(u, 0.25, 0.5);
+    p.aR = 8 + 70 * hold; p.lean = -3 * sip; p.faceY = -1.5 * sip;
+    const jit = seg(u, 0.52, 0.72) > 0 && u < 0.72;
+    p.rx = jit ? 0.7 * Math.sin(c.t * 70) : 0; p.eye = sip > 0.3 ? 'closed' : jit ? 'wide' : u > 0.75 ? 'half' : 'open';
+    p.props = hold > 0.05 ? [{ type: 'mug', x: 60 + c.F.w * 0.38, y: c.F.by - c.F.h * 0.38 - 3 * sip, a: -18 * sip, s: 0.75, steam: true, t: c.t, op: hold }] : null;
+    return p;
+  } },
+  // baykuş: başını neredeyse arkasına çevirir (yüz kayar), sonra döner
+  headturn: { dur: 2.4, f: (u, c) => {
+    const p = { ...c.B.stand };
+    const k = K(u, [[0, 0], [0.25, 1, 'io'], [0.6, 1], [0.85, 0, 'io']]);
+    p.faceX = 2.5 - 11 * k; p.look = -k; p.eye = k > 0.9 ? 'half' : 'open';
+    return p;
+  } },
   // ---- yetenekler (form başına)
   ability: { dur: 2.6, f: (u, c) => ability(u, c) },
 };
@@ -378,7 +406,16 @@ function ability(u, c) {
     // ulu ağaç: tacını sallar, yapraklar dökülür
     const env = bump(u, 0.05, 0.75), w = Math.sin(u * TAU * 6) * env;
     p.topA = 12 * w; p.lean = 4 * w; p.aL = 30 + 20 * w; p.aR = 30 - 20 * w; p.eye = env > 0.3 ? 'closed' : 'open';
-    p.props = [0, 1, 2, 3, 4].map(i => { const q = seg(u, 0.1 + i * 0.08, 0.7 + i * 0.06); return { type: 'leaf', x: 34 + i * 13 + 8 * Math.sin(q * 6 + i), y: F.by - F.h - 10 + q * 52, a: q * 300 + i * 40, s: 0.9, o: bump(q, 0, 1), c: i % 2 ? '#7DBB72' : '#F6C6D6' }; });
+    p.props = [0, 1, 2, 3, 4].map(i => { const q = seg(u, 0.1 + i * 0.08, 0.7 + i * 0.06); return { type: 'leaf', x: 34 + i * 13 + 8 * Math.sin(q * 6 + i), y: F.by - F.h - 10 + q * 52, a: q * 300 + i * 40, s: 0.9, o: bump(q, 0, 1), c: i % 2 ? '#86A178' : '#F6C6D6' }; });
+    return p;
+  }
+  if (F.kind === 'owl') {
+    // Dört Tur Önde: başını iki yana çevirip tarar, gözleri daralır, başının üstünde dört nokta sırayla belirir
+    const p = { ...B.stand, eye: 'focus' };
+    const scan = Math.sin(seg(u, 0.05, 0.55) * TAU * 2) * bump(u, 0.02, 0.6);
+    p.faceX = 2.5 + 7 * scan; p.look = scan; p.lean = 2 * scan;
+    const wide = bump(u, 0.62, 0.95); p.aL = 8 + 70 * wide; p.aR = 8 + 70 * wide; p.bsy = 1 + 0.04 * wide;
+    p.props = [0, 1, 2, 3].map(i => { const q = seg(u, 0.2 + i * 0.12, 0.3 + i * 0.12); return { type: 'spark', x: 60 - 15 + i * 10, y: F.by - F.h - 12 - 4 * Math.sin(i), s: 0.55 + 0.25 * q, o: q * (1 - seg(u, 0.92, 1)), c: '#D9B45A' }; });
     return p;
   }
   // damla: dalga — çömel, sıçra, inişte dalga ve kabarcıklar
@@ -391,8 +428,10 @@ function ability(u, c) {
 }
 
 export const ALIAS = (name, F) => ({
-  groom: F.kind === 'chick' ? 'mirror' : F.kind === 'plant' ? 'photo' : 'bubble',
+  groom: F.kind === 'chick' ? 'mirror' : F.kind === 'plant' ? 'photo' : F.kind === 'owl' ? 'headturn' : 'bubble',
+  ...(F.kind === 'owl' ? { look: 'headturn', petals: 'coffee', mirror: 'headturn', photo: 'coffee' } : {}),
   shake: 'wiggle', sniff: 'look', chase: 'spin', pounce: 'ability', dig: 'ability', home: 'sit',
+  bite: 'poked', knock: 'wiggle', cuddle: 'love', protect: 'focus', swat: 'poked', rub: 'love', guard: 'focus', snap: 'poked',
 }[name] || name);
 
 // ---------------------------------------------------------------- çizim
@@ -418,14 +457,19 @@ const armPath = (type, side) => {
   }
 };
 
+// bitkinin hâli: vigor 0 (yapraksız, kuru) … 1 (gür); dry kurumuşluk (renk kahveye kayar)
+const DRY = '#A28A5C';
 function topOps(F, p, x, y) {
-  const o = [], s = p.topS ?? 1;
-  const g = kids => op('top', 'g', { transform: `translate(${r1(x)} ${r1(y)}) rotate(${r1(p.topA || 0)}) scale(${r1(s * 100) / 100})` }, kids);
-  const leaf = (k, x0, y0, a, sc, c, v) => op(k, 'g', { transform: `translate(${x0} ${y0}) rotate(${a}) scale(${sc})` }, [op(k + 'a', 'path', { d: 'M0 0 C7 -10 22 -12 27 -4 C21 6 7 6 0 0 Z', ...F_(c) }), op(k + 'b', 'path', { d: 'M2 -0.5 C10 -3 18 -4.5 24 -4', ...S_(v, 1.3) })]);
+  const o = [], vg = F.kind === 'plant' ? clamp(p.vigor ?? 1, 0, 1) : 1, dry = F.kind === 'plant' ? clamp(p.dry || 0, 0, 1) : 0;
+  const lc = c => (dry > 0.02 ? mix(c, DRY, dry * 0.85) : c);
+  const droop = F.kind === 'plant' ? 24 * (1 - vg) : 0;
+  const s = (p.topS ?? 1) * (F.kind === 'plant' ? 0.72 + 0.28 * vg : 1);
+  const g = kids => op('top', 'g', { transform: `translate(${r1(x)} ${r1(y)}) rotate(${r1((p.topA || 0) + droop)}) scale(${r1(s * 100) / 100})` }, kids);
+  const leaf = (k, x0, y0, a, sc, c, v) => op(k, 'g', { transform: `translate(${x0} ${y0}) rotate(${a + droop * 0.8}) scale(${r1(sc * (0.55 + 0.45 * vg) * 100) / 100})`, opacity: vg < 0.12 ? 0 : null }, [op(k + 'a', 'path', { d: 'M0 0 C7 -10 22 -12 27 -4 C21 6 7 6 0 0 Z', ...F_(lc(c)) }), op(k + 'b', 'path', { d: 'M2 -0.5 C10 -3 18 -4.5 24 -4', ...S_(lc(v), 1.3) })]);
   switch (F.top) {
     case 'cap': {
       const up = p.capUp || 0, spin = p.capSpin || 0;
-      return [op('top', 'g', { transform: `translate(${r1(x)} ${r1(y - up + 6)}) rotate(${r1((p.topA || 0) * 0.6 - 10 + spin)})` }, [op('capS', 'path', { d: 'M-19 2 C-18 -10 -9 -17 1 -17 C11 -17 19 -10 20 1 L14 -3 L9 3 L3 -4 L-3 3 L-9 -4 L-14 2 Z', ...F_('#F6EBD8') }), op('capD', 'ellipse', { cx: -5, cy: -10, rx: 2.6, ry: 1.8, ...F_('#E9D9BF') })])];
+      return [op('top', 'g', { transform: `translate(${r1(x)} ${r1(y - up + 6)}) rotate(${r1((p.topA || 0) * 0.6 - 10 + spin)})` }, [op('capS', 'path', { d: 'M-19 2 C-18 -10 -9 -17 1 -17 C11 -17 19 -10 20 1 L14 -3 L9 3 L3 -4 L-3 3 L-9 -4 L-14 2 Z', ...F_('#EAE0CE') }), op('capD', 'ellipse', { cx: -5, cy: -10, rx: 2.6, ry: 1.8, ...F_('#DCCDB3') })])];
     }
     case 'tuft': return [g([op('tf', 'path', { d: 'M-4 2 C-7 -7 -1 -10 0 -4 C1 -11 8 -10 4 2 Z', ...F_(F.body) })])];
     case 'tuft2': return [g([op('tf', 'path', { d: 'M-8 3 C-12 -8 -4 -11 -3 -3 C-3 -14 7 -14 5 -3 C9 -11 17 -8 10 3 Z', ...F_(F.body) })])];
@@ -433,18 +477,31 @@ function topOps(F, p, x, y) {
       const [c1, c2] = F.crest;
       return [g([-7, 0, 7].flatMap((dx, i) => [op('cs' + i, 'path', { d: `M0 3 L${dx} ${-12 + Math.abs(dx) * 0.4}`, ...S_(c1, 1.7) }), op('cb' + i, 'ellipse', { cx: dx, cy: r1(-14 + Math.abs(dx) * 0.4), rx: 2.6, ry: 3.4, ...F_(c2) })]))];
     }
-    case 'sprout0': return [g([op('st', 'path', { d: 'M0 2 C-1 -4 1 -8 5 -10', ...S_('#5C9A5A', 2.2) }), leaf('lf', 4.5, -9.5, -38, 0.42, '#7DB872', '#4E8A4E')])];
-    case 'sprout': return [g([op('st', 'path', { d: 'M0 3 L0 -12', ...S_('#5C9A5A', 2.6) }), leaf('lf1', 0, -11, -152, 0.8, '#7DB872', '#4E8A4E'), leaf('lf2', 0, -11, -28, 0.9, '#8BC47F', '#4E8A4E')])];
+    case 'sprout0': return [g([op('st', 'path', { d: 'M0 2 C-1 -4 1 -8 5 -10', ...S_(lc('#6B8A5E'), 2.2) }), leaf('lf', 4.5, -9.5, -38, 0.42, '#8AA878', '#5E7A55')])];
+    case 'sprout': return [g([op('st', 'path', { d: 'M0 3 L0 -12', ...S_(lc('#6B8A5E'), 2.6) }), leaf('lf1', 0, -11, -152, 0.8, '#8AA878', '#5E7A55'), leaf('lf2', 0, -11, -28, 0.9, '#97B285', '#5E7A55')])];
     case 'daisy': {
-      const petals = Array.from({ length: 12 }, (_, i) => op('pt' + i, 'ellipse', { cx: 0, cy: -9, rx: 3.3, ry: 7.4, transform: `rotate(${i * 30} 0 -17)`, ...F_(i % 2 ? '#F4EEE2' : '#FFFDF7') }));
-      return [g([op('st', 'path', { d: 'M0 3 L0 -8', ...S_('#5C9A5A', 2.4) }), ...petals.map(pp => ({ ...pp, a: { ...pp.a, cy: -17 - 8 } })), op('ctr', 'circle', { cx: 0, cy: -17, r: 6.2, ...F_('#F2BE45') }), op('ctr2', 'circle', { cx: -1.4, cy: -18.4, r: 2, ...F_('#F7D06A') })])];
+      // yaprak sayısı hâline göre: solgunken taç yaprakları dökülür, kuruyken yalnızca göbek kalır
+      const n = Math.round(12 * clamp(vg * 1.35 - 0.2, 0, 1));
+      const petals = Array.from({ length: n }, (_, i) => op('pt' + i, 'ellipse', { cx: 0, cy: -9, rx: 3.3, ry: r1(7.4 * (0.75 + 0.25 * vg)), transform: `rotate(${i * 30 + (1 - vg) * 8 * Math.sin(i)} 0 -17)`, ...F_(lc(i % 2 ? '#E6DFCF' : '#F0EBDF')) }));
+      return [g([op('st', 'path', { d: 'M0 3 L0 -8', ...S_(lc('#6B8A5E'), 2.4) }), ...petals.map(pp => ({ ...pp, a: { ...pp.a, cy: -17 - 8 } })), op('ctr', 'circle', { cx: 0, cy: -17, r: 6.2, ...F_(lc('#CFA95A')) }), op('ctr2', 'circle', { cx: -1.4, cy: -18.4, r: 2, ...F_(lc('#DDBD72')) })])];
     }
-    case 'tulip': return [g([op('st', 'path', { d: 'M0 3 L0 -8', ...S_('#5C9A5A', 2.4) }), op('tb', 'path', { d: 'M-10 -12 C-11 -2 -6 4 0 4 C6 4 11 -2 10 -12 C7 -9 5 -9 3.5 -15 C2 -10 -2 -10 -3.5 -15 C-5 -9 -7 -9 -10 -12 Z', ...F_('#D9505E'), transform: 'translate(0 -10)' }), op('tf', 'path', { d: 'M-5 -12 C-5 -4 -3 2 0 4 C3 2 5 -4 5 -12 C3 -9 1 -11 0 -17 C-1 -11 -3 -9 -5 -12 Z', ...F_('#EC6B78'), transform: 'translate(0 -10)' })])];
-    case 'bloom': return [g([0, 72, 144, 216, 288].map((a, i) => op('bp' + i, 'ellipse', { cx: 0, cy: -6, rx: 3.4, ry: 5.6, transform: `rotate(${a} 0 -2)`, ...F_('#F28BB0') })).concat([op('bc', 'circle', { cx: 0, cy: -2, r: 3, ...F_('#F7D466') })])) ];
+    case 'tulip': {
+      // solgunken lale başını eğer ve kapanır
+      const sq = 0.7 + 0.3 * vg;
+      return [g([op('st', 'path', { d: `M0 3 Q${r1(4 * (1 - vg))} -3 ${r1(3 * (1 - vg))} -8`, ...S_(lc('#6B8A5E'), 2.4) }), op('tb', 'path', { d: 'M-10 -12 C-11 -2 -6 4 0 4 C6 4 11 -2 10 -12 C7 -9 5 -9 3.5 -15 C2 -10 -2 -10 -3.5 -15 C-5 -9 -7 -9 -10 -12 Z', ...F_(lc('#B0646A')), transform: `translate(${r1(3 * (1 - vg))} -10) rotate(${r1(28 * (1 - vg))}) scale(${r1(sq * 100) / 100} 1)` }), op('tf', 'path', { d: 'M-5 -12 C-5 -4 -3 2 0 4 C3 2 5 -4 5 -12 C3 -9 1 -11 0 -17 C-1 -11 -3 -9 -5 -12 Z', ...F_(lc('#C47C80')), transform: `translate(${r1(3 * (1 - vg))} -10) rotate(${r1(28 * (1 - vg))}) scale(${r1(sq * 100) / 100} 1)`, opacity: vg < 0.15 ? 0 : null })])];
+    }
+    case 'bloom': {
+      // kaktüs çiçeği yalnızca iyi günlerde açar
+      const n = vg > 0.72 ? 5 : vg > 0.5 ? 3 : 0;
+      return [g([0, 72, 144, 216, 288].slice(0, n).map((a, i) => op('bp' + i, 'ellipse', { cx: 0, cy: -6, rx: 3.4, ry: 5.6, transform: `rotate(${a} 0 -2)`, ...F_(lc('#CC9AA4')) })).concat(n ? [op('bc', 'circle', { cx: 0, cy: -2, r: 3, ...F_(lc('#D6BE72')) })] : [op('bc', 'circle', { cx: 0, cy: -1, r: 1.8, ...F_(lc('#8E7A5A')) })]))];
+    }
     case 'crown': {
-      const R = F.crownR, cl = [[-16, -6, 14, '#4E8F55'], [16, -6, 14, '#4E8F55'], [0, -4, 15, '#4E8F55'], [-11, -18, 14, '#65A866'], [11, -18, 14, '#65A866'], [0, -26, 16, '#7DBB72'], [-3, -32, 6, '#93CB86'], [9, -26, 5, '#93CB86']];
+      // ulu ağaç: hâline göre taç seyrelir; kuruyken çıplak dallar kalır
+      const R = F.crownR, cl = [[-16, -6, 14, '#5E7F5C'], [16, -6, 14, '#5E7F5C'], [0, -4, 15, '#5E7F5C'], [-11, -18, 14, '#6E8E68'], [11, -18, 14, '#6E8E68'], [0, -26, 16, '#86A178'], [-3, -32, 6, '#9DB48E'], [9, -26, 5, '#9DB48E']];
       const fl = [[-17, -14], [-4, -36], [10, -32], [18, -14], [2, -16], [-10, -4], [13, -2]];
-      return [g([...cl.map(([cx, cy, r, c], i) => op('cr' + i, 'circle', { cx, cy, r: r1(r * R / 30), ...F_(c) })), ...fl.map(([cx, cy], i) => op('fl' + i, 'circle', { cx, cy, r: i % 3 ? 2.4 : 3, ...F_(i % 2 ? '#F6C6D6' : '#EFA3BD') }))])];
+      const keep = Math.round(cl.length * clamp(vg * 1.25 - 0.1, 0, 1));
+      const twigs = op('tw', 'path', { d: 'M0 2 L0 -18 M0 -10 L-12 -22 M0 -14 L11 -26 M-6 -16 L-14 -14 M6 -20 L14 -18', ...S_(lc('#7A5D44'), 2.2), opacity: vg < 0.65 ? r1(1 - vg) : 0 });
+      return [g([twigs, ...cl.slice(0, keep).map(([cx, cy, r, c], i) => op('cr' + i, 'circle', { cx, cy, r: r1(r * R / 30 * (0.8 + 0.2 * vg)), ...F_(lc(c)) })), ...(vg > 0.72 ? fl : []).map(([cx, cy], i) => op('fl' + i, 'circle', { cx, cy, r: i % 3 ? 2.4 : 3, ...F_(i % 2 ? '#E0C4C2' : '#D1A6AC') }))])];
     }
     case 'finears': return [op('top', 'g', {}, [op('feL', 'path', { d: `M${P(x - F.w * 0.36, y + F.h * 0.3)} c-7 -3 -9 -11 -5 -15 c2 5 5 8 9 9 Z`, ...F_(shade(F.body, -0.12)), transform: `rotate(${r1(-(p.topA || 0))} ${r1(x - F.w * 0.36)} ${r1(y + F.h * 0.3)})` }),
       op('feR', 'path', { d: `M${P(x + F.w * 0.36, y + F.h * 0.3)} c7 -3 9 -11 5 -15 c-2 5 -5 8 -9 9 Z`, ...F_(shade(F.body, -0.12)), transform: `rotate(${r1(p.topA || 0)} ${r1(x + F.w * 0.36)} ${r1(y + F.h * 0.3)})` })])];
@@ -453,9 +510,14 @@ function topOps(F, p, x, y) {
         [-1, 0, 1].map(i => op(k + i, 'path', { d: `M0 0 C${m * 4} ${-4 + i * 4} ${m * 9} ${-7 + i * 5} ${m * 11} ${-9 + i * 6}`, ...S_(F.gill, 2.6) })));
       return [op('top', 'g', {}, [side(-1, 'gL'), side(1, 'gR')])];
     }
+    case 'tufts': {
+      const t = F.tuft || 1, c = shade(F.body, -0.12);
+      const tf = (m, k) => op(k, 'path', { d: `M${r1(m * 9)} 4 C${r1(m * 10)} ${r1(-3 * t)} ${r1(m * 14)} ${r1(-9 * t)} ${r1(m * 17)} ${r1(-12 * t)} C${r1(m * 15)} ${r1(-5 * t)} ${r1(m * 15)} 0 ${r1(m * 14)} 5 Z`, ...F_(c) });
+      return [g([tf(-1, 'tfL'), tf(1, 'tfR')])];
+    }
     case 'dorsal': return [g([op('df', 'path', { d: 'M-8 3 C-6 -6 0 -12 8 -14 C5 -8 5 -2 8 3 Z', ...F_(shade(F.body, -0.15)) })])];
-    case 'horn1': return [g([op('hn', 'path', { d: 'M-2.6 2 L0.6 -9 L3 2 Z', ...F_('#F2E6C8') })])];
-    case 'horn2': return [g([op('hn1', 'path', { d: 'M-9 3 C-10 -4 -12 -9 -16 -12 C-9 -11 -5 -6 -4 2 Z', ...F_('#F2E6C8') }), op('hn2', 'path', { d: 'M9 3 C10 -4 12 -9 16 -12 C9 -11 5 -6 4 2 Z', ...F_('#F2E6C8') })])];
+    case 'horn1': return [g([op('hn', 'path', { d: 'M-2.6 2 L0.6 -9 L3 2 Z', ...F_('#E3D9C2') })])];
+    case 'horn2': return [g([op('hn1', 'path', { d: 'M-9 3 C-10 -4 -12 -9 -16 -12 C-9 -11 -5 -6 -4 2 Z', ...F_('#E3D9C2') }), op('hn2', 'path', { d: 'M9 3 C10 -4 12 -9 16 -12 C9 -11 5 -6 4 2 Z', ...F_('#E3D9C2') })])];
     default: return o;
   }
 }
@@ -482,12 +544,12 @@ export function draw(F, p, col, T, uid) {
       const ra = rad(a), x = cx + Math.cos(ra) * R, y = cyF + Math.sin(ra) * R;
       const shim = p.fanShim ? 0.85 + 0.15 * Math.sin(T * 9 + i) : 1;
       const rx = 6.5 + 2.5 * (n / 11), ry = 11 + 4 * (n / 11);
-      kids.push(op('fs' + i, 'path', { d: `M${P(cx, cyF)} L${P(x, y)}`, ...S_('#2F7D4A', 1.4) }));
+      kids.push(op('fs' + i, 'path', { d: `M${P(cx, cyF)} L${P(x, y)}`, ...S_('#4E6E58', 1.4) }));
       kids.push(op('ff' + i, 'g', { transform: `translate(${P(x, y)}) rotate(${r1(a + 90)})` }, [
         op('a', 'ellipse', { cx: 0, cy: 0, rx: r1(rx), ry: r1(ry), ...F_(F.fanCol) }),
-        op('b', 'ellipse', { cx: 0, cy: r1(-ry * 0.2), rx: r1(rx * 0.56 * shim), ry: r1(ry * 0.4 * shim), ...F_('#E8C84A') }),
-        op('c', 'ellipse', { cx: 0, cy: r1(-ry * 0.2), rx: r1(rx * 0.38), ry: r1(ry * 0.28), ...F_('#1E7FA8') }),
-        op('d', 'circle', { cx: 0, cy: r1(-ry * 0.24), r: r1(rx * 0.2), ...F_('#1B3F8F') })]));
+        op('b', 'ellipse', { cx: 0, cy: r1(-ry * 0.2), rx: r1(rx * 0.56 * shim), ry: r1(ry * 0.4 * shim), ...F_('#C9B36C') }),
+        op('c', 'ellipse', { cx: 0, cy: r1(-ry * 0.2), rx: r1(rx * 0.38), ry: r1(ry * 0.28), ...F_('#3F7E8C') }),
+        op('d', 'circle', { cx: 0, cy: r1(-ry * 0.24), r: r1(rx * 0.2), ...F_('#2F4A73') })]));
     }
     o.push(op('fan', 'g', {}, kids));
   }
@@ -504,30 +566,47 @@ export function draw(F, p, col, T, uid) {
     const fw = F.foot === 'stub' ? 4.6 : F.foot === 'root' ? 6 : 6, fh = F.foot === 'stub' ? 3.4 : 3;
     o.push(op('ftL', 'ellipse', { cx: r1(fL[0] - 1), cy: r1(fL[1]), rx: fw, ry: fh, ...F_(F.feet) }), op('ftR', 'ellipse', { cx: r1(fR[0] + 1), cy: r1(fR[1]), rx: fw, ry: fh, ...F_(F.feet) }));
   }
-  if (F.mound) o.push(op('mound', 'path', { d: `M${cx - 30} ${G + 1} C${cx - 22} ${G - 9} ${cx + 22} ${G - 9} ${cx + 30} ${G + 1} Z`, ...F_('#8A6A4E') }));
+  if (F.mound) o.push(op('mound', 'path', { d: `M${cx - 30} ${G + 1} C${cx - 22} ${G - 9} ${cx + 22} ${G - 9} ${cx + 30} ${G + 1} Z`, ...F_('#7A6250') }));
   // gövde grubu: yaslanma ve ezilme gövdenin tabanından
   const bodyK = [];
   const bodyD = F.shape === 'drop' ? dropShape(cx, by, w, h) : egg(cx, by, w, h, F.kind === 'chick' && F.stage <= 2 ? 1.05 : 0.92);
   bodyK.push(op('defs', 'defs', {}, [op('clip', 'clipPath', { id: uid + 'c' }, [op('clipP', 'path', { d: bodyD })])]));
-  bodyK.push(op('body', 'path', { d: bodyD, ...F_(F.body) }));
+  const dryB = F.kind === 'plant' ? clamp(p.dry || 0, 0, 1) : 0;
+  bodyK.push(op('body', 'path', { d: bodyD, ...F_(dryB > 0.02 ? mix(F.body, '#B5A486', dryB * 0.5) : F.body) }));
+  // kuru ve dikenli: gövde kenarında ince dikenler
+  if (dryB > 0.35 && F.stage > 0) {
+    const n = 7, th = [];
+    for (let i = 0; i < n; i++) {
+      const t = 0.15 + i / (n - 1) * 0.7, side = i % 2 ? 1 : -1, yy = by - h * t, xx = cx + side * w * (0.5 - 0.12 * Math.abs(t - 0.5)) * 0.98;
+      th.push(`M${P(xx, yy)} l${r1(side * 4.2 * dryB)} ${r1(-1.6 * dryB)}`);
+    }
+    bodyK.push(op('thorn', 'path', { d: th.join(' '), ...S_('#8C7650', 1.1), opacity: r1(clamp((dryB - 0.35) * 2, 0, 1)) }));
+  }
   const inner = [];
   if (F.belly) inner.push(op('belly', 'ellipse', { cx, cy: r1(by - h * 0.2), rx: r1(w * 0.32), ry: r1(h * 0.22), ...F_(F.belly) }));
   inner.push(op('shd', 'ellipse', { cx: r1(cx - w * 0.52), cy: r1(by - h * 0.42), rx: r1(w * 0.24), ry: r1(h * 0.66), ...F_(shade(F.body, -0.08)), opacity: '.4' }));
   if (F.ribs) inner.push(op('ribs', 'path', { d: `M${P(cx - w * 0.2, by - h * 0.92)} C${P(cx - w * 0.3, by - h * 0.6)} ${P(cx - w * 0.3, by - h * 0.3)} ${P(cx - w * 0.22, by - 1)} M${P(cx + w * 0.2, by - h * 0.92)} C${P(cx + w * 0.3, by - h * 0.6)} ${P(cx + w * 0.3, by - h * 0.3)} ${P(cx + w * 0.22, by - 1)}`, ...S_(shade(F.body, -0.12), 1.4) }),
-    ...[[-0.33, 0.7], [0.36, 0.66], [-0.3, 0.3], [0.33, 0.25], [0, 0.88]].map(([dx, dy], i) => op('sp' + i, 'path', { d: `M${P(cx + w * dx - 1.4, by - h * dy)} l2.8 0 M${P(cx + w * dx, by - h * dy - 1.4)} l0 2.8`, ...S_('#E8F2D8', 0.9) })));
+    ...[[-0.33, 0.7], [0.36, 0.66], [-0.3, 0.3], [0.33, 0.25], [0, 0.88]].map(([dx, dy], i) => op('sp' + i, 'path', { d: `M${P(cx + w * dx - 1.4, by - h * dy)} l2.8 0 M${P(cx + w * dx, by - h * dy - 1.4)} l0 2.8`, ...S_('#DCE0CF', 0.9) })));
+  if (F.chev) for (let i = 0; i < 3; i++) for (let j = -1; j <= 1; j++) inner.push(op(`cv${i}${j}`, 'path', { d: `M${P(cx + j * w * 0.16 - 2.2 + (i % 2) * 2, by - h * (0.16 + i * 0.12))} l2.2 1.6 l2.2 -1.6`, ...S_(shade(F.belly || F.body, -0.22), 0.9), opacity: '.75' }));
+  if (F.dots) for (let i = 0; i < 6; i++) inner.push(op('dt' + i, 'circle', { cx: r1(cx - w * 0.2 + (i % 3) * w * 0.2), cy: r1(by - h * (0.18 + Math.floor(i / 3) * 0.14)), r: 0.8, ...F_(shade(F.body, -0.3)) }));
+  if (F.down) inner.push(op('down', 'path', { d: `M${P(cx - w * 0.46, by - h * 0.7)} q-2 1 -0.6 2.6 M${P(cx + w * 0.46, by - h * 0.66)} q2 1 0.6 2.6 M${P(cx - w * 0.1, by - h * 0.98)} q1 -2.4 2.8 -1 M${P(cx + w * 0.08, by - h * 0.99)} q1.2 -2 2.6 -0.6`, ...S_(shade(F.body, -0.12), 1), opacity: '.8' }));
+  if (F.fluff) inner.push(op('fluff', 'path', { d: `M${P(cx - w * 0.47, by - h * 0.62)} q-2.4 1.4 -0.6 3.2 M${P(cx - w * 0.5, by - h * 0.44)} q-2.6 1.2 -0.8 3.2 M${P(cx + w * 0.47, by - h * 0.64)} q2.4 1.4 0.6 3.2 M${P(cx - w * 0.12, by - h * 0.97)} q1 -2.6 3.2 -1.4`, ...S_(shade(F.body, -0.14), 1.1), opacity: '.7' }));
   if (F.bark) inner.push(op('bark', 'path', { d: `M${P(cx - w * 0.22, by - h * 0.15)} C${P(cx - w * 0.25, by - h * 0.4)} ${P(cx - w * 0.2, by - h * 0.6)} ${P(cx - w * 0.24, by - h * 0.85)} M${P(cx + w * 0.24, by - h * 0.1)} C${P(cx + w * 0.27, by - h * 0.35)} ${P(cx + w * 0.22, by - h * 0.55)} ${P(cx + w * 0.26, by - h * 0.8)}`, ...S_(shade(F.body, -0.14), 1.6) }));
   const shellOps = [];
-  if (F.shell) shellOps.push(op('shell', 'path', { d: `M${P(cx - w * 0.62, by - h * 0.46)} L${P(cx - w * 0.46, by - h * 0.56)} L${P(cx - w * 0.32, by - h * 0.44)} L${P(cx - w * 0.16, by - h * 0.58)} L${P(cx, by - h * 0.45)} L${P(cx + w * 0.16, by - h * 0.58)} L${P(cx + w * 0.32, by - h * 0.44)} L${P(cx + w * 0.46, by - h * 0.56)} L${P(cx + w * 0.62, by - h * 0.46)} L${P(cx + w * 0.62, by + 2)} L${P(cx - w * 0.62, by + 2)} Z`, ...F_('#F6EBD8') }),
-    op('shellD', 'path', { d: `M${P(cx - w * 0.4, by - h * 0.2)} C${P(cx - w * 0.3, by - h * 0.05)} ${P(cx - w * 0.1, by)} ${P(cx + w * 0.05, by)}`, ...S_('#E9D9BF', 2.4) }));
+  if (F.shell) shellOps.push(op('shell', 'path', { d: `M${P(cx - w * 0.62, by - h * 0.46)} L${P(cx - w * 0.46, by - h * 0.56)} L${P(cx - w * 0.32, by - h * 0.44)} L${P(cx - w * 0.16, by - h * 0.58)} L${P(cx, by - h * 0.45)} L${P(cx + w * 0.16, by - h * 0.58)} L${P(cx + w * 0.32, by - h * 0.44)} L${P(cx + w * 0.46, by - h * 0.56)} L${P(cx + w * 0.62, by - h * 0.46)} L${P(cx + w * 0.62, by + 2)} L${P(cx - w * 0.62, by + 2)} Z`, ...F_('#EAE0CE') }),
+    op('shellD', 'path', { d: `M${P(cx - w * 0.4, by - h * 0.2)} C${P(cx - w * 0.3, by - h * 0.05)} ${P(cx - w * 0.1, by)} ${P(cx + w * 0.05, by)}`, ...S_('#DCCDB3', 2.4) }));
   bodyK.push(op('inner', 'g', { 'clip-path': `url(#${uid}c)` }, inner), ...shellOps);
   // kollar / kanatlar / yapraklar
   if (F.arms) {
     const ay = by - h * (F.arms === 'cactus' ? 0.55 : 0.42);
+    const pv = F.kind === 'plant' ? clamp(p.vigor ?? 1, 0, 1) : 1, pd = F.kind === 'plant' ? clamp(p.dry || 0, 0, 1) : 0;
+    const armC = pd > 0.02 ? mix(F.armCol, DRY, pd * 0.8) : F.armCol;
     const arm = (m, a, k) => {
       const x = cx + m * w * (F.arms === 'cactus' ? 0.46 : 0.45);
       const isB = F.arms === 'branch';
-      const ops = [op(k + 's', 'path', { d: armPath(F.arms, m), ...(isB ? S_(F.armCol, 2.6) : F_(F.armCol)) })];
-      if (isB) ops.push(op(k + 'l', 'ellipse', { cx: r1(m * 8), cy: 14, rx: 3.6, ry: 2.2, ...F_('#65A866') }));
+      const ops = [op(k + 's', 'path', { d: armPath(F.arms, m), ...(isB ? S_(armC, 2.6) : F_(armC)), opacity: F.arms === 'leaf' && pv < 0.18 ? 0 : null })];
+      if (isB && pv > 0.35) ops.push(op(k + 'l', 'ellipse', { cx: r1(m * 8), cy: 14, rx: 3.6, ry: 2.2, ...F_(pd > 0.02 ? mix('#6E8E68', DRY, pd) : '#6E8E68') }));
+      a -= 30 * (1 - pv);
       if (F.armTip) ops.push(op(k + 't', 'path', { d: `M${2 * m} 14 C${-1 * m} 12 ${-1 * m} 9 ${1 * m} 8 C${4 * m} 9 ${5 * m} 12 ${2 * m} 14 Z`, ...F_(F.armTip) }));
       return op(k, 'g', { transform: `translate(${r1(x)} ${r1(ay)}) rotate(${r1(m < 0 ? a : -a)})` }, ops);
     };
@@ -537,7 +616,14 @@ export function draw(F, p, col, T, uid) {
   const fx = cx + (p.faceX ?? 2.5), fyy = by - h * F.eyeY + (p.faceY || 0);
   const g2 = F.eyeGap;
   const face = [];
-  if (F.blush || p.blush) face.push(...blush(fx - g2 - 3.4, fx + g2 + 3.4, fyy + 5.2, 1, clamp((F.blush || 0) + (p.blush || 0), 0, 0.9)));
+  if (F.disc) {
+    // baykuşun yüz diski: iki gözün çevresinde açık renkli, hafif kalp biçimli alan (baş dönünce kayar)
+    const dr = F.eyeR * 2.05, dc = F.disc;
+    if (F.discHeart) face.push(op('disc', 'path', { d: `M${P(fx, fyy + dr * 1.55)} C${P(fx - g2 * 2.3, fyy + dr * 0.6)} ${P(fx - g2 * 2.2, fyy - dr * 1.3)} ${P(fx, fyy - dr * 0.75)} C${P(fx + g2 * 2.2, fyy - dr * 1.3)} ${P(fx + g2 * 2.3, fyy + dr * 0.6)} ${P(fx, fyy + dr * 1.55)} Z`, ...F_(dc) }));
+    else face.push(op('discL', 'circle', { cx: r1(fx - g2), cy: r1(fyy), r: r1(dr), ...F_(dc) }), op('discR', 'circle', { cx: r1(fx + g2), cy: r1(fyy), r: r1(dr), ...F_(dc) }));
+    if (F.glowEye) face.push(op('glow', 'ellipse', { cx: r1(fx), cy: r1(fyy), rx: r1(g2 * 2.2), ry: r1(dr * 1.1), ...F_('#D9B45A'), opacity: r1(0.08 + 0.05 * Math.sin(T * 1.4)) }));
+  }
+  if ((p.blush || 0) > 0.35) face.push(...blush(fx - g2 - 3.4, fx + g2 + 3.4, fyy + 5.2, 1, clamp((p.blush - 0.35) * 0.5, 0, 0.22)));
   face.push(...eyes(F.eyeFam, fx - g2, fx + g2, fyy, F.eyeR, p.eye || 'open', p.blink || 0, p.look || 0, p.lookY || 0, colors(F)));
   if (F.beak) face.push(...mouth('beak', fx, fyy + 6 * F.beak, F.beak, '', p.mouth || 0, 0, colors(F)));
   else if (F.mouth === 'cat') {
@@ -545,10 +631,15 @@ export function draw(F, p, col, T, uid) {
     if (m > 0.08) face.push(op('mo', 'ellipse', { cx: r1(fx), cy: r1(fyy + 6.4), rx: r1(2 + m), ry: r1(0.8 + m * 2.6), fill: '#3a1f3a' }));
     else face.push(op('mo', 'path', { d: `M${P(fx - 3, fyy + 5.4)} Q${P(fx - 1.5, fyy + 7.6)} ${P(fx, fyy + 5.6)} Q${P(fx + 1.5, fyy + 7.6)} ${P(fx + 3, fyy + 5.4)}`, ...S_('#2b3a5a', 1.3) }));
   } else face.push(...mouth('tiny', fx, fyy + 5.6, 1, p.eye === 'happy' ? 'happy' : p.eye === 'sad' ? 'sad' : '', p.mouth || 0, 0, { ...colors(F), line: F.mouthCol || '#3a2a30', mouth: '#5a2a34' }));
-  if (p.tears) face.push(op('tr1', 'path', { d: `M${P(fx - g2, fyy + 1)} C${P(fx - g2 - 2, fyy + 10)} ${P(fx - g2 + 1, fyy + 18)} ${P(fx - g2 - 1, by - 2)}`, ...S_('#7CC6F5', 2.6), opacity: '.85' }), op('tr2', 'path', { d: `M${P(fx + g2, fyy + 1)} C${P(fx + g2 + 2, fyy + 10)} ${P(fx + g2 - 1, fyy + 18)} ${P(fx + g2 + 1, by - 2)}`, ...S_('#7CC6F5', 2.6), opacity: '.85' }));
-  if (p.sweat) face.push(op('sw', 'path', { d: `M${P(fx + g2 + 8, fyy - 8)} C${P(fx + g2 + 11, fyy - 3)} ${P(fx + g2 + 5, fyy - 1)} ${P(fx + g2 + 7, fyy - 7)} Z`, fill: '#9FDCFF' }));
+  if (p.tears) face.push(op('tr1', 'path', { d: `M${P(fx - g2, fyy + 1)} C${P(fx - g2 - 2, fyy + 10)} ${P(fx - g2 + 1, fyy + 18)} ${P(fx - g2 - 1, by - 2)}`, ...S_('#8FB4C9', 2.6), opacity: '.85' }), op('tr2', 'path', { d: `M${P(fx + g2, fyy + 1)} C${P(fx + g2 + 2, fyy + 10)} ${P(fx + g2 - 1, fyy + 18)} ${P(fx + g2 + 1, by - 2)}`, ...S_('#8FB4C9', 2.6), opacity: '.85' }));
+  if (p.sweat) face.push(op('sw', 'path', { d: `M${P(fx + g2 + 8, fyy - 8)} C${P(fx + g2 + 11, fyy - 3)} ${P(fx + g2 + 5, fyy - 1)} ${P(fx + g2 + 7, fyy - 7)} Z`, fill: '#A9C6D6' }));
   bodyK.push(op('face', 'g', {}, face));
   bodyK.push(...topOps(F, p, cx + (p.faceX ?? 2.5) * 0.3, by - h + (F.top === 'cap' ? 8 : 2)));
+  // toparlanırken: tepede yeni, küçük ve taze bir filiz
+  if (F.kind === 'plant' && (p.trend || 0) > 0 && (p.vigor ?? 1) < 0.7 && F.stage > 0) {
+    const bx = cx + 6, byy = by - h - 1, gr = 0.6 + 0.4 * Math.sin(T * 1.6);
+    bodyK.push(op('bud', 'g', { transform: `translate(${r1(bx)} ${r1(byy)}) scale(${r1(gr * 100) / 100})` }, [op('bds', 'path', { d: 'M0 1 L0 -5', ...S_('#7E9E68', 1.4) }), op('bdl', 'path', { d: 'M0 -4 C3 -8 7 -8 8 -6 C6 -3 3 -3 0 -4 Z', ...F_('#9DBB7A') })]));
+  }
   o.push(op('bodyG', 'g', { transform: `rotate(${r1(p.lean || 0)} ${cx} ${by})` }, bodyK));
   return o;
 }

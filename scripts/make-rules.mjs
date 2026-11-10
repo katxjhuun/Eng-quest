@@ -14,7 +14,7 @@ const msgFields = {
   title: str(80), text: str(600), emoji: str(16), music: bool(), at: ts(), by: str(120), broadcast: bool(),
   // pet komutları (yalnızca yönetici gönderebilir; uygulama ayrıca doğrular)
   action: str(12, '/^(heal|feed|energy|restore|revive|set|stage|name|species|flow|roam|say|react|reset)$/'),
-  species: str(6, '/^(plant|chick|cat|dog)$/'), stage: num(5), stars: num(999), name: str(16),
+  species: str(6, '/^(plant|chick|cat|dog|owl|gecko)$/'), stage: num(5), stars: num(999), name: str(16),
   hp: num(100), food: num(100), energy: num(100), emote: str(8, '/^[a-z]{2,8}$/'), on: bool(),
   $other: NO,
 };
@@ -51,7 +51,7 @@ const rules = {
         // petin durumu (uygulama yazar, panel okur); kişisel bilgi içermez
         pet: {
           '.write': OWN,
-          species: str(6, '/^(plant|chick|cat|dog)$/'), stage: num(5), stars: num(9999), name: str(16), alive: bool(),
+          species: str(6, '/^(plant|chick|cat|dog|owl|gecko)$/'), stage: num(5), stars: num(9999), name: str(16), alive: bool(),
           hp: num(10000), hpMax: num(10000), food: num(10000), foodMax: num(10000), energy: num(10000), energyMax: num(10000),
           stuffed: num(100), flow: bool(), roam: bool(), mood: str(12, '/^[a-z]{2,12}$/'), streak: num(), correct: num(), answers: num(),
           revives: num(10000), memorial: num(100), deathCat: str(6, '/^[a-z]{2,6}$/'), catchUp: num(20), updatedAt: ts(), $other: NO,

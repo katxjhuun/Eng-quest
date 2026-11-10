@@ -28,7 +28,7 @@ const catInfo = id => CATS.find(c => c.id === id) || (id === 'mix' ? { id, icon:
 const MODE_LABEL = { type: 'Yazarak', quiz: 'Pop Quiz', listen: 'Dinleyerek', mix: 'Karışık' };
 const TYPE_ICON = { message: '✉️', xp: '⭐', level: '🎓', reward: '🎁', pet: '🐾' };
 // ---- pet ----
-const PET_KINDS = { plant: { label: 'Bitki', food: '💧', foodLabel: 'Su' }, chick: { label: 'Civciv', food: '🌾', foodLabel: 'Yem' }, cat: { label: 'Kedi', food: '🐟', foodLabel: 'Mama' }, dog: { label: 'Köpek', food: '🦴', foodLabel: 'Mama' } };
+const PET_KINDS = { plant: { label: 'Bitki', food: '💧', foodLabel: 'Su' }, chick: { label: 'Civciv', food: '🌾', foodLabel: 'Yem' }, cat: { label: 'Kedi', food: '🐟', foodLabel: 'Mama' }, dog: { label: 'Köpek', food: '🦴', foodLabel: 'Mama' }, owl: { label: 'Baykuş', food: '🐭', foodLabel: 'Av' }, gecko: { label: 'Gecko', food: '🦗', foodLabel: 'Böcek' } };
 const PET_MOODS = ['idle', 'happy', 'love', 'sad', 'sleep', 'groggy', 'sleepy', 'poked', 'surprised', 'hungry', 'focus', 'full', 'eat', 'dead'];
 const MOOD_TR = { idle: 'keyifli', happy: 'mutlu', love: 'sevgi dolu', sad: 'üzgün', sleep: 'uyuyor', groggy: 'mahmur', sleepy: 'uykulu', poked: 'dürtülmüş', surprised: 'şaşkın', hungry: 'aç', focus: 'odaklanmış', full: 'mayışmış', eat: 'yiyor', dead: 'öldü' };
 const PET_ACT = { heal: '❤️ Can dolduruldu', feed: '🍖 Beslendi', energy: '⚡ Enerji dolduruldu', restore: '✨ Hepsi dolduruldu', revive: '💫 Canlandırıldı', set: '🛠️ Değerler ayarlandı', stage: '🧬 Form', name: '🏷️ Ad', species: '🔄 Tür', flow: '🌊 Flow', roam: '🐾 Dolaşma', say: '💬 Konuştu', react: '🎭 Tepki', reset: '🐾 Pet sıfırlandı' };

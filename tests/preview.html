@@ -21,6 +21,9 @@ if (mode === 'stages') {
   const poses = ['stand','sit','loaf','lie','bow','run','jump','sniff','arch','flat'];
   const stage = +(q.get('s') || 1);
   for (const sp of list) root.insertAdjacentHTML('beforeend', `<h3>${sp} · aşama ${stage}</h3><div class="row">${poses.map(p=>cell(petSVG(sp,stage,{pose:p, mood: p==='loaf'?'sleep':p==='flat'?'dead':p==='jump'?'happy':p==='arch'?'poked':'idle'}), p)).join('')}</div>`);
+} else if (mode === 'vigor') {
+  const vs = [1, 0.75, 0.5, 0.3, 0.12];
+  for (let st = 1; st <= 5; st++) root.insertAdjacentHTML('beforeend', `<h3>plant · ${stageName('plant', st)}</h3><div class="row">${vs.map(v => cell(petSVG('plant', st, { cond: { vigor: v, dry: Math.max(0, Math.min(1, (0.5 - v) / 0.4)), trend: v < 0.6 ? 1 : 0 } }), 'vigor ' + v)).join('')}</div>`);
 } else {
   const moods = ['idle','happy','love','sad','sleep','groggy','poked','surprised','hungry','focus','full','eat','dead'];
   const stage = +(q.get('s') || 1);

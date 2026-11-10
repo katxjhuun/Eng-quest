@@ -2,11 +2,12 @@
 // (kuyruk, kulak, yaprak) hesaplar ve SVG'yi her karede yalnızca değişen özniteliklerle günceller.
 import * as quad from './quad.js';
 import * as bean from './bean.js';
+import * as lizard from './lizard.js';
 import { blend, Spring, EASE, clamp, r1, TAU } from './anim.js';
 import { propOps } from './props.js';
 import { op } from './face.js';
 
-const RIG = { cat: quad, dog: quad, chick: bean, plant: bean };
+const RIG = { cat: quad, dog: quad, chick: bean, plant: bean, owl: bean, gecko: lizard };
 export const rigOf = species => RIG[species] || bean;
 const NS = 'http://www.w3.org/2000/svg';
 const G = 108;
@@ -61,15 +62,22 @@ function frameOps(rig, S, pose, T, uid, face) {
   const front = [], back = [], world = [];
   for (const pr of pose.props || []) (pr.world ? world : pr.back ? back : front).push(pr);
   const sx = (pose.sx ?? 1) * k, sy = (pose.sy ?? 1) * k;
-  const root = op('root', 'g', { transform: `translate(${r1(60 + (pose.rx || 0) * k)} ${r1(G + (pose.ry || 0) * k)}) rotate(${r1(pose.rr || 0)}) scale(${r1(sx * 1000) / 1000} ${r1(sy * 1000) / 1000}) translate(-60 -${G})` },
+  const root = op('root', 'g', { transform: `translate(${r1(60 + (pose.rx || 0) * k)} ${r1(G + (pose.ry || 0) * k)}) rotate(${r1(pose.rr || 0)}) scale(${r1(sx * 1000) / 1000} ${r1(sy * 1000) / 1000}) translate(-60 -${G})`, filter: `url(#${uid}gr)` },
     [...propOps(back, 'pb'), ...kids, ...propOps(front, 'pf')]);
+  // lo-fi doku: gövdenin üstüne ince, durağan film greni (yalnızca çizili alana)
+  const grain = op('grdefs', 'defs', {}, [op('gr', 'filter', { id: uid + 'gr', x: '-5%', y: '-5%', width: '110%', height: '110%', 'color-interpolation-filters': 'sRGB' }, [
+    op('t', 'feTurbulence', { type: 'fractalNoise', baseFrequency: '2.4', numOctaves: '1', seed: '7', result: 'n' }),
+    op('m', 'feColorMatrix', { in: 'n', type: 'matrix', values: '0 0 0 0 0.16  0 0 0 0 0.13  0 0 0 0 0.12  0 0 0 0.34 -0.14', result: 'g' }),
+    op('c', 'feComposite', { in: 'g', in2: 'SourceGraphic', operator: 'in', result: 'gi' }),
+    op('o', 'feMerge', {}, [op('a', 'feMergeNode', { in: 'SourceGraphic' }), op('b', 'feMergeNode', { in: 'gi' })]),
+  ])]);
   // gölge: yerde kalır, yükseldikçe küçülür
   const fp = rig.footprint(F, pose);
   const alt = clamp(-(pose.ry || 0) / 45, 0, 0.7);
   const shadow = op('shadow', 'ellipse', { cx: r1(60 + (fp.cx - 60 + (pose.rx || 0)) * k), cy: G + 1.4, rx: r1(fp.w * 0.5 * k * (1 - alt * 0.6) * (pose.sx ?? 1)), ry: r1(2.6 * (1 - alt * 0.5)), fill: '#1f1b24', opacity: r1((0.13 * (1 - alt)) * 100) / 100 });
   const f = face * (pose.spin ?? 1);
   const wk = world.length ? [op('world', 'g', { transform: `translate(60 ${G}) scale(${k}) translate(-60 -${G})` }, propOps(world, 'pw'))] : [];
-  return [op('face', 'g', { transform: Math.abs(f - 1) < 0.001 ? null : `translate(60 0) scale(${r1(f * 1000) / 1000} 1) translate(-60 0)` }, [shadow, root, ...wk])];
+  return [grain, op('face', 'g', { transform: Math.abs(f - 1) < 0.001 ? null : `translate(60 0) scale(${r1(f * 1000) / 1000} 1) translate(-60 0)` }, [shadow, root, ...wk])];
 }
 
 // ---------------------------------------------------------------- oynatıcı
@@ -110,6 +118,8 @@ export class Puppet {
     if (!first) this.fade(0.3);
   }
   setMood(m) { this.mood = m || 'idle'; }
+  // türe özel kalıcı hâl (bitkinin canlılığı, kuruluğu, toparlanma eğilimi…): her pozun üstüne yazılır
+  setCond(c) { this.cond = c || null; }
   setBase(name) {
     const b = this.rig?.BASES[name] ? name : 'idle';
     if (b === this.base) return;
@@ -219,6 +229,7 @@ export class Puppet {
     const u = EASE.io(this.turnT);
     this.faceCur = this.turnT >= 1 ? this.facing : this.turnFrom + (this.facing - this.turnFrom) * u;
     let p = this.secondary(this.pose(dt), dt);
+    if (this.cond) p = { ...p, ...this.cond };
     // dönerken hafif sıçrama
     if (this.turnT < 1) { p = { ...p, ry: (p.ry || 0) - 2.5 * Math.sin(u * Math.PI), sy: (p.sy ?? 1) * (1 + 0.04 * Math.sin(u * Math.PI)) }; }
     const face = Math.abs(this.faceCur) < 0.08 ? 0.08 * Math.sign(this.faceCur || 1) : this.faceCur;
@@ -240,6 +251,7 @@ export function staticSVG(species, stage, opts = {}) {
   let p = def.f(opts.u ?? 0, c);
   if (['idle', 'sit', 'lie', 'walk'].includes(clipName) || !rig.CLIPS[clipName]) p = rig.moodPose(p, mood, S.F);
   if (opts.belly && rig.belly) p = rig.belly(p, opts.belly, S.F);
+  if (opts.cond) p = { ...p, ...opts.cond };
   const uid = 'ps' + (++staticSeq);
   const ops = frameOps(rig, S, p, opts.t || 0, uid, opts.face || 1);
   return `<svg class="pet-svg ${opts.cls || ''}${S.col.light ? ' coat-light' : ''}" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${str(ops)}</svg>`;

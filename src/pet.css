@@ -55,6 +55,10 @@ body{position:relative}
 .pet-sprite{position:absolute;inset:0}
 .pet-sprite svg{width:100%;height:100%;overflow:visible}
 .pet-shadow{display:none}
+/* lo-fi renk ayarı: akşam sıcak ve soluk, gece serin ve karanlık; hüzünde renk çekilir */
+body.pet-evening .pet-sprite svg{filter:sepia(.16) saturate(.86)}
+body.pet-night .pet-sprite svg{filter:brightness(.82) saturate(.66) hue-rotate(-8deg)}
+.pet-sprite[data-mood="sad"] svg,.pet-sprite[data-mood="hungry"] svg{filter:saturate(.58) brightness(.95)}
 .pet-sprite[data-mood="dead"] svg{filter:grayscale(.85) opacity(.8)}
 /* açık tüylü kedi/köpek: açık zeminde silüet kaybolmasın diye ince kontur */
 .pet-svg.coat-light{filter:drop-shadow(0 0 .7px rgba(43,34,48,.6)) drop-shadow(0 1px 1px rgba(43,34,48,.12))}
@@ -64,7 +68,7 @@ body{position:relative}
 
 /* seçim kartlarındaki durağan çizimler için hafif nefes */
 @keyframes breathe{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.025)}}
-.pet-sprite[data-mood="focus"] svg{filter:drop-shadow(0 0 5px rgba(143,124,255,.45))}
+.pet-sprite[data-mood="focus"] svg{filter:drop-shadow(0 0 4px rgba(120,140,150,.4))}
 
 /* ---- emote balonu ---- */
 .pet-emote{position:absolute;left:50%;top:-42px;width:34px;height:34px;margin-left:-17px;display:grid;place-items:center;background:#fff;border:2px solid #2b2230;border-radius:50%;box-shadow:0 3px 0 rgba(31,28,34,.16);opacity:0;pointer-events:none;z-index:3;transform:translateX(calc(var(--face,1)*10px)) scale(.2);transform-origin:50% 120%}
@@ -250,3 +254,11 @@ body{position:relative}
 .md-new{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#e0457b;color:#fff;font-size:9.5px;font-weight:900;font-style:normal;line-height:16px;text-align:center}
 @media(max-width:400px){.md-ctrl{gap:5px}.md-b{width:34px;height:34px}.md-main{width:42px;height:42px}.md-mix span{display:none}.md-mix{padding:0 8px}}
 @media(prefers-reduced-motion:reduce){.music-deck.fresh,.md-eq i,.md-mix.on{animation:none}}
+
+/* ısırık: pet ekranı küçük bir sarsıntıyla ısırır */
+.pet-actor.bitten .pet-sprite{animation:petBite .5s cubic-bezier(.3,.9,.4,1)}
+@keyframes petBite{0%{transform:translateX(0)}20%{transform:translateX(6px) scale(1.06)}40%{transform:translateX(-4px)}60%{transform:translateX(3px)}80%{transform:translateX(-1px)}100%{transform:none}}
+
+/* pet karakter metni (seçim kartı ve bilgi) */
+.pc-soul{margin:4px 0 6px;font-size:11.5px;line-height:1.4;color:#6e6672;font-style:italic}
+.pi-soul{margin:0 0 10px;font-size:13px;line-height:1.5;color:#5e5762;font-style:italic}

@@ -8,74 +8,95 @@ import { CAT_XP_STEP, catLabel } from './quiz.js';
 import { SUBJECT_ORDER } from './data/subjects.js';
 
 const HOUR = 3600e3;
-const ORDER = ['plant', 'chick', 'cat', 'dog'];
-const QUAD = ['cat', 'dog'];
+const ORDER = ['plant', 'chick', 'cat', 'dog', 'owl', 'gecko'];
+const QUAD = ['cat', 'dog', 'gecko']; // rastgele (seçilemeyen) renk alan türler
 export const PET_SPECS = {
   plant: {
     name: 'Filiz', hp: 100, food: 140, energy: 100, foodLabel: 'Su', foodIcon: '💧', treat: '💧', perk: 'Büyük su deposu',
     passive: { name: 'Fotosentez', desc: 'Gündüz (08–18) susuzluğu ve enerji kaybı yarı hızda.' },
     active: { id: 'weed', name: 'Ayıkla', cost: 20, desc: 'Seçenekli soruda 2 yanlış şıkkı eler; yazmalı soruda XP cezası olmadan 1 harf açar.' },
-    love: ['Yapraklarım titredi 🌿', 'Güneş gibisin ☀️', 'Kökümden mutluyum 🌱'],
+    soul: 'Sabır ve dayanıklılık. Ne umutlu ne umutsuz; kurtarıcı beklemez, dayanır. Bazen yapraksız, bazen kuru ve dikenli, bazen yarı solgun; yavaş yavaş toparlanır, yine solar. İyi günlerde kısa bir huzur bulur.',
+    love: ['…', 'Güneş biraz daha kalsa.', 'Buradayım. Hep buradaydım.'],
   },
   chick: {
     name: 'Pıtırcık', hp: 100, food: 100, energy: 140, foodLabel: 'Yem', foodIcon: '🌾', treat: '🌾', perk: 'Ekstra enerji',
     passive: { name: 'Erken Kuş', desc: 'Sabah 06–12 arasında doğru cevaplar %25 fazla XP verir.' },
     active: { id: 'peek', name: 'Cik İpucu', cost: 15, desc: 'Cevabın ilk harfini, harf ve kelime sayısını fısıldar.' },
-    love: ['Cik cik! 💛', 'Tüylerim kabardı 🐣', 'En sevdiğim sensin!'],
+    soul: 'Saf, meraklı, etrafındaki şeylerden habersiz. Çok düşünmez, kafa yormaz; sevdiğine bağlanır, zamanını onunla geçirir. Saflığın güzelliği. Günü herkesten önce bitirir.',
+    love: ['Cik.', 'Sen buradasın.', 'Bugün güzel.'],
   },
   cat: {
     name: 'Mırnav', hp: 130, food: 100, energy: 100, foodLabel: 'Mama', foodIcon: '🐟', treat: '🐟', perk: 'Ekstra can',
     passive: { name: 'Dokuz Can', desc: 'Günde bir kez ölümcül bir yanlışta 1 canla kurtulur.' },
     active: { id: 'skip', name: 'Pati Atla', cost: 25, desc: 'Soruyu cezasız ve serini bozmadan geçer.' },
-    love: ['Mırr… 😽', 'Biraz daha kaşı 🐾', 'Tamam, seni seviyorum. Kimseye söyleme 😼'],
+    soul: 'Cazibe merkezi. Bencil, çıkarcı; tüm ilgini ister. İşine geldiği sürece seninle iyi geçinir; her şey yolundayken bile sıkılıp olay çıkarır, sonra hiçbir şey olmamış gibi yine sana sokulur.',
+    love: ['Mırr.', 'Şimdilik kalabilirsin.', 'Devam et. Ben söyleyince bırakırsın.'],
   },
   dog: {
     name: 'Hav', hp: 115, food: 115, energy: 100, foodLabel: 'Mama', foodIcon: '🦴', treat: '🦴', perk: 'Can + mama dengesi',
     passive: { name: 'Sadık Dost', desc: 'Her 5 doğruluk seride 10 can yeniler.' },
     active: { id: 'sniff', name: 'İz Sür', cost: 20, desc: '1 yanlış şıkkı eler ve bu soruda yanlış yaparsan canını korur.' },
-    love: ['Hav hav! 🐶', 'Kuyruğum duramıyor!', 'En iyi arkadaşım sensin 💛'],
+    soul: 'Can yoldaş. Koşulsuz sadakat; aç kalsa da yorulsa da yanındadır. Sen düştüğünde dümeni o alır, korur, kollar. Kendi geleneği, kendi düzeni vardır. Ama uyurken dürtme: kurt ısırır.',
+    love: ['Buradayım.', 'Hep buradayım.', 'Gitme. Ya da git; beklerim.'],
+  },
+  owl: {
+    name: 'Nöbetçi', hp: 105, food: 100, energy: 125, foodLabel: 'Av', foodIcon: '🐭', treat: '🐭', perk: 'Gece uzun dayanır',
+    passive: { name: 'Gece Nöbeti', desc: 'Gece (22–04) doğru cevaplar %25 fazla XP verir; geceleri uyumaz, öğleden sonra (13–16) kestirir.' },
+    active: { id: 'ward', name: 'Dört Tur Önde', cost: 25, desc: 'Sonraki 4 soruda yanlış cevapların can kaybı yarıya iner.' },
+    soul: 'Gece yaşar; gece onun için gündüzdür. Gözü kapalıyken bile tetiktedir, stratejisi hep dört tur öndedir. Kaybetme, yardım bekleme lüksü yoktur; bir kez düşerse karanlık onu yutar. Kahve onu yalnızca kısır bir döngüye sokar.',
+    love: ['Hm.', 'Gecenin en iyi saati.', 'Sen de uyumuyor musun?'],
+  },
+  gecko: {
+    name: 'Süzgeç', hp: 110, food: 90, energy: 110, foodLabel: 'Böcek', foodIcon: '🦗', treat: '🦗', perk: 'Güneşte sarsılmaz',
+    passive: { name: 'Güneşte Sabit', desc: 'Gündüz (10–17) yanlış cevaplarda %30 daha az can kaybeder.' },
+    active: { id: 'prey', name: 'Av Ona Gelir', cost: 20, desc: 'Kıpırdamadan bekler: sonraki doğru cevabın XP’si iki katına çıkar.' },
+    soul: 'Herkesten farklıdır; farklı görünür, farklı yaşar, farklı düşünür. Hayat onun süzgecinden bambaşka geçer; artı ve eksi yoktur. Güneş ne kadar yakarsa yaksın sabit durur. Av peşinde koşmaz; av ona gelir, bir şekilde hep gelir.',
+    love: ['…', 'Mavi bugün tatlı.', 'Kıpırdama. Böyle iyi.'],
   },
 };
 
 const LINES = {
-  greet: { dawn: ['Erkencisin… 🌅'], morning: ['Günaydın! ☀️ Bir soruyla uyanalım mı?', 'Kahve yok mu? ☕ O zaman bir soru!'], day: ['Hadi bir tane daha!', 'Bugün ne öğreniyoruz? 🤓'], evening: ['Akşam oldu… birkaç soru, sonra uyku 😪'], night: ['Zzz…'] },
-  cheer: ['Sen yaparsın! 💪', 'Küçük adımlar, büyük ilerleme 🌱', 'Bugün harika gidiyorsun ✨', 'Bir soru daha, sonra mola? 😊', 'Merak etmek en güzel yetenek 🧠', 'Seninle öğrenmek çok güzel 💛'],
-  wrong: ['Olsun, açıklamayı birlikte okuyalım 📖', 'Hata yapmak öğrenmenin parçası 🌱', 'Bir dahakine kesin bilirsin!', 'Derin nefes… devam 💪'],
-  hungry: { plant: ['Susadım… 💧 Doğru cevaplar beni sular', 'Toprağım kurudu 🥀'], other: ['Karnım guruldadı… 🍖 Doğru cevaplar beni doyurur', 'Acıktım… bir soru çözsek mi? 🥺'] },
-  full: ['Çok yedim… biraz mayıştım 😌', 'Karnım davul gibi 🥁', 'Bir şekerleme yapsam mı… 😴'],
-  flow: ['Odaklandık! 🎯', 'Akıştasın, bozmayalım 🌊', 'Sessizce yanındayım 🤫', 'Bu tempo efsane 🔥'],
-  low: ['Canım azaldı… dikkatli olalım 🥺', 'Biraz yaralıyım, açıklamaları iyi okuyalım 🩹'],
-  missed: ['Seni özledim! 🥺 Neredeydin?', 'Döndün! 💛 Çok bekledim.'],
-  tapped: ['Hey! 😤', 'Dürtme beni!', 'Ay! Gıdıklanıyor 😆', 'Ne var ne var? 👀'],
-  flee: ['Yakalayamazsın! 💨', 'Kaç kaç! 🏃'],
-  woke: ['Hıı? Uyuyordum… 😴', 'Beş dakika daha…', 'Gece gece ne oldu? 🌙'],
+  greet: { dawn: ['Erken.'], morning: ['Günaydın.', 'Kahve mi, soru mu?'], day: ['Bir tane daha?', 'Devam.'], evening: ['Gün bitiyor.'], night: ['…'] },
+  cheer: ['Devam.', 'Yavaş ama sağlam.', 'İyi gidiyor.', 'Bir soru daha.'],
+  wrong: ['Olur böyle.', 'Açıklamaya bakalım.', 'Sorun değil.'],
+  hungry: { plant: ['Toprak kurudu.', 'Biraz su.'], other: ['Acıktım.', 'Karnım boş.'] },
+  full: ['Fazla oldu.', 'Biraz uzanayım.'],
+  flow: ['Sessizce yanındayım.', 'Akıştasın.'],
+  low: ['Biraz yıprandım.', 'Dikkatli olalım.'],
+  missed: ['Döndün.', 'Bekliyordum.'],
+  tapped: ['Hm.', 'Ne?'],
+  flee: ['…'],
+  woke: ['Uyuyordum.', 'Beş dakika.'],
 };
 
 const pick = a => a[Math.floor(Math.random() * a.length)];
 
 // Emote balonları: petin başının üstünde beliren, büyük ve okunaklı duygu simgeleri
 const EM = {
-  love: '<path d="M12 20.6C5 15.6 2.4 11.7 2.4 8.4 2.4 5.3 4.8 3.4 7.3 3.4c2 0 3.7 1.2 4.7 2.9 1-1.7 2.7-2.9 4.7-2.9 2.5 0 4.9 1.9 4.9 5 0 3.3-2.6 7.2-9.6 12.2z" fill="#FF5C7A"/><path d="M6.3 7.2c.4-1.2 1.4-1.8 2.4-1.7" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".8"/>',
-  note: '<path d="M8.5 17.5V6.2l10-2.4v11.4" fill="none" stroke="#7B61FF" stroke-width="2.2" stroke-linejoin="round"/><ellipse cx="6.4" cy="17.6" rx="2.9" ry="2.3" fill="#7B61FF"/><ellipse cx="16.4" cy="15.3" rx="2.9" ry="2.3" fill="#7B61FF"/><path d="M8.5 9l10-2.4" stroke="#7B61FF" stroke-width="2.2"/>',
-  excl: '<rect x="9.6" y="2.6" width="4.8" height="12.8" rx="2.4" fill="#FF6A3D"/><circle cx="12" cy="19.4" r="2.6" fill="#FF6A3D"/>',
-  ask: '<path d="M7.6 8.4c0-2.8 2-4.6 4.6-4.6 2.6 0 4.5 1.7 4.5 4 0 3.4-4.4 3.4-4.4 7" fill="none" stroke="#3E8EF7" stroke-width="3.2" stroke-linecap="round"/><circle cx="12.3" cy="19.6" r="2.2" fill="#3E8EF7"/>',
-  anger: '<g fill="none" stroke="#E5484D" stroke-width="2.6" stroke-linecap="round"><path d="M9.5 2.8v3.4c0 2-1.3 3.3-3.3 3.3H2.8"/><path d="M14.5 2.8v3.4c0 2 1.3 3.3 3.3 3.3h3.4"/><path d="M9.5 21.2v-3.4c0-2-1.3-3.3-3.3-3.3H2.8"/><path d="M14.5 21.2v-3.4c0-2 1.3-3.3 3.3-3.3h3.4"/></g>',
-  tear: '<path d="M12 2.8S5.4 10.8 5.4 15a6.6 6.6 0 0 0 13.2 0C18.6 10.8 12 2.8 12 2.8z" fill="#5BB4F0"/><path d="M8.8 15.2c0 1.6 1 2.8 2.4 3.2" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".85"/>',
-  sweat: '<path d="M15.5 3.4s-6 6.4-6 10.4a6 6 0 0 0 12 0c0-4-6-10.4-6-10.4z" fill="#9FDCFF" transform="rotate(18 15.5 12)"/><path d="M3 8.5h4.5M2.5 13h4M4 17.5h3.5" stroke="#7DB7E0" stroke-width="1.8" stroke-linecap="round"/>',
-  zz: '<path d="M3.5 12.5h5.2l-5.2 6h5.2" fill="none" stroke="#6A55E0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 3.5h8.5L11 13.5h8.5" fill="none" stroke="#6A55E0" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
-  star: '<path d="M12 2.6l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z" fill="#F7C531" stroke="#E7A915" stroke-width="1.2" stroke-linejoin="round"/>',
-  fire: '<path d="M12 21.4c-4.4 0-7.4-3-7.4-6.9 0-3.4 2.2-5.4 3.6-7.6.5 1.9 1.5 2.9 2.6 3.3-.3-3.4 1.2-6.2 3.6-8 0 3 1.4 4.6 2.9 6.4 1.3 1.6 2.1 3.4 2.1 5.9 0 3.9-3 6.9-7.4 6.9z" fill="#FF7A2F"/><path d="M12 21.2c-2.2 0-3.6-1.5-3.6-3.4 0-2 1.6-3.2 2.5-4.7.6 1.4 1.4 2 2.2 2.2-.1-1.2.3-2.3 1-3.1.9 1.5 1.7 2.6 1.7 4.6 0 2.4-1.6 4.4-3.8 4.4z" fill="#FFC23D"/>',
-  idea: '<path d="M12 3.2a6.3 6.3 0 0 0-3.8 11.3c.7.6 1.1 1.4 1.1 2.3h5.4c0-.9.4-1.7 1.1-2.3A6.3 6.3 0 0 0 12 3.2z" fill="#FFD84A" stroke="#E5B421" stroke-width="1.2"/><rect x="9.4" y="17.6" width="5.2" height="3.4" rx="1.2" fill="#9A93A0"/><path d="M10.4 9.4c.3-1.3 1.2-2.1 2.4-2.3" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>',
+  love: '<path d="M12 20.6C5 15.6 2.4 11.7 2.4 8.4 2.4 5.3 4.8 3.4 7.3 3.4c2 0 3.7 1.2 4.7 2.9 1-1.7 2.7-2.9 4.7-2.9 2.5 0 4.9 1.9 4.9 5 0 3.3-2.6 7.2-9.6 12.2z" fill="#C97C86"/><path d="M6.3 7.2c.4-1.2 1.4-1.8 2.4-1.7" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".8"/>',
+  note: '<path d="M8.5 17.5V6.2l10-2.4v11.4" fill="none" stroke="#7D7A9E" stroke-width="2.2" stroke-linejoin="round"/><ellipse cx="6.4" cy="17.6" rx="2.9" ry="2.3" fill="#7D7A9E"/><ellipse cx="16.4" cy="15.3" rx="2.9" ry="2.3" fill="#7D7A9E"/><path d="M8.5 9l10-2.4" stroke="#7D7A9E" stroke-width="2.2"/>',
+  excl: '<rect x="9.6" y="2.6" width="4.8" height="12.8" rx="2.4" fill="#C77B5B"/><circle cx="12" cy="19.4" r="2.6" fill="#C77B5B"/>',
+  ask: '<path d="M7.6 8.4c0-2.8 2-4.6 4.6-4.6 2.6 0 4.5 1.7 4.5 4 0 3.4-4.4 3.4-4.4 7" fill="none" stroke="#6E8FAE" stroke-width="3.2" stroke-linecap="round"/><circle cx="12.3" cy="19.6" r="2.2" fill="#6E8FAE"/>',
+  anger: '<g fill="none" stroke="#B5605E" stroke-width="2.6" stroke-linecap="round"><path d="M9.5 2.8v3.4c0 2-1.3 3.3-3.3 3.3H2.8"/><path d="M14.5 2.8v3.4c0 2 1.3 3.3 3.3 3.3h3.4"/><path d="M9.5 21.2v-3.4c0-2-1.3-3.3-3.3-3.3H2.8"/><path d="M14.5 21.2v-3.4c0-2 1.3-3.3 3.3-3.3h3.4"/></g>',
+  tear: '<path d="M12 2.8S5.4 10.8 5.4 15a6.6 6.6 0 0 0 13.2 0C18.6 10.8 12 2.8 12 2.8z" fill="#86AFC6"/><path d="M8.8 15.2c0 1.6 1 2.8 2.4 3.2" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".85"/>',
+  sweat: '<path d="M15.5 3.4s-6 6.4-6 10.4a6 6 0 0 0 12 0c0-4-6-10.4-6-10.4z" fill="#A9C6D6" transform="rotate(18 15.5 12)"/><path d="M3 8.5h4.5M2.5 13h4M4 17.5h3.5" stroke="#8FAFC2" stroke-width="1.8" stroke-linecap="round"/>',
+  zz: '<path d="M3.5 12.5h5.2l-5.2 6h5.2" fill="none" stroke="#7D7A9E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 3.5h8.5L11 13.5h8.5" fill="none" stroke="#7D7A9E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
+  star: '<path d="M12 2.6l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z" fill="#D2B46A" stroke="#B89B52" stroke-width="1.2" stroke-linejoin="round"/>',
+  fire: '<path d="M12 21.4c-4.4 0-7.4-3-7.4-6.9 0-3.4 2.2-5.4 3.6-7.6.5 1.9 1.5 2.9 2.6 3.3-.3-3.4 1.2-6.2 3.6-8 0 3 1.4 4.6 2.9 6.4 1.3 1.6 2.1 3.4 2.1 5.9 0 3.9-3 6.9-7.4 6.9z" fill="#C78457"/><path d="M12 21.2c-2.2 0-3.6-1.5-3.6-3.4 0-2 1.6-3.2 2.5-4.7.6 1.4 1.4 2 2.2 2.2-.1-1.2.3-2.3 1-3.1.9 1.5 1.7 2.6 1.7 4.6 0 2.4-1.6 4.4-3.8 4.4z" fill="#DDB46A"/>',
+  idea: '<path d="M12 3.2a6.3 6.3 0 0 0-3.8 11.3c.7.6 1.1 1.4 1.1 2.3h5.4c0-.9.4-1.7 1.1-2.3A6.3 6.3 0 0 0 12 3.2z" fill="#DCC27A" stroke="#BFA25A" stroke-width="1.2"/><rect x="9.4" y="17.6" width="5.2" height="3.4" rx="1.2" fill="#9A93A0"/><path d="M10.4 9.4c.3-1.3 1.2-2.1 2.4-2.3" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>',
   dots: '<circle cx="5.5" cy="12.5" r="2.3" fill="#6f6870"/><circle cx="12" cy="12.5" r="2.3" fill="#6f6870"/><circle cx="18.5" cy="12.5" r="2.3" fill="#6f6870"/>',
-  shield: '<path d="M12 2.8l7.6 3v5.6c0 4.6-3.2 8.2-7.6 9.8-4.4-1.6-7.6-5.2-7.6-9.8V5.8z" fill="#4F8BF7"/><path d="M8.4 12l2.6 2.6 4.8-5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
-  spark: '<path d="M12 2.5c.8 4.6 2.9 6.7 7.5 7.5-4.6.8-6.7 2.9-7.5 7.5-.8-4.6-2.9-6.7-7.5-7.5 4.6-.8 6.7-2.9 7.5-7.5z" fill="#8F7CFF"/><path d="M19 15.5c.3 1.7 1.1 2.5 2.8 2.8-1.7.3-2.5 1.1-2.8 2.8-.3-1.7-1.1-2.5-2.8-2.8 1.7-.3 2.5-1.1 2.8-2.8z" fill="#B9ABFF"/>',
-  cloud: '<path d="M7 14.2h10.4a3.6 3.6 0 0 0 .2-7.2 5 5 0 0 0-9.6 1A3.1 3.1 0 0 0 7 14.2z" fill="#9AA3B2"/><path d="M8.2 17l-1 3M12.2 17l-1 3M16.2 17l-1 3" stroke="#5BB4F0" stroke-width="1.8" stroke-linecap="round"/>',
-  fish: '<path d="M3 12c3.2-4.4 8-5.6 12.4-3.2L20.6 6v12l-5.2-2.8C11 17.6 6.2 16.4 3 12z" fill="#5BA4E6"/><circle cx="7.4" cy="11.2" r="1.2" fill="#1f2a3a"/><path d="M11.6 9.2c.8 1.8.8 3.8 0 5.6" fill="none" stroke="#3E86C9" stroke-width="1.3" stroke-linecap="round"/>',
+  shield: '<path d="M12 2.8l7.6 3v5.6c0 4.6-3.2 8.2-7.6 9.8-4.4-1.6-7.6-5.2-7.6-9.8V5.8z" fill="#6E8FAE"/><path d="M8.4 12l2.6 2.6 4.8-5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
+  spark: '<path d="M12 2.5c.8 4.6 2.9 6.7 7.5 7.5-4.6.8-6.7 2.9-7.5 7.5-.8-4.6-2.9-6.7-7.5-7.5 4.6-.8 6.7-2.9 7.5-7.5z" fill="#8E8AAE"/><path d="M19 15.5c.3 1.7 1.1 2.5 2.8 2.8-1.7.3-2.5 1.1-2.8 2.8-.3-1.7-1.1-2.5-2.8-2.8 1.7-.3 2.5-1.1 2.8-2.8z" fill="#B4B0CC"/>',
+  cloud: '<path d="M7 14.2h10.4a3.6 3.6 0 0 0 .2-7.2 5 5 0 0 0-9.6 1A3.1 3.1 0 0 0 7 14.2z" fill="#9AA3B2"/><path d="M8.2 17l-1 3M12.2 17l-1 3M16.2 17l-1 3" stroke="#86AFC6" stroke-width="1.8" stroke-linecap="round"/>',
+  fish: '<path d="M3 12c3.2-4.4 8-5.6 12.4-3.2L20.6 6v12l-5.2-2.8C11 17.6 6.2 16.4 3 12z" fill="#7D9BB3"/><circle cx="7.4" cy="11.2" r="1.2" fill="#1f2a3a"/><path d="M11.6 9.2c.8 1.8.8 3.8 0 5.6" fill="none" stroke="#5F7E96" stroke-width="1.3" stroke-linecap="round"/>',
   bone: '<path d="M6.6 9.2a2.6 2.6 0 1 1 2.8-3.6l5.2 5.2a2.6 2.6 0 1 1 3.6 2.8 2.6 2.6 0 1 1-2.8 3.6l-5.2-5.2a2.6 2.6 0 1 1-3.6-2.8z" fill="#F3E6D2" stroke="#C9AE88" stroke-width="1.4" stroke-linejoin="round"/>',
-  drop: '<path d="M12 2.8S5.4 10.8 5.4 15a6.6 6.6 0 0 0 13.2 0C18.6 10.8 12 2.8 12 2.8z" fill="#4FA6EA"/><path d="M8.8 15.2c0 1.6 1 2.8 2.4 3.2" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".85"/>',
-  seed: '<ellipse cx="8" cy="13" rx="2.4" ry="3.6" fill="#E6B54A" transform="rotate(-25 8 13)"/><ellipse cx="15.5" cy="10" rx="2.4" ry="3.6" fill="#D9A23A" transform="rotate(20 15.5 10)"/><ellipse cx="14" cy="17.5" rx="2.4" ry="3.6" fill="#E6B54A" transform="rotate(70 14 17.5)"/>',
+  drop: '<path d="M12 2.8S5.4 10.8 5.4 15a6.6 6.6 0 0 0 13.2 0C18.6 10.8 12 2.8 12 2.8z" fill="#7FA7BF"/><path d="M8.8 15.2c0 1.6 1 2.8 2.4 3.2" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".85"/>',
+  mouse: '<path d="M4 15.5c0-4 3.4-7 7.6-7 3.8 0 7 2.6 7.4 6.2l2.6.8-2.8 1.2c-.6 1.4-2.6 2.3-7.2 2.3H6.2C5 19 4 17.6 4 15.5z" fill="#9A9088"/><circle cx="9.6" cy="9.4" r="2.6" fill="#B2A79E"/><circle cx="16.2" cy="14" r="1" fill="#2a2428"/><path d="M4.4 17c-2 0-2.8 1.4-2 3" fill="none" stroke="#9A9088" stroke-width="1.4" stroke-linecap="round"/>',
+  bug: '<ellipse cx="12" cy="13.5" rx="4.6" ry="6" fill="#6E6258"/><path d="M12 7.5v12" stroke="#4E453E" stroke-width="1.2"/><circle cx="12" cy="6.4" r="2.4" fill="#4E453E"/><path d="M10.6 4.6L8.4 2.4M13.4 4.6l2.2-2.2M7.4 11l-3-1.4M16.6 11l3-1.4M7.4 15.4l-3 1.2M16.6 15.4l3 1.2" stroke="#4E453E" stroke-width="1.3" stroke-linecap="round"/>',
+  seed: '<ellipse cx="8" cy="13" rx="2.4" ry="3.6" fill="#C9AA6A" transform="rotate(-25 8 13)"/><ellipse cx="15.5" cy="10" rx="2.4" ry="3.6" fill="#B89458" transform="rotate(20 15.5 10)"/><ellipse cx="14" cy="17.5" rx="2.4" ry="3.6" fill="#C9AA6A" transform="rotate(70 14 17.5)"/>',
 };
-const FOOD_EMOTE = { cat: 'fish', dog: 'bone', plant: 'drop', chick: 'seed' };
+const FOOD_EMOTE = { cat: 'fish', dog: 'bone', plant: 'drop', chick: 'seed', owl: 'mouse', gecko: 'bug' };
+const DOG_BITE_STAGE = 3; // Genç Kurt ve sonrası: uyurken dürtülürse ısırır
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 export function initPet(core, quiz) {
@@ -123,6 +144,7 @@ export function initPet(core, quiz) {
     p.alive = p.alive !== false; p.lastTick = n(p.lastTick, Date.now()); p.lastSeen = n(p.lastSeen, Date.now());
     p.flow = !!p.flow; p.flowCount = n(p.flowCount, 0); p.answers = n(p.answers, 0); p.correct = n(p.correct, 0); p.streak = n(p.streak, 0);
     p.roam = p.roam !== false; p.notify = p.notify !== false;
+    if (p.species === 'plant') p.vig = clamp(n(p.vig, 0.85), 0, 1);
     // kedi/köpek tüy rengi: yoksa rastgele atanır ve kalıcı olur
     if (QUAD.includes(p.species) && !(Number.isInteger(p.coat) && p.coat >= 0 && p.coat < 8)) p.coat = randomCoat();
     if (p.death && typeof p.death !== 'object') p.death = null;
@@ -138,16 +160,36 @@ export function initPet(core, quiz) {
     const mx = maxes(p);
     while (t < now) {
       const step = Math.min(HOUR / 2, now - t), h = step / HOUR, d = new Date(t + step / 2), ph = phaseOf(d);
-      const asleep = ph === 'night' || ph === 'dawn' || p.energy <= 0;
+      const asleep = (p.species === 'owl' ? owlNap(d) : ph === 'night' || ph === 'dawn') || p.energy <= 0;
       const foodRate = p.species === 'plant' && isDaytime(d) ? 2 : 4;
       p.food = clamp(p.food - foodRate * h, 0, mx.food);
       p.energy = clamp(p.energy + (asleep ? 20 : 8) * h, 0, mx.energy);
       p.stuffed = clamp(p.stuffed - 30 * h, 0, 100);
       if (p.food <= 0) { if (p.hp > mx.hp * 0.2) p.hp = Math.max(mx.hp * 0.2, p.hp - 3 * h); }
       else if (p.food > mx.food * 0.5) p.hp = clamp(p.hp + 4 * h, 0, mx.hp);
+      if (p.species === 'plant') stepVigor(p, mx, h, t + step / 2);
       t += step;
     }
     p.lastTick = now;
+  }
+
+  // Bitkinin hâli: su ve can hedefi belirler; üstüne birkaç günlük kendi döngüsü biner
+  // (bazen iyi bakılsa da solar). Solmak hızlı, toparlanmak yavaştır.
+  function vigorTarget(p, mx, at) {
+    const base = 0.58 * (p.food / mx.food) + 0.42 * (p.hp / mx.hp);
+    const days = at / (24 * HOUR);
+    const cycle = 0.2 * Math.sin(days * Math.PI * 2 / 3.4 + (p.born || 0) % 7) + 0.07 * Math.sin(days * Math.PI * 2 / 1.1);
+    return clamp(base + cycle - 0.04, 0, 1);
+  }
+  function stepVigor(p, mx, h, at) {
+    if (!Number.isFinite(p.vig)) p.vig = vigorTarget(p, mx, at);
+    const d = vigorTarget(p, mx, at) - p.vig;
+    p.vig = clamp(p.vig + clamp(d, -0.07 * h, 0.03 * h), 0, 1);
+    p.vigTrend = d > 0.04 ? 1 : d < -0.04 ? -1 : 0;
+  }
+  function plantCond(p) {
+    const v = Number.isFinite(p.vig) ? p.vig : 1;
+    return { vigor: v, dry: clamp((0.5 - v) / 0.4, 0, 1), trend: p.vigTrend || 0 };
   }
 
   // ---------- seviye → evrim ----------
@@ -189,7 +231,7 @@ export function initPet(core, quiz) {
       if (catXpOf(cat) >= (info.target || 0)) {
         if (cat === 'en' && info.floor != null) app.levelFloor = info.floor;
         delete cu[cat];
-        if (P()) say(`Telafi tamamlandı! ${catLabel(cat)} eski yerine döndü 🎉`, 4200);
+        if (P()) sayNow(`Telafi tamamlandı! ${catLabel(cat)} eski yerine döndü 🎉`, 4200);
       }
     }
   }
@@ -200,6 +242,8 @@ export function initPet(core, quiz) {
     if (cu && catXpOf(cat) < cu.target) m *= 2;
     if (p && p.alive && p.energy > 0) {
       if (p.species === 'chick') { const h = clockNow().getHours(); if (h >= 6 && h < 12) m *= 1.25; }
+      if (p.species === 'owl') { const h = clockNow().getHours(); if (h >= 22 || h < 4) m *= 1.25; }
+      if (p.species === 'gecko' && p.prey && right) { m *= 2; p.prey = false; setTimeout(() => { emote('bug', 1600); sayNow('Av geldi. ×2 XP', 2400); renderPanel(); }, 900); }
     }
     return Math.round(delta * m);
   }
@@ -271,6 +315,11 @@ export function initPet(core, quiz) {
     if (p.food < mx.food * 0.2) return 'hungry';
     if (p.hp < mx.hp * 0.3) return 'sad';
     const ph = phase();
+    if (p.species === 'owl') {
+      if (ph === 'night' || ph === 'evening') return 'focus';
+      if (ph === 'morning' || ph === 'day' && clockNow().getHours() >= 11 || p.energy < mx.energy * 0.2) return 'groggy';
+      return 'idle';
+    }
     if (ph === 'morning' || p.energy < mx.energy * 0.2) return 'groggy';
     if (ph === 'evening') return dozing ? 'sleep' : 'sleepy';
     return 'idle';
@@ -279,10 +328,15 @@ export function initPet(core, quiz) {
   function isSleeping() {
     const p = P(); if (!p || !p.alive) return false;
     if (p.energy <= 0) return true;
+    if (p.species === 'owl') return owlNap(clockNow()) && Date.now() >= awakeUntil;
     const ph = phase();
     if (ph === 'night' || ph === 'dawn') return Date.now() >= awakeUntil;
+    // civciv günü herkesten önce bitirir
+    if (p.species === 'chick' && clockNow().getHours() >= 21) return Date.now() >= awakeUntil;
     return false;
   }
+  // baykuş: gece uyanık, öğleden sonra kestirir
+  const owlNap = d => { const h = d.getHours(); return h >= 13 && h < 16; };
   // Canlı çizim: iskeletli oynatıcı (pets/puppet.js) her karede pozu hesaplar.
   // Temel durum (boşta, oturma, yürüme, koşu, uyku, yatma, ölü) ruh hali ve hareketten gelir;
   // tepkiler (zıplama, irkilme, yemek…) bunun üstünde tek seferlik klip olarak oynar.
@@ -305,6 +359,7 @@ export function initPet(core, quiz) {
     const mood = currentMood();
     puppet.setForm(p.species, p.stage, p.coat | 0);
     puppet.setMood(mood);
+    puppet.setCond(p.species === 'plant' ? plantCond(p) : null);
     puppet.setBase(baseNow());
     if (force) artKey = '';
     const key = `${mood}|${baseNow()}`;
@@ -315,7 +370,10 @@ export function initPet(core, quiz) {
     const mx = maxes(p), parts = [];
     if (isSleeping()) parts.push(p.energy <= 0 ? '😵 Bitkin, uyuyor' : '😴 Uyuyor');
     else if (p.flow) parts.push('🎯 Odaklanmış');
-    else { const ph = phase(); if (ph === 'morning') parts.push('☕ Mahmur'); else if (ph === 'evening') parts.push('🌙 Uykusu geliyor'); else parts.push('😊 Keyifli'); }
+    else if (p.species === 'owl') { const ph = phase(); parts.push(ph === 'night' || ph === 'evening' ? '🌙 Nöbette' : ph === 'morning' ? '☕ Mahmur' : '😐 Gündüz yorgunu'); if (p.ward) parts.push(`♟️ ${p.ward} tur önde`); }
+    else { const ph = phase(); if (ph === 'morning') parts.push('☕ Mahmur'); else if (ph === 'evening') parts.push('🌙 Uykusu geliyor'); else parts.push(p.species === 'gecko' ? '🦎 Kendi halinde' : '😊 Keyifli'); }
+    if (p.species === 'gecko' && p.prey) parts.push('🦗 Av yaklaşıyor');
+    if (p.species === 'plant') { const v = Number.isFinite(p.vig) ? p.vig : 1; parts.push(v > 0.75 ? '🌿 Gür' : v > 0.5 ? '🍃 İdare ediyor' : v > 0.3 ? '🥀 Yarı solgun' : '🌵 Kuru, dikenli'); if ((p.vigTrend || 0) > 0 && v < 0.7) parts.push('🌱 toparlanıyor'); }
     if (p.stuffed >= 30) parts.push('😌 Mayışmış');
     else if (p.food < mx.food * 0.2) parts.push(p.species === 'plant' ? '🥀 Susuz' : '🍖 Aç');
     if (p.hp < mx.hp * 0.3) parts.push('🩹 Canı az');
@@ -355,7 +413,12 @@ export function initPet(core, quiz) {
 
   // ---------- konuşma balonu ve efektler ----------
   let bubbleTimer = 0, lastSay = 0;
-  function say(text, ms = 3200) {
+  // Pet konuşmaktan çok ifadesiyle anlatır: sıradan laflar en fazla 40 saniyede bir, önemli olanlar (sayNow) her zaman.
+  function say(text, ms = 2600) {
+    if (Date.now() - lastSay < 40000) return;
+    sayNow(text, ms);
+  }
+  function sayNow(text, ms = 3200) {
     if (!P() || actorEl.classList.contains('hidden')) return;
     bubble.textContent = text; bubble.classList.add('show'); lastSay = Date.now();
     placeBubble();
@@ -480,12 +543,17 @@ export function initPet(core, quiz) {
   }
   // türe özel boşta hareketleri (ağırlıklı seçim)
   const IDLE_KIT = {
-    cat: [['groom', 2600, 3], ['stretch', 2000, 2], ['look', 1700, 2], ['hop', 950, 1]],
-    dog: [['sniff', 1800, 3], ['shake', 1400, 2], ['chase', 2200, 1], ['look', 1700, 1], ['hop', 950, 1]],
-    chick: [['mirror', 3200, 2], ['petals', 3400, 2], ['look', 1700, 1], ['dance', 1600, 1], ['stretch', 2000, 1]],
-    plant: [['photo', 3600, 3], ['stretch', 2000, 1], ['look', 1700, 1], ['wiggle', 1200, 1]],  };
+    cat: [['groom', 2600, 4], ['stretch', 2000, 2], ['look', 1700, 2], ['sit', 3000, 2]],
+    dog: [['sniff', 1800, 3], ['shake', 1400, 2], ['chase', 2200, 1], ['look', 1700, 2], ['sit', 2600, 1]],
+    chick: [['look', 1700, 3], ['mirror', 3200, 2], ['petals', 3400, 2], ['hop', 950, 1], ['stretch', 2000, 1]],
+    plant: [['photo', 3600, 3], ['sit', 3000, 2], ['look', 1700, 1]],
+    owl: [['headturn', 2400, 3], ['look', 1700, 1], ['sit', 3000, 2], ['coffee', 4000, 1]],
+    gecko: [['lick', 1800, 3], ['tongue', 1600, 2], ['freeze', 3000, 2], ['tailwave', 2600, 1], ['bask', 4200, 1]],  };
+  // mizaç durumu (oturum içi): kedinin can sıkıntısı, köpeğin seni kollaması
+  let catBored = 0, wrongRun = 0, guardUntil = 0, mischiefAt = 0;
   function pickIdle(sp) {
-    const kit = (IDLE_KIT[sp] || IDLE_KIT.chick).filter(([n]) => n !== 'photo' || isDaytime(clockNow()));
+    const day = isDaytime(clockNow()), ph = phase();
+    const kit = (IDLE_KIT[sp] || IDLE_KIT.chick).filter(([n]) => (n !== 'photo' && n !== 'bask' || day) && (n !== 'coffee' || ph === 'morning' || ph === 'day'));
     let r = Math.random() * kit.reduce((s, k) => s + k[2], 0);
     for (const k of kit) { r -= k[2]; if (r <= 0) return k; }
     return kit[0];
@@ -498,11 +566,14 @@ export function initPet(core, quiz) {
     if (m === 'hungry' && Math.random() < 0.55) { setAnim('hungry', 3000); emote('food', 2200); return; }
     if (m === 'sad' && Math.random() < 0.45) { if (p.hp < mx.hp * 0.2) { setAnim('cry', 3000); emote('tear', 2000); } else { setAnim('sad', 2200); emote('cloud', 2200); } return; }
     if (p.flow && Math.random() < 0.4) { setAnim('focus', 2200); if (Math.random() < 0.4) emote('spark', 1500); return; }
+    if (sp === 'dog' && Date.now() < guardUntil) { setAnim('protect', 3000); if (Math.random() < 0.4) emote('shield', 1500); return; }
     if (Math.random() < 0.18) { setAnim('sit', 2600); return; }
     const [name, ms] = pickIdle(sp);
     if (name === 'look') { facing *= -1; if (Math.random() < 0.35) emote('ask', 1400); }
     if (name === 'hop' && Math.random() < 0.5) emote('note', 1400);
     if (name === 'dance') emote('note', 1500);
+    if (sp === 'cat') catBored += 8; // aynı şey sürdükçe sıkılır
+    if (name === 'coffee') setTimeout(() => emote('dots', 1500), 3000); // kahve: kısa bir canlanma, sonra yine aynı yorgunluk
     if (name === 'mirror') setTimeout(() => emote('love', 1200), 1600);
     if (name === 'photo') setTimeout(() => emote('star', 1300), 900);
     setAnim(name, ms);
@@ -524,7 +595,11 @@ export function initPet(core, quiz) {
       nextThink = now + 3200; return;
     }
     const lazy = p.stuffed >= 30 || ['groggy', 'sleepy'].includes(currentMood());
-    if (mode === 'home') { if (Math.random() < (p.flow ? 0.35 : 0.55)) leaveHome(); else idleAct(); }
+    // kedi: sıkıldıysa olay çıkarır; birkaç saniye sonra hiçbir şey olmamış gibi sokulur
+    if (p.species === 'cat' && catBored >= 60 && now > mischiefAt) { catMischief(); nextThink = now + 5200; return; }
+    // köpek: zor anlarında soru kartının başında nöbet tutar
+    if (p.species === 'dog' && now < guardUntil && p.roam && !reduced) { const g = guardSpot(); if (g && mode !== 'home') { walkTo(g, baseSpeed() * 1.4, () => { setAnim('protect', 3000); emote('shield', 1500); }); nextThink = now + 4200; return; } }
+    if (mode === 'home') { if (Math.random() < (p.flow ? 0.35 : p.species === 'plant' ? 0.25 : p.species === 'dog' && now < guardUntil ? 0.9 : 0.55)) leaveHome(); else idleAct(); }
     else if (!inView(H)) {
       // kullanıcı kaydırıp peti geride bıraktıysa: en yakın kenardan ekrana geri girer
       const above = vy(pos.y) < 0;
@@ -533,12 +608,12 @@ export function initPet(core, quiz) {
     } else {
       const r = Math.random();
       if (r < 0.14) goHome();
-      else if (r < (lazy ? 0.4 : 0.6)) walkTo(freeSpot(), baseSpeed());
+      else if (r < (lazy ? 0.4 : 0.6)) walkTo((p.species === 'chick' && Math.random() < 0.7 && spotNearYou()) || freeSpot(), baseSpeed());
       else idleAct();
     }
     // ara sıra moral
     const sinceSay = now - lastSay;
-    if (sinceSay > (p.flow ? 70000 : 110000) && Math.random() < 0.35) {
+    if (sinceSay > (p.flow ? 150000 : 240000) && Math.random() < 0.2) {
       const mx = maxes(p);
       if (p.flow) { say(pick(LINES.flow)); emote('spark', 1500); }
       else if (p.food < mx.food * 0.25) { say(pick(p.species === 'plant' ? LINES.hungry.plant : LINES.hungry.other)); emote('food', 2400); }
@@ -585,6 +660,15 @@ export function initPet(core, quiz) {
 
   // ---------- etkileşim ----------
   let pressTimer = 0, pressed = false;
+  // son dokunulan yer: civciv sevdiğinin yanında kalmak ister
+  let lastPtr = null;
+  document.addEventListener('pointerdown', e => { if (!e.target.closest?.('#petActor')) lastPtr = { x: e.pageX, y: e.pageY, t: Date.now() }; }, { passive: true });
+  function spotNearYou() {
+    if (!lastPtr || Date.now() - lastPtr.t > 25000) return null;
+    const vw = window.innerWidth, sy = SY(), vh = window.innerHeight;
+    const y = clamp(lastPtr.y - H + (Math.random() - 0.3) * 60, sy + 70, sy + vh - H - 20);
+    return { x: clamp(lastPtr.x - W / 2 + (Math.random() - 0.5) * 120, 8, vw - W - 8), y };
+  }
   actorEl.addEventListener('pointerdown', e => {
     if (!P()?.alive) return;
     e.preventDefault(); e.stopPropagation(); pressed = true;
@@ -596,36 +680,92 @@ export function initPet(core, quiz) {
   });
   actorEl.addEventListener('pointerleave', () => { clearTimeout(pressTimer); pressed = false; });
   actorEl.addEventListener('click', e => e.stopPropagation());
+  function shakeActor() { actorEl.classList.remove('bitten'); void actorEl.offsetWidth; actorEl.classList.add('bitten'); setTimeout(() => actorEl.classList.remove('bitten'), 520); }
+  function catFed(p) { return p.food > maxes(p).food * 0.45; }
+  // uzun basış: okşama
   function pet() {
     const p = P(); if (!p?.alive) return;
-    if (isSleeping()) awakeUntil = Date.now() + 45000;
-    react('love', 2200, 'love', 'love'); spawn('♥', 'heart', 4); say(pick(PET_SPECS[p.species].love));
+    const sp = p.species;
+    if (isSleeping() && !(sp === 'dog' && p.stage >= DOG_BITE_STAGE)) awakeUntil = Date.now() + 45000;
+    if (sp === 'dog' && isSleeping() && p.stage >= DOG_BITE_STAGE) { dogBite(); return; }
+    if (sp === 'cat') {
+      // işine geldiğinde: karnı toksa sokulur, değilse kıvrılıp gider
+      if (catFed(p)) { react('love', 2600, 'cuddle', 'love'); catBored = Math.max(0, catBored - 30); say(pick(PET_SPECS.cat.love)); }
+      else { react('poked', 1200, 'poked', 'fish'); facing *= -1; if (p.roam && !reduced && mode !== 'home') setTimeout(() => walkTo(freeSpot(), baseSpeed()), 900); }
+      return;
+    }
+    if (sp === 'plant') { react('love', 2400, isDaytime(clockNow()) ? 'photo' : 'sit', 'love'); say(pick(PET_SPECS.plant.love)); return; }
+    if (sp === 'owl') { react('love', 2200, 'sit', 'love'); say(pick(PET_SPECS.owl.love)); return; }
+    if (sp === 'gecko') { react('love', 2600, isDaytime(clockNow()) ? 'bask' : 'tailwave', 'love'); say(pick(PET_SPECS.gecko.love)); return; }
+    react('love', 2200, sp === 'dog' ? 'cuddle' : 'love', 'love'); spawn('♥', 'heart', 2); say(pick(PET_SPECS[sp].love));
   }
+  // kurt uyurken dürtülürse ısırır
+  function dogBite() {
+    awakeUntil = Date.now() + 20000;
+    tempMood = 'poked'; tempUntil = Date.now() + 1400;
+    setAnim('bite', 1100); setTimeout(() => { emote('anger', 1600); shakeActor(); }, 280);
+    say('Uyurken dürtme.', 2200);
+    setTimeout(() => { awakeUntil = 0; drawSprite(); }, 9000); // hemen geri uyur
+  }
+  // kısa dokunuş: her tür kendi mizacıyla tepki verir
   function tap() {
     const p = P(); if (!p?.alive) return;
-    if (isSleeping()) { awakeUntil = Date.now() + 45000; react('surprised', 1500, 'shock', 'excl'); say(pick(LINES.woke)); return; }
-    const r = Math.random();
-    if (r < 0.3 && p.roam && !reduced) {
-      react('surprised', 1300, 'flee', 'sweat'); spawn('•', 'sweat', 2);
-      if (mode === 'home') { const a = homeAnchor(); pos.x = a.x; pos.y = a.y; mode = 'roam'; }
-      const vw = window.innerWidth, vh = window.innerHeight;
-      const t = { x: pos.x < vw / 2 ? vw - W - 12 - Math.random() * 60 : 12 + Math.random() * 60, y: clamp(vy(pos.y) + (Math.random() - 0.5) * vh * 0.5, 90, vh - H - 20) + SY() };
-      walkTo(t, 260, () => react('happy', 900, 'hop', 'note'));
-      sprite.className = 'pet-sprite a-flee';
-      if (Math.random() < 0.5) say(pick(LINES.flee), 1800);
-    } else if (r < 0.65) { react('poked', 1300, 'poked', Math.random() < 0.6 ? 'anger' : 'excl'); if (Math.random() < 0.6) say(pick(LINES.tapped), 1800); }
-    else { react('love', 1800, 'love', 'love'); spawn('♥', 'heart', 3); if (Math.random() < 0.6) say(pick(PET_SPECS[p.species].love), 2200); }
+    const sp = p.species, r = Math.random();
+    if (isSleeping()) {
+      if (sp === 'dog' && p.stage >= DOG_BITE_STAGE) { dogBite(); return; }
+      if (sp === 'plant') { emote('dots', 1400); return; }
+      awakeUntil = Date.now() + 45000;
+      if (sp === 'cat') { react('poked', 1300, 'poked', 'anger'); facing *= -1; return; }
+      react('surprised', 1400, 'shock', sp === 'chick' ? 'ask' : 'excl'); say(pick(LINES.woke)); return;
+    }
+    if (sp === 'chick') {
+      // meraklı, habersiz: her dokunuşa sevinir ya da merakla bakar
+      if (r < 0.6) { react('happy', 1000, 'hop', Math.random() < 0.5 ? 'love' : 'note'); }
+      else { react('surprised', 1500, 'look', 'ask'); }
+      return;
+    }
+    if (sp === 'plant') {
+      if (r < 0.5) react('poked', 1100, 'wiggle', 'dots');
+      else if (isDaytime(clockNow())) react('happy', 2400, 'photo', 'star');
+      else emote('dots', 1300);
+      return;
+    }
+    if (sp === 'cat') {
+      // umursamaz, tırmalar ya da (karnı toksa) yanaşır
+      if (r < 0.42) { facing *= -1; setAnim(Math.random() < 0.5 ? 'groom' : 'sit', 2400); emote('dots', 1500); if (p.roam && !reduced && mode !== 'home' && Math.random() < 0.4) setTimeout(() => walkTo(freeSpot(), baseSpeed()), 800); }
+      else if (r < 0.7) { react('poked', 1200, 'poked', 'anger'); catBored = Math.max(0, catBored - 10); }
+      else if (catFed(p)) { react('love', 2400, 'cuddle', 'love'); }
+      else { react('hungry', 2200, 'hungry', 'fish'); }
+      return;
+    }
+    if (sp === 'owl') {
+      // gece tetikte: başını çevirip süzer; gündüz huysuz
+      const night = ['night', 'evening'].includes(phase());
+      if (night) react('focus', 2400, r < 0.6 ? 'headturn' : 'look', r < 0.6 ? 'dots' : 'ask');
+      else react('groggy', 1800, r < 0.5 ? 'yawn' : 'headturn', 'dots');
+      return;
+    }
+    if (sp === 'gecko') {
+      // farklı tepki verir: donar, gözünü yalar ya da dil çıkarır
+      if (r < 0.4) { setAnim('freeze', 3000); emote('dots', 1400); }
+      else if (r < 0.75) { react('happy', 1800, 'lick', 'ask'); }
+      else react('love', 1600, 'tongue', 'love');
+      return;
+    }
+    // köpek: hemen sevinir; bazen oyun daveti
+    if (r < 0.7) { react('love', 1800, 'love', 'love'); }
+    else { react('happy', 1100, 'poked', 'note'); }
   }
   $('#petHab').addEventListener('click', () => {
     const p = P(); if (!p?.alive) return;
-    if (mode === 'home') { react('happy', 900, 'hop', 'note'); say(pick(LINES.cheer), 2200); return; }
-    goHome(); say('Geliyorum! 🐾', 1500);
+    if (mode === 'home') { tap(); return; }
+    goHome(); emote(p.species === 'cat' ? 'dots' : 'note', 1300);
   });
   $('#petNameBtn').addEventListener('click', () => openInfo());
   $('#flowBtn').addEventListener('click', () => {
     const p = P(); if (!p) return;
     p.flow = !p.flow; p.flowCount = 0; save(true);
-    if (p.flow) { react('focus', 1600, 'focus', 'spark'); spawn('✦', 'spark', 2); say('Flow açık! Müzik ödülleri durdu, enerjim 10 soruda bir azalır 🌊', 3600); core.toast('🌊 Flow modu açık · ödül pencereleri kapandı'); }
+    if (p.flow) { react('focus', 1600, 'focus', 'spark'); spawn('✦', 'spark', 2); sayNow('Flow açık! Müzik ödülleri durdu, enerjim 10 soruda bir azalır 🌊', 3600); core.toast('🌊 Flow modu açık · ödül pencereleri kapandı'); }
     else { react('happy', 1000, 'hop', 'note'); say('Güzel bir akıştı! Biraz dinlenelim mi? 😊', 2600); core.toast('Flow modu kapandı'); }
     renderPanel();
   });
@@ -634,10 +774,10 @@ export function initPet(core, quiz) {
   function useAbility() {
     const p = P(); if (!p?.alive) return;
     const sp = PET_SPECS[p.species], ab = sp.active;
-    if (p.energy < ab.cost) { react('groggy', 1400, 'yawn', 'dots'); say('Enerjim yetmiyor… biraz dinlenmem lazım 😪'); return; }
+    if (p.energy < ab.cost) { react('groggy', 1400, 'yawn', 'dots'); sayNow('Enerjim yetmiyor… biraz dinlenmem lazım 😪'); return; }
     if (isSleeping()) awakeUntil = Date.now() + 60000;
     const t = quiz.petTarget();
-    if (!t) { core.toast('Yetenekler pop quiz kartındaki cevaplanmamış sorularda çalışır.'); emote('ask', 1600); say('Bir soru açalım, sonra yardım ederim 🤓', 2400); return; }
+    if (!t) { core.toast('Yetenekler pop quiz kartındaki cevaplanmamış sorularda çalışır.'); emote('ask', 1600); sayNow('Bir soru açalım, sonra yardım ederim 🤓', 2400); return; }
     // kedi: önce lazer avı, soru avın sonunda atlanır
     if (ab.id === 'skip') {
       if (abilityBusy) return;
@@ -646,8 +786,8 @@ export function initPet(core, quiz) {
       laserChase(() => {
         abilityBusy = false;
         const q = P(); if (!q) return;
-        if (quiz.skip()) { say('Yakaladım! Bu soruyu sonraya sakladım 🐾', 3200); spawn('✦', 'spark', 3); }
-        else { q.energy = Math.min(maxes(q).energy, q.energy + ab.cost); save(true); emote('ask', 1500); say('Soru değişti, enerjini geri verdim 🤔', 2400); }
+        if (quiz.skip()) { sayNow('Yakaladım! Bu soruyu sonraya sakladım 🐾', 3200); spawn('✦', 'spark', 3); }
+        else { q.energy = Math.min(maxes(q).energy, q.energy + ab.cost); save(true); emote('ask', 1500); sayNow('Soru değişti, enerjini geri verdim 🤔', 2400); }
         renderPanel();
       });
       return;
@@ -658,16 +798,38 @@ export function initPet(core, quiz) {
       else { const n = quiz.eliminate(2); ok = n > 0; msg = `${n} yanlış şıkkı ayıkladım 🌿`; }
     } else if (ab.id === 'peek') {
       const h = quiz.answerHint(); if (h) { ok = true; msg = `Cik! “${h.first.toLocaleUpperCase('tr')}” ile başlıyor · ${h.letters} ${/\d/.test(h.text) ? 'karakter' : 'harf'}${h.words > 1 ? ` · ${h.words} kelime` : ''} 🐣`; }
+    } else if (ab.id === 'ward') {
+      p.ward = 4; ok = true; msg = 'Dört tur öndeyim. Sonraki 4 soruda yanlışların yarı acıtır.';
+    } else if (ab.id === 'prey') {
+      if (p.prey) { emote('dots', 1400); sayNow('Zaten bekliyorum.', 1800); return; }
+      p.prey = true; ok = true; msg = 'Kıpırdamıyorum. Sonraki doğru cevap ×2 XP.';
     } else if (ab.id === 'sniff') {
       const n = t.style === 'type' ? 0 : quiz.eliminate(1); p.shieldFor = t.item.id; ok = true;
       msg = n ? 'Kazdım, kokladım: bir şık yanlış! Bu soruda seni koruyorum 🛡️' : 'Bu soruda seni koruyorum, yanlışta canım gitmez 🛡️';
     }
-    if (!ok) { emote('ask', 1500); say('Şu an bunu yapamam 🤔', 2000); return; }
+    if (!ok) { emote('ask', 1500); sayNow('Şu an bunu yapamam 🤔', 2000); return; }
     p.energy = Math.max(0, p.energy - ab.cost); save(true);
     // her türün kendi yetenek animasyonu; mesaj animasyonun doruğunda gelir
-    if (ab.id === 'sniff') { tempMood = 'focus'; tempUntil = Date.now() + 2200; setAnim('dig', 3400); setTimeout(() => { emote('shield', 1800); spawn('✦', 'spark', 2); say(msg, 4200); }, 2300); }
-    else { setAnim('ability', 2600); setTimeout(() => { emote('idea', 1500); spawn('✦', 'spark', 3); say(msg, 4400); }, 1100); }
+    if (ab.id === 'sniff') { tempMood = 'focus'; tempUntil = Date.now() + 2200; setAnim('dig', 3400); setTimeout(() => { emote('shield', 1800); spawn('✦', 'spark', 2); sayNow(msg, 4200); }, 2300); }
+    else { setAnim('ability', 2600); setTimeout(() => { emote('idea', 1500); spawn('✦', 'spark', 3); sayNow(msg, 4400); }, 1100); }
     renderPanel();
+  }
+
+  function cardSpot(dx = 0.5) {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const card = document.querySelector('.quiz-card')?.getBoundingClientRect();
+    if (!card || !card.width || card.top < 60 || card.top > vh - 60) return null;
+    return { x: clamp(card.left + card.width * dx - W / 2, 8, vw - W - 8), y: clamp(card.top - H + 14, 70, vh - H - 10) + SY() };
+  }
+  const guardSpot = () => cardSpot(0.82);
+  // kedinin olay çıkarması: kartın kenarına gider, fincanı düşürür, umursamaz; sonra sokulur
+  function catMischief() {
+    const p = P(); catBored = 0; mischiefAt = Date.now() + 90000;
+    const act = () => { setAnim('knock', 2400); setTimeout(() => emote('dots', 1600), 1300); };
+    const spot = p.roam && !reduced ? cardSpot(0.25) : null;
+    if (spot) { if (mode === 'home') { const a = homeAnchor(); pos.x = a.x; pos.y = a.y; mode = 'roam'; } walkTo(spot, baseSpeed() * 1.2, act); }
+    else act();
+    setTimeout(() => { const q = P(); if (q?.alive && !isSleeping()) react('love', 2600, 'cuddle', 'love'); }, 9000 + Math.random() * 6000);
   }
 
   // kedinin lazer avı: nokta ekranda birkaç yere sıçrar, kedi koşarak izler, sonda üstüne atlar
@@ -712,6 +874,7 @@ export function initPet(core, quiz) {
     if (!p.alive) return;
     const mx = maxes(p), sp = PET_SPECS[p.species], now = clockNow();
     p.answers++;
+    const warded = p.species === 'owl' && p.ward > 0;
     // enerji
     const photo = p.species === 'plant' && isDaytime(now) ? 0.5 : 1;
     if (p.flow) { p.flowCount++; if (p.flowCount % 10 === 0) { p.energy = Math.max(0, p.energy - 5 * photo); spawn('✦', 'spark', 1); } }
@@ -720,12 +883,14 @@ export function initPet(core, quiz) {
     if (ph === 'dawn') awakeUntil = Date.now() + 30 * 60000;
     const asleep = isSleeping();
     if (d.right) {
-      p.correct++; p.streak++;
+      p.correct++; p.streak++; wrongRun = 0;
+      if (p.species === 'plant') p.vig = clamp((p.vig ?? 0.8) + 0.012, 0, 1);
+      if (p.species === 'cat' && p.streak >= 3) catBored += 7; // iyi giden aynı şeyden bile sıkılır
       const feed = 7;
       if (p.food + feed > mx.food) p.stuffed = clamp(p.stuffed + 9, 0, 100);
       p.food = clamp(p.food + feed, 0, mx.food);
       if (p.food > mx.food * 0.3) p.hp = clamp(p.hp + 2, 0, mx.hp);
-      if (p.species === 'dog' && p.streak % 5 === 0) { p.hp = clamp(p.hp + 10, 0, mx.hp); setTimeout(() => { emote('love', 1600); say('Sadık dost: +10 can 🐶'); }, 1300); }
+      if (p.species === 'dog' && p.streak % 5 === 0) { p.hp = clamp(p.hp + 10, 0, mx.hp); setTimeout(() => { emote('love', 1600); sayNow('Sadık dost: +10 can 🐶'); }, 1300); }
       if (p.shieldFor === d.id) p.shieldFor = null;
       if (asleep) { spawn('z', 'zz', 1); emote('zz', 1600); if (Math.random() < 0.25) say('Zzz… aferin… zzz', 1800); }
       else {
@@ -739,23 +904,41 @@ export function initPet(core, quiz) {
     } else {
       p.streak = 0;
       let dmg = d.kind === 'legacy-miss' ? 5 : d.kind === 'legacy-fail' ? 8 : 14;
-      if (p.shieldFor && p.shieldFor === d.id) { dmg = 0; p.shieldFor = null; react('focus', 1300, 'hop', 'shield'); spawn('✦', 'spark', 1); say('Seni korudum! 🛡️ Açıklamaya bakalım.', 2600); }
+      if (p.species === 'owl' && p.ward > 0) dmg = Math.ceil(dmg / 2);
+      if (p.species === 'gecko') { const h = now.getHours(); if (h >= 10 && h < 17) dmg = Math.ceil(dmg * 0.7); }
+      if (p.shieldFor && p.shieldFor === d.id) { dmg = 0; p.shieldFor = null; react('focus', 1300, 'hop', 'shield'); spawn('✦', 'spark', 1); sayNow('Seni korudum! 🛡️ Açıklamaya bakalım.', 2600); }
       if (dmg > 0) {
         if (p.hp - dmg <= 0 && p.species === 'cat' && p.nineLivesDay !== todayKey()) {
-          p.hp = 1; p.nineLivesDay = todayKey(); react('surprised', 1500, 'shock', 'excl'); say('Dokuz candan birini kullandım! 😼 Dikkat!', 3600);
+          p.hp = 1; p.nineLivesDay = todayKey(); react('surprised', 1500, 'shock', 'excl'); sayNow('Dokuz candan birini kullandım! 😼 Dikkat!', 3600);
         } else {
           p.hp = Math.max(0, p.hp - dmg);
           if (p.hp <= 0) { die(d.cat); save(true); renderPanel(); return; }
           if (asleep) { spawn('•', 'tear', 1); emote('tear', 1400); }
           else {
-            react('sad', 700, 'flinch', p.hp < mx.hp * 0.3 ? 'cloud' : 'tear'); spawn('•', 'tear', 2);
-            setTimeout(() => { const q = P(); if (q?.alive) { const low = q.hp < maxes(q).hp * 0.3; react('sad', low ? 3000 : 1600, low ? 'cry' : 'sad'); } }, 720);
-            if (p.hp < mx.hp * 0.3 && Math.random() < 0.7) setTimeout(() => say(pick(LINES.low), 2800), 700);
-            else if (Math.random() < 0.4) setTimeout(() => say(pick(LINES.wrong), 2600), 700);
+            wrongRun++;
+            const low = p.hp < mx.hp * 0.3;
+            if (p.species === 'chick' && !low) {
+              // habersiz: ne olduğunu tam anlamaz, merakla bakar
+              react('surprised', 1600, 'look', 'ask');
+            } else if (p.species === 'gecko' && !low) {
+              // artı eksi yoktur: hafifçe donar, devam eder
+              react('idle', 1800, 'freeze', 'dots');
+            } else if (p.species === 'plant') {
+              // sızlanmaz; sessizce biraz eğilir ve dayanır
+              p.vig = clamp((p.vig ?? 0.8) - 0.02, 0, 1);
+              react('sad', 1800, 'sad', 'dots');
+            } else {
+              react('sad', 700, 'flinch', low ? 'cloud' : 'tear'); spawn('•', 'tear', 1);
+              setTimeout(() => { const q = P(); if (q?.alive) { const lw = q.hp < maxes(q).hp * 0.3; react('sad', lw ? 3000 : 1600, lw && q.species !== 'cat' ? 'cry' : 'sad'); } }, 720);
+            }
+            // köpek: sen düşünce dümeni alır — bir süre soru kartının başında nöbet tutar
+            if (p.species === 'dog' && (wrongRun >= 2 || low)) { guardUntil = Date.now() + 45000; setTimeout(() => { if (P()?.alive) { emote('shield', 1800); nextThink = 0; } }, 1500); }
+            if (low && Math.random() < 0.5) setTimeout(() => say(pick(LINES.low), 2600), 700);
           }
         }
       }
     }
+    if (warded) { p.ward = Math.max(0, p.ward - 1); if (!p.ward) setTimeout(() => emote('dots', 1400), 1600); }
     if (gains) setTimeout(() => react('happy', 1200, 'joy', 'star'), 300);
     save(true); renderPanel();
   }
@@ -846,7 +1029,7 @@ export function initPet(core, quiz) {
     tempMood = null; animCls = ''; sprite.className = 'pet-sprite a-idle'; drawSprite(true);
     save(true); core.renderProgress(); quiz.renderAll(); renderPanel();
     react('happy', 1600, 'joy', 'love'); spawn('✦', 'spark', 4);
-    setTimeout(() => say('Geri döndüm! Bu sefer daha dikkatli olalım 💪', 3600), 400);
+    setTimeout(() => sayNow('Geri döndüm! Bu sefer daha dikkatli olalım 💪', 3600), 400);
     core.toast(`💫 ${p.name} canlandı · ${catLabel(cat)} sıfırlandı · telafi 2× XP`);
   });
   $('#petNew').addEventListener('click', () => {
@@ -864,12 +1047,13 @@ export function initPet(core, quiz) {
   let chosen = null;
   function openChooser(afterDeath = false) {
     $('#pcTitle').textContent = afterDeath ? 'Yeni bir arkadaş seç' : 'Bir pet seç';
-    $('#pcLead').textContent = afterDeath ? 'Yeni petin sıfırdan başlar ve her seviye atladığında evrimleşir.' : 'Doğru cevaplar onu besler, yanlışlar canını yakar. Her seviye atladığında evrimleşir. Ona iyi bak!';
+    $('#pcLead').textContent = afterDeath ? 'Yeni petin sıfırdan başlar ve her seviye atladığında evrimleşir.' : 'Her biri bir hâli taşır. Doğru cevaplar onu besler, yanlışlar canını yakar; her seviyede evrimleşir.';
     const bar = (v, c) => `<span class="pcb"><i style="width:${Math.round(v / 140 * 100)}%;background:${c}"></i></span>`;
     $('#pcGrid').innerHTML = ORDER.map(id => {
       const s = PET_SPECS[id];
       return `<button class="pc-card" data-sp="${id}"><div class="pc-art">${petSVG(id, 1, { mood: 'happy' })}</div><strong>${esc(s.name)} <small>${esc(PET_SPECIES[id].label)}</small></strong>
-        <div class="pc-stats"><span>❤️${bar(s.hp, '#E5534B')}</span><span>${s.foodIcon}${bar(s.food, id === 'plant' ? '#4FA6EA' : '#F0A04B')}</span><span>⚡${bar(s.energy, '#E9C23C')}</span></div>
+        <div class="pc-stats"><span>❤️${bar(s.hp, '#E5534B')}</span><span>${s.foodIcon}${bar(s.food, id === 'plant' ? '#7FA7BF' : '#F0A04B')}</span><span>⚡${bar(s.energy, '#E9C23C')}</span></div>
+        <p class="pc-soul">${esc(s.soul.split('. ').slice(0, 2).join('. ').replace(/\.?$/, '.'))}</p>
         <div class="pc-skill"><b>${esc(s.passive.name)}</b> ${esc(s.passive.desc)}</div><div class="pc-skill act"><b>✨ ${esc(s.active.name)}</b> ${esc(s.active.desc)}</div>
         <div class="pc-evo">${[0, 2, 5].map(st => `<span>${petSVG(id, st)}</span>`).join('<em>›</em>')}</div></button>`;
     }).join('');
@@ -895,7 +1079,7 @@ export function initPet(core, quiz) {
     else { const now2 = levelsNow(); for (const [k, v] of Object.entries(now2)) app.petLevels[k] = Math.max(app.petLevels[k] ?? v, v); }
     chooser.classList.remove('show'); save(true);
     mode = 'home'; artKey = ''; renderPanel();
-    setTimeout(() => { react('happy', 1500, 'joy', 'love'); spawn('♥', 'heart', 3); say(`Merhaba! Ben ${p.name}. Doğru cevaplarla ${p.species === 'plant' ? 'sulanırım 💧' : 'beslenirim 🍖'}`, 4200); }, 500);
+    setTimeout(() => { react('happy', 1500, 'joy', 'love'); spawn('♥', 'heart', 3); sayNow(`Ben ${p.name}.`, 4200); }, 500);
     if (notifyAvailable()) LocalNotifications.requestPermissions().catch(() => {});
     $('#petHome')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
   });
@@ -906,7 +1090,7 @@ export function initPet(core, quiz) {
     const sp = PET_SPECS[p.species], mx = maxes(p);
     $('#piTitle').textContent = `${p.name} · ${stageName(p.species, p.stage)}`;
     $('#piLine').innerHTML = [0, 1, 2, 3, 4, 5].map(st => `<div class="pi-stage ${st < p.stage ? 'past' : st === p.stage ? 'now' : 'future'}">${petSVG(p.species, st, { coat: p.coat })}<small>${st <= p.stage ? esc(stageName(p.species, st)) : '???'}</small></div>`).join('');
-    $('#piSkills').innerHTML = `<div><b>🌀 ${esc(sp.passive.name)} (pasif)</b><span>${esc(sp.passive.desc)}</span></div><div><b>✨ ${esc(sp.active.name)} (aktif · ${sp.active.cost}⚡)</b><span>${esc(sp.active.desc)}</span></div><div><b>💪 Güçlü yanı</b><span>${esc(sp.perk)}</span></div>`;
+    $('#piSkills').innerHTML = `<p class="pi-soul">${esc(sp.soul)}</p><div><b>🌀 ${esc(sp.passive.name)} (pasif)</b><span>${esc(sp.passive.desc)}</span></div><div><b>✨ ${esc(sp.active.name)} (aktif · ${sp.active.cost}⚡)</b><span>${esc(sp.active.desc)}</span></div><div><b>💪 Güçlü yanı</b><span>${esc(sp.perk)}</span></div>`;
     $('#piStats').innerHTML = `<span>❤️ ${Math.round(p.hp)}/${mx.hp}</span><span>${sp.foodIcon} ${Math.round(p.food)}/${mx.food}</span><span>⚡ ${Math.round(p.energy)}/${mx.energy}</span><span>✅ ${p.correct} doğru</span><span>⭐ ${p.stars}</span><span>💫 ${p.revives || 0} kez canlandı</span>`;
     $('#piName').value = p.name; $('#piRoam').checked = p.roam; $('#piNotify').checked = p.notify;
     $('#piNotifyRow').classList.toggle('hidden', !notifyAvailable());
@@ -1001,7 +1185,7 @@ export function initPet(core, quiz) {
     if (!P()) return;
     if (actorEl.classList.contains('hidden')) { if (n < 40) setTimeout(() => sayWhenVisible(text, em, ms, n + 1), 1500); return; }
     if (em) emote(em, Math.min(ms, 3200));
-    if (text) say(text, ms);
+    if (text) sayNow(text, ms);
   }
   const REACTS = { love: ['love', 2200, 'love', 'love'], joy: ['happy', 1100, 'joy', 'star'], dance: ['happy', 1500, 'dance', 'note'], shock: ['surprised', 1300, 'shock', 'excl'], sad: ['sad', 1800, 'sad', 'tear'], sleep: ['sleep', 2600, 'doze', 'zz'] };
   function admin(msg = {}) {
@@ -1104,6 +1288,6 @@ export function initPet(core, quiz) {
     ensure, reload, render: renderPanel, openChooser, openInfo, xpMod, snapshot, admin,
     onPause() { const p = P(); if (p) { tick(); p.lastSeen = Date.now(); save(); schedule(); } },
     onResume() { cancelNotes(); tick(); greetIfAway(); renderPanel(); },
-    debug: { die: () => { const p = P(); if (p) { p.hp = 1; } }, evolve: n => evolveBy(n || 1), phase, react, say, tick, emote, setAnim, baseNow, puppet, ability: useAbility },
+    debug: { die: () => { const p = P(); if (p) { p.hp = 1; } }, evolve: n => evolveBy(n || 1), phase, react, say, tick, emote, setAnim, baseNow, puppet, ability: useAbility, tap, pet, mischief: () => catMischief(), bored: v => { catBored = v; }, isSleeping, mood: currentMood, guard: () => guardUntil },
   };
 }

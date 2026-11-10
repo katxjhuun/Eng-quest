@@ -56,6 +56,8 @@ const goodPet = { species: 'cat', stage: 3, stars: 0, name: 'Mırnav', alive: tr
 t('anon writes own pet', true, db.as(anon('u1')).write('/users/u1/pet', goodPet));
 t('anon removes own pet', true, db.as(anon('u1')).write('/users/u1/pet', null));
 t('anon pet bad species', false, db.as(anon('u1')).write('/users/u1/pet', { ...goodPet, species: 'dragon' }));
+t('anon pet owl ok', true, db.as(anon('u1')).write('/users/u1/pet', { ...goodPet, species: 'owl' }));
+t('anon pet gecko ok', true, db.as(anon('u1')).write('/users/u1/pet', { ...goodPet, species: 'gecko' }));
 t('anon pet long name', false, db.as(anon('u1')).write('/users/u1/pet', { ...goodPet, name: 'x'.repeat(40) }));
 t('anon pet unknown key', false, db.as(anon('u1')).write('/users/u1/pet', { ...goodPet, owner: 'a@b.c' }));
 t('anon writes other pet', false, db.as(anon('u1')).write('/users/u2/pet', goodPet));

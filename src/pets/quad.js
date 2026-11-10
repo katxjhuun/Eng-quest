@@ -7,9 +7,12 @@ export const G = 108;
 
 // ---------------------------------------------------------------- tüy renkleri (rastgele atanır)
 export const COATS = {
-  cat: ['#221E25', '#E2893C', '#7D8391', '#E6CDA2', '#7A4E33', '#F1EDE6', '#4A4553', '#C9773A'],
-  dog: ['#221E25', '#6B4630', '#D5A04E', '#E8D5B2', '#8D9097', '#F1EDE6', '#B4633A', '#3C3437'],
+  // lo-fi: kırık, tozlu tonlar (doygun turuncu/sarı yok)
+  cat: ['#2B2629', '#C08658', '#8A8890', '#D8C7AA', '#6E5242', '#E6E0D6', '#55505A', '#AE8660'],
+  dog: ['#2B2629', '#6E5040', '#BE9862', '#D9C9AE', '#8C8E94', '#E6E0D6', '#A06A4C', '#3E3639'],
 };
+// göz rengi tüyle eşleşir (kedi: amber/yeşil/gri-mavi; köpek: koyu kahve)
+const IRIS = { cat: ['#C9A24A', '#8FA36A', '#C9A24A', '#7E9AA6', '#B98E45', '#7E9AA6', '#9DB07A', '#B98E45'], dog: ['#6B4A33', '#3A2A22', '#4A3326', '#5A3E2C', '#4A3326', '#5A3E2C', '#3A2A22', '#7A5638'] };
 export function coatColors(b) {
   const L = lum(b), dark = L < 0.1, light = L > 0.45;
   return {
@@ -18,7 +21,7 @@ export function coatColors(b) {
     mark: dark ? shade(b, 0.16) : shade(b, light ? -0.22 : -0.34),
     under: dark ? shade(b, 0.28) : shade(b, 0.5),
     white: '#FFFFFF', pupil: dark ? '#141116' : '#231d27', line: dark || L < 0.3 ? '#FFFFFF' : '#2a2026', lid: b,
-    rim: light ? shade(b, -0.3) : null,
+    rim: light ? shade(b, -0.3) : L < 0.2 ? '#7A6E70' : null,
   };
 }
 
@@ -29,15 +32,15 @@ const CAT = [
   { name: 'lynx', k: 0.94, hs: 1.06, leg: 1.02, len: 0.92, th: 1.03, tail: 5.6, tailLen: 0.34, tufts: true, ruff: true, marks: 'spots' },
   { name: 'puma', k: 1, hs: 1, leg: 1.05, len: 1.06, th: 1, tail: 5, tailLen: 1.15 },
   { name: 'leopard', k: 1.03, hs: 1, leg: 1.05, len: 1.12, th: 1.02, tail: 5, tailLen: 1.15, marks: 'rosettes' },
-  { name: 'panther', k: 1.08, hs: 1.02, leg: 1.08, len: 1.16, th: 1.03, tail: 5.2, tailLen: 1.22, glow: '#F2CF4E' },
+  { name: 'panther', k: 1.08, hs: 1.02, leg: 1.08, len: 1.16, th: 1.03, tail: 5.2, tailLen: 1.22, glow: '#D9B45A' },
 ];
 const DOG = [
   { name: 'puppy', k: 0.8, hs: 1.22, leg: 0.72, len: 0.72, th: 1.03, ears: 'floppy', tail: 5.4, tailLen: 0.42 },
   { name: 'pup', k: 0.88, hs: 1.06, leg: 0.92, len: 0.88, th: 1, ears: 'mixed', tail: 5, tailLen: 0.66 },
-  { name: 'shepherd', k: 0.96, hs: 1, leg: 1.02, len: 1, th: 1.03, ears: 'pointy', tail: 6.2, tailLen: 0.86, marks: 'saddle', collar: '#D9534F' },
+  { name: 'shepherd', k: 0.96, hs: 1, leg: 1.02, len: 1, th: 1.03, ears: 'pointy', tail: 6.2, tailLen: 0.86, marks: 'saddle', collar: '#9E5A4E' },
   { name: 'youngwolf', k: 0.99, hs: 0.98, leg: 1.04, len: 1.04, th: 1, ears: 'pointy', tail: 7, tailLen: 0.9, marks: 'wolf', bush: true },
   { name: 'wolf', k: 1.04, hs: 0.98, leg: 1.08, len: 1.1, th: 1.04, ears: 'pointy', tail: 7.6, tailLen: 0.95, marks: 'wolf', bush: true, ruff: true },
-  { name: 'alpha', k: 1.1, hs: 1, leg: 1.1, len: 1.14, th: 1.1, ears: 'pointy', tail: 8, tailLen: 1, marks: 'wolf', bush: true, ruff: true, mane: true, glow: '#F5C64E' },
+  { name: 'alpha', k: 1.1, hs: 1, leg: 1.1, len: 1.14, th: 1.1, ears: 'pointy', tail: 8, tailLen: 1, marks: 'wolf', bush: true, ruff: true, mane: true, glow: '#C9A55A' },
 ];
 export function form(kind, stage) {
   const f = (kind === 'dog' ? DOG : CAT)[clamp(stage | 0, 0, 5)];
@@ -407,6 +410,48 @@ export const CLIPS = {
     if (held) q.props = [...p.props.slice(0, 2), { type: 'bone', x: q.headX + 15 * F.hs, y: q.headY + 6 * F.hs, a: -8, s: 0.9 * F.hs }];
     return q;
   } },
+  // kurt: uyurken dürtülünce — kafa kalkar, öne atılıp ısırır (ağız açık, kulaklar geride), geri çekilir
+  snap: { dur: 1.1, f: (u, c) => {
+    const B = c.B, F = c.F;
+    const wake = K(u, [[0, 0], [0.12, 1, 'out'], [1, 1]]);
+    let p = blend({ ...B.loaf, eye: 'closed' }, { ...B.crouch, earA: -30, earB: -30, tailA: 160, tailC: 2, eye: 'angry' }, wake);
+    const lunge = K(u, [[0, 0], [0.18, 0], [0.3, 1, 'out'], [0.46, 1], [0.7, 0, 'io']]);
+    p.headX += 8 * lunge * F.hs; p.headY += 2 * lunge; p.headA = 8 - 14 * lunge; p.chestX += 3 * lunge; p.rx = 3 * lunge;
+    const bite = bump(u, 0.24, 0.36) + bump(u, 0.38, 0.48);
+    p.mouth = 0.25 + 0.75 * bite; p.rr = -2 * lunge;
+    p.rx += 0.8 * Math.sin(u * TAU * 14) * bump(u, 0.5, 1);
+    return p;
+  } },
+  // kedi: oturur, patisini kaldırır ve masadaki fincanı itip düşürür; sonra umursamaz
+  swat: { dur: 2.4, f: (u, c) => {
+    const B = c.B, F = c.F;
+    const p = { ...B.sit };
+    const raise = K(u, [[0, 0], [0.18, 1, 'out'], [0.3, 0.6], [0.38, 1, 'out'], [0.5, 0, 'io']]);
+    p.fnX = B.sit.fnX + 9 * raise; p.fnY = B.sit.fnY - 10 * raise; p.headA = -6 * raise + 10 * seg(u, 0.55, 0.8);
+    p.eye = u < 0.5 ? 'focus' : 'half'; p.tailA = 205 + 15 * Math.sin(u * TAU * 2); p.tailC = 14;
+    const push = seg(u, 0.36, 0.5), fall = seg(u, 0.5, 0.85);
+    const cx = B.sit.fnX + 13;
+    p.props = [{ type: 'mug', x: cx + 4 * push + 8 * fall, y: G - 0.5 + 0 * fall, a: 95 * EASE.in(fall) + 12 * push, s: 0.95 * F.hs + 0.1, op: 1 }];
+    if (fall > 0.95) p.props.push({ type: 'spill', x: cx + 13, y: G, s: 1 });
+    return p;
+  } },
+  // kedi: hiçbir şey olmamış gibi sokulur — başını sürter, gözler kapalı, kuyruk dik ve uçta kıvrık
+  rub: { dur: 2.6, rep: true, f: (u, c) => {
+    const p = { ...c.B.stand, eye: 'closed' };
+    const s = Math.sin(u * TAU * 2);
+    p.headA = 10 + 8 * s; p.headX += 2 + 1.5 * s; p.headY += 2; p.chestX += 1 * s; p.rr = 1.5 * s;
+    p.tailA = 262; p.tailC = -14; p.tailW = 2; p.tailF = 0.6; p.earA = -8; p.earB = -6;
+    return p;
+  } },
+  // köpek: nöbet — dik duruş, göğüs önde, kulaklar dik, kuyruk yüksek ve sabit
+  guard: { dur: 3, rep: true, f: (u, c) => {
+    const B = c.B, F = c.F;
+    const p = { ...B.stand, eye: 'focus' };
+    p.chestY -= 2.5; p.chestX += 1.5; p.headY -= 4 * F.hs; p.headX += 1; p.headA = -6 + 2 * Math.sin(u * TAU);
+    p.earA = 12; p.earB = 12; p.tailA = 250; p.tailC = 3; p.tailW = 1.2; p.tailF = 0.5;
+    p.look = Math.sin(u * TAU) * 0.6;
+    return p;
+  } },
 };
 
 // sıçrama: çömel → fırla → havada → konar → yerleş
@@ -529,8 +574,8 @@ export function draw(F, p, col, T, uid) {
   let hk, sx = 0;
   if (F.dog) { const d = dogHead(F, p, col); hk = d.o; sx = d.sx; } else hk = catHead(F, p, col);
   // gözler
-  const ec = { ...col, white: F.glow || col.white, pupil: F.glow ? '#16131a' : col.pupil, line: F.glow || col.line };
-  const ex = F.dog ? [-3.2, 5] : [-4.5, 5.5], ey = F.dog ? -3.4 : -0.6, er = F.dog ? 3.3 : 3.55;
+  const ec = { ...col, iris: F.glow || col.iris, pupil: '#141014', line: F.glow || col.line };
+  const ex = F.dog ? [-3.2, 5] : [-4.4, 5.4], ey = F.dog ? -3.4 : -0.8, er = F.dog ? 2.9 : 3.2;
   if (col.rim && !['happy', 'closed', 'x', 'squint'].includes(p.eye)) hk.push(op('rim', 'path', { d: `M${P(ex[0] - er - 0.8, ey)} a${r1(er + 0.8)} ${r1(er + 0.8)} 0 1 0 ${r1(2 * er + 1.6)} 0 a${r1(er + 0.8)} ${r1(er + 0.8)} 0 1 0 ${r1(-2 * er - 1.6)} 0 M${P(ex[1] - er - 0.8, ey)} a${r1(er + 0.8)} ${r1(er + 0.8)} 0 1 0 ${r1(2 * er + 1.6)} 0 a${r1(er + 0.8)} ${r1(er + 0.8)} 0 1 0 ${r1(-2 * er - 1.6)} 0`, fill: col.rim, opacity: '.55' }));
   hk.push(...eyes('ring', ex[0], ex[1], ey, er, p.eye || 'open', p.blink || 0, p.look || 0, p.lookY || 0, ec));
   hk.push(...mouth(F.dog ? 'dog' : 'cat', F.dog ? sx - 5 : 1.2, F.dog ? 7.6 : 6.8, 1, '', p.mouth || 0, p.tongue || 0, { mouth: '#4a1f28' }));
@@ -547,8 +592,10 @@ export function footprint(F, p) {
 export function setup(kind, stage, coat = 0) {
   const F = form(kind, stage);
   const list = COATS[kind] || COATS.cat;
-  const b = list[((coat | 0) % list.length + list.length) % list.length];
-  return { F, B: bases(F), col: coatColors(b), k: F.k };
+  const ci = ((coat | 0) % list.length + list.length) % list.length;
+  const col = coatColors(list[ci]);
+  col.iris = (IRIS[kind] || IRIS.cat)[ci]; col.slit = kind !== 'dog';
+  return { F, B: bases(F), col, k: F.k };
 }
 // bir adım döngüsünde gövdenin aldığı yol (viewBox birimi, ölçeksiz)
 export const cycleLen = (F, mode) => (mode === 'run' ? 57 : 28) * F.leg;
@@ -565,6 +612,7 @@ export const ALIAS = (name, F) => ({
   groom: F.dog ? 'sniff' : 'groom',
   shake: F.dog ? 'shake' : 'groom',
   chase: F.dog ? 'chase' : 'pounce',
+  bite: F.dog ? 'snap' : 'poked', knock: F.dog ? 'shake' : 'swat', cuddle: F.dog ? 'love' : 'rub', protect: F.dog ? 'guard' : 'focus',
   mirror: 'look', petals: F.dog ? 'sniff' : 'groom', photo: 'stretch', bubble: 'look', wiggle: F.dog ? 'shake' : 'stretch', spin: F.dog ? 'chase' : 'hop', home: 'sit',
 }[name] || name);
 export function belly(p, b) { return { ...p, sag: (p.sag || 0) + 5 * b, rcS: (p.rcS || 1) * (1 + 0.08 * b), rrS: (p.rrS || 1) * (1 + 0.1 * b) }; }

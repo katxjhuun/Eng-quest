@@ -1,3 +1,19 @@
+# dam-la 2.3.0 — Petler büyüdü: lo-fi görünüm, mizaçlar, baykuş ve gecko
+
+Uzaktan güncellemeyle gelir. Veritabanı kuralları güncellendi (baykuş ve gecko türleri): Firebase konsolunda yayınlanmalı.
+- **Lo-fi görsel dil:** Soluk, kırık tonlu paletler; çizimlerin üstünde ince film greni. Akşam renkler sıcaklaşır, gece serinleyip kararır, hüzünde renk çekilir. Parıltılı iri gözler ve allık kalktı: civcivde sade yuvarlak gözler, bitkide kapaklı sabırlı bakış, kedide amber badem göz ve yarık göz bebeği, köpekte koyu yumuşak gözler.
+- **Her petin bir hâli var** (seçim ekranında ve bilgi sayfasında yazıyor):
+  - **Civciv** — saf, meraklı, habersiz. Yanlış cevapta üzülmez, ne olduğunu anlamaya çalışır; dokunduğun yerin yakınında dolaşır; günü 21:00'de bitirip uyur.
+  - **Bitki** — sabır. Kendi döngüsü var: bazen gür, bazen yarı solgun, bazen yapraksız, kuru ve dikenli; yavaş yavaş toparlanır (tepede taze bir filiz belirir), yine solar. Su ve bakım yönü belirler ama döngüyü tamamen durduramaz. Yanlışta sızlanmaz, sessizce eğilir.
+  - **Kedi** — bencil cazibe merkezi. Dokunuşları çoğu zaman umursamaz ya da tırmalar; karnı toksa sokulur. İşler fazla iyi gidince sıkılır, soru kartının kenarındaki fincanı düşürür, bir süre sonra hiçbir şey olmamış gibi gelip başını sürter.
+  - **Köpek/Kurt** — koşulsuz sadakat. Arka arkaya yanlış yaptığında ya da canın azaldığında soru kartının başında nöbet tutar. Kurt formlarında uyurken dürtersen ısırır.
+- **Yeni: Baykuş** (Nöbetçi) — gece onun gündüzü: geceleri uyumaz, öğleden sonra kestirir. Pasif *Gece Nöbeti*: 22–04 arası doğru cevaplar %25 fazla XP. Aktif *Dört Tur Önde*: sonraki 4 soruda yanlışların can kaybı yarıya iner. Sabahları kahve içer; kısa bir canlanma, sonra yine aynı yorgunluk. 6 form: Tüy Yumağı → Gece Bekçisi.
+- **Yeni: Gecko** (Süzgeç) — farklı görünür, farklı yaşar: gözünü yalar, adımın ortasında donar, güneşlenir. Rengi sahiplenirken rastgele atanır. Pasif *Güneşte Sabit*: 10–17 arası yanlışlarda %30 daha az can kaybı. Aktif *Av Ona Gelir*: kıpırdamadan bekler, sonraki doğru cevap ×2 XP. 6 form: Kıpır → Sessiz Ejder (bukalemun formunda rengi yavaşça değişir).
+- Pet daha az konuşur: sıradan laflar en fazla 40 saniyede bir; kendini çoğunlukla ifadesi ve tavrıyla anlatır.
+- Yuvalar ve emote simgeleri de soluk tonlara geçti. Yönetici paneli yeni türleri gösterir ve tür değiştirme listesinde sunar.
+
+---
+
 # dam-la 2.2.8 — Ödül şarkıları önce yalnızca ses
 
 Uzaktan güncellemeyle gelir.

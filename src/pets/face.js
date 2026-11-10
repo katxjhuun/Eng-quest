@@ -1,6 +1,7 @@
-// Gözler ve ağızlar: iki aile.
-//  'ring' — koyu siluet gövdede beyaz "O" göz (referans kedi/köpek)
-//  'dot'  — açık renk gövdede koyu, parlak noktalı göz (civciv, bitki, damla)
+// Gözler ve ağızlar (lo-fi, yetişkin dili: parıltısız, küçük, kapaklı gözler; allık yok).
+//  'dot'  — açık renk gövdede küçük, koyu, hafif kapaklı göz (civciv, bitki)
+//  'ring' — kedi/köpek: renkli iris; kedide dikey yarık göz bebeği, köpekte koyu yuvarlak
+//  'owl'  — baykuş: iri yuvarlak amber iris, kalın koyu çerçeve
 // Her fonksiyon çizim komutları (op) döndürür: { k: anahtar, t: etiket, a: öznitelikler }
 import { r1, P, clamp } from './anim.js';
 
@@ -52,13 +53,26 @@ function eye(fam, k, x, y, r, style, blink, lx, ly, col, d) {
       if (style === 'up') { py -= r * 0.32; }
       const ry = R * open;
       const yy = y + (R - ry) * 0.35;
-      if (ring) {
-        out.push(op(k + 'w', 'ellipse', { cx: r1(x), cy: r1(yy), rx: r1(R), ry: r1(ry), fill: W }));
-        out.push(op(k + 'p', 'ellipse', { cx: r1(x + px), cy: r1(yy + py * open), rx: r1(pr), ry: r1(Math.min(pr, ry * 0.9)), fill: PU }));
+      if (fam === 'owl') {
+        // baykuş: koyu çerçeve, amber iris, iri bebek (dikkatliyken daralır)
+        out.push(op(k + 'r', 'ellipse', { cx: r1(x), cy: r1(yy), rx: r1(R * 1.18), ry: r1(ry * 1.18 + 0.4), fill: col.rimCol || '#2a2428' }));
+        out.push(op(k + 'w', 'ellipse', { cx: r1(x), cy: r1(yy), rx: r1(R), ry: r1(ry), fill: col.iris || '#D9A441' }));
+        const op_ = style === 'focus' || style === 'angry' ? 0.42 : style === 'wide' ? 0.78 : 0.6;
+        out.push(op(k + 'p', 'ellipse', { cx: r1(x + px * 0.6), cy: r1(yy + py * 0.6 * open), rx: r1(R * op_), ry: r1(Math.min(R * op_, ry * 0.92)), fill: '#141014' }));
+        if (open > 0.5) out.push(op(k + 'h', 'circle', { cx: r1(x + px * 0.6 - R * 0.25), cy: r1(yy - ry * 0.3), r: r1(R * 0.14), fill: '#F4EBDD', opacity: '.55' }));
+      } else if (ring) {
+        // renkli iris; kedi: yarık bebek (heyecanla açılır), köpek: koyu yuvarlak bebek
+        const slit = col.slit;
+        out.push(op(k + 'w', 'ellipse', { cx: r1(x), cy: r1(yy), rx: r1(R), ry: r1(ry), fill: col.iris || W }));
+        const wide = style === 'wide' || style === 'up' ? 1 : style === 'happy' ? 0.7 : 0;
+        const prx = slit ? R * (0.2 + 0.42 * wide) : pr * 1.15, pry = slit ? ry * 0.86 : Math.min(pr * 1.15, ry * 0.9);
+        out.push(op(k + 'p', 'ellipse', { cx: r1(x + px), cy: r1(yy + py * open), rx: r1(prx), ry: r1(pry), fill: PU }));
+        if (open > 0.5) out.push(op(k + 'h', 'circle', { cx: r1(x + px - R * 0.3), cy: r1(yy - ry * 0.32), r: r1(R * 0.16), fill: '#F6EEE2', opacity: '.5' }));
       } else {
-        // nokta göz: koyu oval + parlak nokta
-        out.push(op(k + 'w', 'ellipse', { cx: r1(x + px * 0.5), cy: r1(yy + py * 0.5), rx: r1(R * 0.82), ry: r1(ry), fill: PU }));
-        if (open > 0.4) out.push(op(k + 'p', 'circle', { cx: r1(x + px * 0.5 + R * 0.28), cy: r1(yy + py * 0.5 - ry * 0.38), r: r1(R * 0.3), fill: W }));
+        // nokta göz: küçük koyu oval, parıltı yok; üstte ince kapak çizgisi (sakin, düşünceli bakış)
+        out.push(op(k + 'w', 'ellipse', { cx: r1(x + px * 0.5), cy: r1(yy + py * 0.5), rx: r1(R * 0.6), ry: r1(ry * 0.74), fill: PU }));
+        if (open > 0.5 && col.glint) out.push(op(k + 'p', 'circle', { cx: r1(x + px * 0.5 + R * 0.18), cy: r1(yy + py * 0.5 - ry * 0.3), r: r1(R * 0.14), fill: W, opacity: '.45' }));
+        if (open > 0.3 && col.lidLine) out.push(op(k + 'q', 'path', { d: `M${P(x - R * 0.85, yy - ry * 0.55)} Q${P(x, yy - ry * 1.05)} ${P(x + R * 0.85, yy - ry * 0.55)}`, ...stroke(col.lidLine, R * 0.32) }));
       }
       if (lid > 0 && open > 0.25) {
         // kapak: gövde renginde bir parça gözün üstünü örter
@@ -107,7 +121,7 @@ export function mouth(kind, x, y, s, mood, open = 0, tongue = 0, col = {}) {
 }
 
 // yanak allığı (açık gövdeler)
-export function blush(x1, x2, y, s, a = 0.5, c = '#FF9FA8') {
+export function blush(x1, x2, y, s, a = 0.5, c = '#D99A8E') {
   return [op('bl1', 'ellipse', { cx: r1(x1), cy: r1(y), rx: r1(3.6 * s), ry: r1(2.1 * s), fill: c, opacity: a.toFixed(2) }),
     op('bl2', 'ellipse', { cx: r1(x2), cy: r1(y), rx: r1(3.6 * s), ry: r1(2.1 * s), fill: c, opacity: a.toFixed(2) })];
 }
