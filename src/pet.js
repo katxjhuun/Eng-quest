@@ -867,6 +867,8 @@ export function initPet(core, quiz) {
     if (r < 0.7) { react('love', 1800, 'love', 'love'); }
     else { react('happy', 1100, 'poked', 'note'); }
   }
+  // çift/üçlü tıklamada metin seçimi ve odak başlamasın
+  $('#petHab').addEventListener('mousedown', e => { e.preventDefault(); });
   $('#petHab').addEventListener('click', () => {
     const p = P(); if (!p?.alive) return;
     if (mode === 'home') { tap(); return; }

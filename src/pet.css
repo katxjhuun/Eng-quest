@@ -1,6 +1,7 @@
 /* ---------- pet yuvası (seviye çubuğu ile soru tipi arasında) ---------- */
 .pet-home{display:flex;flex-direction:column;gap:8px;background:#fffdf8;border:1px solid #e6ded3;border-radius:22px;padding:8px 8px 10px;margin:0 0 14px;box-shadow:0 8px 22px rgba(31,28,34,.06);position:relative}
-.pet-hab{position:relative;border-radius:16px;background:linear-gradient(180deg,transparent 0 76%,#d9b98f 76% 77.2%,#e9cfa6 77.2% 100%),radial-gradient(circle,#e2a93b55 1.3px,transparent 1.8px) 0 0/16px 16px,radial-gradient(circle,#c8553d33 1px,transparent 1.5px) 8px 8px/16px 16px,#f4ead3;overflow:hidden;min-height:214px;cursor:pointer;border:1px solid #ece4d7}
+.pet-hab{position:relative;border-radius:16px;background:linear-gradient(180deg,transparent 0 76%,#d9b98f 76% 77.2%,#e9cfa6 77.2% 100%),radial-gradient(circle,#e2a93b55 1.3px,transparent 1.8px) 0 0/16px 16px,radial-gradient(circle,#c8553d33 1px,transparent 1.5px) 8px 8px/16px 16px,#f4ead3;overflow:hidden;min-height:214px;cursor:pointer;border:1px solid #ece4d7;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.pet-hab *{user-select:none;-webkit-user-select:none}
 .pet-hab:before{content:"";position:absolute;left:0;right:0;bottom:0;height:26px;background:#eadfcd;border-top:1px solid #e0d2bc}
 .pet-hab-bg{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center}
 .pet-hab-bg svg{width:190px;height:190px;margin-bottom:2px}
@@ -533,3 +534,9 @@ body.gm-open{overflow:hidden}
 .cu-h{width:46px;height:52px;border-radius:10px;border:0;background:#f4e7c9;box-shadow:0 3px 0 #d9c49a;font-size:22px;font-weight:900;color:#201d23}
 .cu-h.on{background:#4f3bd4;color:#fff;box-shadow:0 3px 0 #2d2187;transform:translateY(-3px)}
 .cu-btns{display:flex;gap:8px;width:100%}.cu-btns>*{flex:1}.cu-btns input{min-width:0;border:1.5px solid #d8d0c3;border-radius:12px;padding:10px;font-size:15px}
+
+/* Pet alanı metin alanı gibi davranmasın: seçim, imleç, dokunma vurgusu, uzun basma menüsü yok */
+.pet-home,.pet-home *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;caret-color:transparent}
+.pet-home input,.pet-home textarea{-webkit-user-select:text;user-select:text;caret-color:auto}
+.pet-hab,.pet-hab *{cursor:pointer;outline:0}
+.pet-home :not(button):not(input):not(a):not(.pet-hab):not(.pet-hab *){cursor:default}

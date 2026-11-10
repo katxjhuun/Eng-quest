@@ -44,6 +44,37 @@ function similarity(a, b) {
 }
 
 // ---- XP uçma animasyonu (cevap kutusundan XP barına) ----
+// Soru değişirken sayfa kısalırsa tarayıcı kaydırmayı yukarı çeker. Bunu önlemek için ana görünüm eski
+// yüksekliğinde tutulur; kullanıcı yukarı kaydırdıkça fazlalık kendiliğinden erir. Ekran hiç zıplamaz.
+export function holdScroll(fn) {
+  const view = document.querySelector('#gameView');
+  if (!view) { fn(); return; }
+  holdScroll.off?.();
+  const y = window.scrollY;
+  view.style.minHeight = '';
+  const top = view.getBoundingClientRect().top + y;
+  const prev = view.offsetHeight;
+  const tail = Math.max(0, document.documentElement.scrollHeight - (top + prev)); // görünümün altındaki alan
+  view.style.minHeight = prev + 'px';            // önce kilitle: içerik kısalsa da sayfa boyu değişmez
+  fn();
+  if (Math.abs(window.scrollY - y) > 1) window.scrollTo({ top: y, behavior: 'instant' });
+  // yalnızca ekranı yerinde tutmaya yetecek kadar yükseklik kalsın
+  const need = () => Math.max(0, window.scrollY + window.innerHeight - top - tail + 16); // küçük pay: kırpma döngüsüne girmesin
+  // doğal yükseklik min-height kaldırılmadan ölçülür (kaldırmak tarayıcının kaydırmayı hemen kırpmasına yol açar)
+  const natural = () => { const vt = view.getBoundingClientRect().top; let m = 0; for (const c of view.children) { const r = c.getBoundingClientRect(); if (r.height) m = Math.max(m, r.bottom - vt + (parseFloat(getComputedStyle(c).marginBottom) || 0)); } return m + (parseFloat(getComputedStyle(view).paddingBottom) || 0); };
+  const shrink = () => {
+    const h = Math.min(prev, need());
+    if (h <= natural()) { view.style.minHeight = ''; holdScroll.off?.(); return; }
+    if (h <= natural) { holdScroll.off?.(); return; }
+    view.style.minHeight = h + 'px';
+  };
+  shrink();
+  if (Math.abs(window.scrollY - y) > 1) window.scrollTo({ top: y, behavior: 'instant' });
+  if (!view.style.minHeight) return;
+  window.addEventListener('scroll', shrink, { passive: true });
+  holdScroll.off = () => { window.removeEventListener('scroll', shrink); holdScroll.off = null; };
+}
+
 export function flyXp(fromEl, delta, { target = '#xpNumber', onLand } = {}) {
   return new Promise(res => {
     // Uygulama arka plana alınırsa animasyon olayları gelmeyebilir: en geç 3 sn sonra bar güncellenir ve akış sürer.
@@ -59,8 +90,9 @@ export function flyXp(fromEl, delta, { target = '#xpNumber', onLand } = {}) {
     if (!a.width && !a.height) { onLand?.(); resolve(); return; }
     // Hedef ekranda görünmüyorsa önce progress kartını görünür yap.
     const visible = b.top >= 0 && b.bottom <= window.innerHeight;
-    const go = () => {
-      const b2 = tgt.getBoundingClientRect();
+    const go = (seen = true) => {
+      const r2 = tgt.getBoundingClientRect();
+      const b2 = seen ? r2 : { left: r2.left, width: r2.width, top: r2.bottom < 0 ? 4 : window.innerHeight - 40, height: 24 };
       const el = document.createElement('div');
       el.className = 'xp-fly ' + (delta > 0 ? 'pos' : 'neg');
       el.textContent = `${delta > 0 ? '+' : '−'}${Math.abs(delta)} XP`;
@@ -89,7 +121,8 @@ export function flyXp(fromEl, delta, { target = '#xpNumber', onLand } = {}) {
         setTimeout(() => { panel.classList.remove('xp-hit', 'xp-hit-neg'); resolve(); }, 650);
       };
     };
-    if (visible) go(); else { tgt.closest('.progress-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(go, 420); }
+    // ekranı kaydırmadan uç: hedef görünmüyorsa XP ekranın üst kenarına doğru uçar
+    go(visible);
   });
 }
 
@@ -307,7 +340,8 @@ export function initQuiz(core) {
     const box = $('#catTabs'); if (!box) return;
     const cat = A().cat;
     box.innerHTML = CATS.map(c => `<button role="tab" class="cat-tab${c.id === cat ? ' on' : ''}" data-cat="${c.id}" aria-selected="${c.id === cat}"><span>${c.icon}</span>${esc(c.label)}</button>`).join('');
-    const on = box.querySelector('.on'); if (on) on.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+    const on = box.querySelector('.on'); // yalnızca sekme şeridini yatay kaydır; sayfa dikeyde hiç oynamasın
+    if (on) { const l = on.offsetLeft - (box.clientWidth - on.offsetWidth) / 2; if (Math.abs(box.scrollLeft - l) > 4) box.scrollTo({ left: Math.max(0, l), behavior: 'smooth' }); }
   }
   function renderModeBtn() {
     const m = MODES.find(x => x.id === A().profile.mode) || MODES[0];
@@ -506,8 +540,7 @@ export function initQuiz(core) {
     const cat = A().cat, q = Q();
     q.cur[cat] = newCur(cat);
     core.saveLocal(false);
-    render({ speak });
-    $('#quizCard')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    holdScroll(() => render({ speak }));
   }
 
   // ---- ses ----
