@@ -1,3 +1,14 @@
+# dam-la 2.5.0 — Yeni petler ve sıfırdan animasyon
+
+Uzaktan güncellemeyle gelir.
+- **Yeni çizimler (geometrik editoryal):** kara kedi, iki tonlu kurt-köpek, kabuktaki civciv, halka gözlü baykuş, dikenli gecko, yarısı kurumuş kaktüs. Kontur yok, düz renk düzlemleri, toprak tonları, kâğıt grenı.
+- **Yeni hareket motoru:** eski iskelet tamamen bırakıldı. Her pet parçalardan (baş, kulak, kuyruk, bacaklar, kapaklar, göz bebekleri, kanatlar) oluşur ve kendi karakterine göre oynar.
+- **Kayma yok:** yürüyen pet adım attıkça ilerler; duruştaki ayak yerde sabit kalır, salınımdaki ayak kalkıp öne gelir. Koşuda dörtnal. Yürüyemeyen petler (civciv, baykuş, bitki) zıplar ve yalnızca havadayken ilerler.
+- **Yönler:** kedi ve köpek oturunca bir pozda, yürürken yandan ayrı bir çizimle görünür, uyurken kıvrılır/yatar. Yön değişiminde önce baş döner, gövde izler.
+- **Tüm hareketler:** sevinç zıplaması, yeme, kızma/ısırma/pati atma, irkilme, donma, bakınma, baş çevirme, yalanma, gerinme, silkinme, yuvarlanma, eşinme, kuyruk sallama, güneşlenme, kahve, sürtünme, yetenek, uyuklama, uyku, ölüm. Ruh hâli kapaklara, kulaklara, kuyruğa ve başın duruşuna yansır.
+- **Tüy renkleri:** kedi, köpek ve geckoda 8'er renk.
+
+---
 # dam-la 2.4.1 — Naif / retro editoryal petler
 
 Uzaktan güncellemeyle gelir.

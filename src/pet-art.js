@@ -4,7 +4,7 @@
 //   pets/bean.js  — civciv, bitki (öne bakan yuvarlak gövde)
 //   pets/puppet.js — canlı oynatıcı + statik çizim
 // Bu dosya tür bilgilerini ve statik çizim kapısını (petSVG) dışarı açar; panel ve yönetici paneli bunu kullanır.
-import { staticSVG } from './pets/puppet.js';
+import { staticSVG } from './pets/figure.js';
 import { retro } from './pets/anim.js';
 
 const SPECIES = {

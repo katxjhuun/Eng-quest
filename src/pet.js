@@ -3,7 +3,7 @@
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { petSVG, homeSVG, stageName, PET_SPECIES, randomCoat } from './pet-art.js';
-import { Puppet } from './pets/puppet.js';
+import { Puppet } from './pets/figure.js';
 import { CAT_XP_STEP, catLabel } from './quiz.js';
 import { SUBJECT_ORDER } from './data/subjects.js';
 
@@ -656,7 +656,7 @@ export function initPet(core, quiz) {
       if (dist < 2) { moving = false; running = false; const f = onArrive; onArrive = null; f?.(); }
       else { const s = Math.min(dist, speed * dt); stepPx = s; pos.x += (dx / dist) * s; pos.y += (dy / dist) * s; if (Math.abs(dx) > 3) facing = dx > 0 ? 1 : -1; }
     }
-    if (stepPx) puppet.travel(stepPx, running ? 'run' : 'walk', W);
+    if (stepPx) puppet.travel(stepPx, running ? 'run' : 'walk', W, target.x - pos.x, target.y - pos.y);
     puppet.face(facing);
     // pencere küçülürse ekranda kalsın
     if (mode === 'roam' && !moving) { pos.x = clamp(pos.x, 0, window.innerWidth - W); pos.y = clamp(pos.y, 40, pageH() - H - 6); }

@@ -263,3 +263,6 @@ body.pet-night .pet-sprite svg{filter:brightness(.82) saturate(.66) hue-rotate(-
 /* pet karakter metni (seçim kartı ve bilgi) */
 .pc-soul{margin:4px 0 6px;font-size:11.5px;line-height:1.4;color:#6e6672;font-style:italic}
 .pi-soul{margin:0 0 10px;font-size:13px;line-height:1.5;color:#5e5762;font-style:italic}
+
+/* yeni pet motoru */
+.pet-svg.is-dead{filter:grayscale(.85) brightness(.95)}

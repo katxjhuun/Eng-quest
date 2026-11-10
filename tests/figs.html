@@ -1,0 +1,53 @@
+<!doctype html><meta charset="utf-8"><title>pet motoru</title>
+<style>body{margin:0;background:#ECE2CC;font:600 11px system-ui;color:#2A2230}
+.row{display:flex;align-items:flex-end;gap:2px;padding:2px 6px;border-bottom:1px solid #d8cbb0;position:relative;height:104px}
+.cell{width:96px;height:96px;position:relative}.cell span{position:absolute;left:2px;top:0}
+.lane{position:absolute;left:0;bottom:0;width:100%;height:96px}.mover{position:absolute;bottom:0;width:96px;height:96px}
+svg{width:100%;height:100%;display:block}</style>
+<div id="app"></div>
+<script type="module">
+import { Puppet } from '../src/pets/figure.js';
+const SP = ['cat','dog','chick','owl','gecko','plant'];
+const STATES = [['idle',null],['sleep',null],['lie',null],['dead',null],['happy','hop'],['eat','eat'],['angry','lunge'],['jump','surprised'],['look','headturn'],['groom','groom'],['stretch','stretch'],['ability','ability'],['sad','sad']];
+const mode = new URLSearchParams(location.search).get('m') || 'grid';
+const all = [];
+for (const sp of SP) {
+  const row = document.createElement('div'); row.className = 'row'; app.appendChild(row);
+  if (mode === 'walk') {
+    row.style.height = '200px';
+    for (const [i, m] of [['walk',0],['run',1]]) {
+      const lane = document.createElement('div'); lane.className = 'lane'; lane.style.bottom = (m ? 0 : 100) + 'px';
+      const mv = document.createElement('div'); mv.className = 'mover'; lane.appendChild(mv); row.appendChild(lane);
+      const p = new Puppet(mv); p.setForm(sp, 5, 0); p.setBase(i); all.push({ p, mv, x: m ? 600 : 40, v: m ? -170 : 60, run: m === 1, sp });
+    }
+    continue;
+  }
+  for (const [label, clip] of STATES) {
+    const c = document.createElement('div'); c.className = 'cell'; c.innerHTML = `<span>${sp} ${label}</span>`; row.appendChild(c);
+    const p = new Puppet(c); p.setForm(sp, 5, 0);
+    const base = ['sleep','lie','dead'].includes(label) ? label : 'idle';
+    p.setBase(base); if (label === 'dead') p.setMood('dead'); else if (label === 'sleep') p.setMood('sleep'); else if (clip && ['sad','happy'].includes(clip)) p.setMood(clip);
+    all.push({ p, clip });
+  }
+}
+let last = performance.now();
+function loop(now) {
+  const dt = (now - last) / 1000; last = now;
+  for (const a of all) {
+    if (a.mv) {
+      const step = a.v * dt; a.x += step; if (a.x > 900) a.v = -Math.abs(a.v); if (a.x < 20) a.v = Math.abs(a.v);
+      a.mv.style.left = a.x + 'px'; a.p.face(a.v); a.p.travel(Math.abs(step), a.run ? 'run' : 'walk', 96, Math.sign(a.v), 0);
+    } else if (a.clip && !a.p.playing) a.p.play(a.clip, 0);
+    a.p.tick(dt);
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+window.__ok = true;
+// ayak kayması ölçümü: duruş fazındaki ayağın ekran x'i sabit kalmalı
+window.bodyTrace = (sp, frames = 60) => new Promise(res => { const a = all.find(z => z.sp === sp && !z.run); const out = []; let n = 0;
+  const f = () => { const svg = a.mv.querySelector('svg'); const el = a.mv.querySelector('[data-k=root]'); const pt = svg.createSVGPoint(); pt.x = 100; pt.y = 188; const q = pt.matrixTransform(el.getScreenCTM()); out.push([Math.round(q.x*10)/10, Math.round(q.y*10)/10]); if (++n < frames) requestAnimationFrame(f); else res(out); }; requestAnimationFrame(f); });
+window.footTrace = (sp, run, frames = 90) => new Promise(res => {
+  const a = all.find(z => z.sp === sp && z.run === run); const out = [];
+  let n = 0; const f = () => { const leg = a.mv.querySelector('[data-k=legNB]'); const svg = a.mv.querySelector('svg'); const pt = svg.createSVGPoint(); const P = a.p.parts.legNB.p; pt.x = P[0]; pt.y = P[1] + a.p.def.leg; const q = pt.matrixTransform(leg.getScreenCTM()); out.push([Math.round(q.x*10)/10, Math.round(q.y*10)/10, a.p.ph.toFixed(3)]); if (++n < frames) requestAnimationFrame(f); else res(out); }; requestAnimationFrame(f); });
+</script>
