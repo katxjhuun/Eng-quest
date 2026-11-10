@@ -243,7 +243,7 @@ export function initPet(core, quiz) {
     if (p && p.alive && p.energy > 0) {
       if (p.species === 'chick') { const h = clockNow().getHours(); if (h >= 6 && h < 12) m *= 1.25; }
       if (p.species === 'owl') { const h = clockNow().getHours(); if (h >= 22 || h < 4) m *= 1.25; }
-      if (p.species === 'gecko' && p.prey && right) { m *= 2; p.prey = false; setTimeout(() => { emote('bug', 1600); sayNow('Av geldi. ×2 XP', 2400); renderPanel(); }, 900); }
+      if (p.species === 'gecko' && p.prey && right) { m *= 2; p.prey = false; setTimeout(() => { emote('bug', 1600, true); sayNow('Av geldi. ×2 XP', 2400); renderPanel(); }, 900); }
     }
     return Math.round(delta * m);
   }
@@ -256,7 +256,8 @@ export function initPet(core, quiz) {
   home.innerHTML = `
     <div class="pet-hab" id="petHab" title="Petini çağır"><div class="pet-hab-bg" id="petHabBg"></div><div class="pet-away" id="petAway">🐾 Dolaşıyor · dokun, gelsin</div></div>
     <div class="pet-info">
-      <div class="pet-title"><button class="pet-name" id="petNameBtn" aria-label="Pet bilgisi"><span id="petName">Pet</span> <span class="pet-stars" id="petStars"></span></button><span class="pet-form" id="petForm"></span></div>
+      <div class="pet-title"><button class="pet-name" id="petNameBtn" aria-label="Pet bilgisi"><span id="petName">Pet</span> <span class="pet-stars" id="petStars"></span></button><span class="pet-form" id="petForm"></span>
+        <button class="flow-btn" id="flowBtn" aria-pressed="false"><span class="flow-ico">🌊</span><span id="flowSmall">Flow</span></button></div>
       <div class="pet-status" id="petStatus"></div>
       <div class="pet-bars">
         <div class="pbar hp"><span class="pbi">❤️</span><div class="pbt"><i id="pbHp"></i></div><b id="pbHpT"></b></div>
@@ -264,12 +265,20 @@ export function initPet(core, quiz) {
         <div class="pbar energy" id="pbEnergyRow"><span class="pbi">⚡</span><div class="pbt"><i id="pbEnergy"></i><em class="resist" aria-hidden="true"></em></div><b id="pbEnergyT"></b></div>
       </div>
       <div class="pet-catchup hidden" id="petCatch"></div>
-      <div class="pet-actions">
-        <button class="pet-abil" id="petAbility"><span>✨</span><span class="pa-txt"><strong id="petAbilName">Yetenek</strong><small id="petAbilCost"></small></span></button>
-        <button class="flow-btn" id="flowBtn" aria-pressed="false"><span class="flow-ico">🌊</span><span class="pa-txt"><strong>Flow</strong><small id="flowSmall">kapalı</small></span></button>
-      </div>
     </div>`;
   const bar = document.querySelector('.quiz-bar');
+  // Pet yeteneği, soru kartında ipucu düğmesinin yanında durur (yazmalı) / dinle düğmesinin yanında (seçenekli).
+  const skillBtns = [];
+  function mountSkill(parent, before, cls) {
+    if (!parent) return;
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = `pet-skill ${cls} hidden`;
+    b.innerHTML = '<span class="ps-ico">✨</span><span class="ps-name"></span><small class="ps-cost"></small>';
+    parent.insertBefore(b, before || null); skillBtns.push(b);
+    b.addEventListener('click', () => useAbility());
+  }
+  mountSkill($('#qzHint')?.parentNode, $('#qzSubmit'), 'hintbtn ps-typed');
+  mountSkill(document.querySelector('#quizCard .read-actions'), null, 'mini-btn ps-choice');
   (bar ? bar.parentNode.insertBefore(home, bar.nextSibling) : document.querySelector('main')?.prepend(home));
 
   // ---------- DOM: dolaşan pet ----------
@@ -388,17 +397,21 @@ export function initPet(core, quiz) {
     $('#petStars').textContent = p.stars ? '⭐'.repeat(Math.min(5, p.stars)) + (p.stars > 5 ? `×${p.stars}` : '') : '';
     $('#petForm').textContent = `${stageName(p.species, p.stage)} · ${PET_SPECIES[p.species].label} · Form ${p.stage + 1}/6`;
     $('#petStatus').textContent = statusText(p);
-    const setBar = (id, v, m) => { $(id).style.width = `${clamp((v / m) * 100, 0, 100)}%`; $(id + 'T').textContent = `${Math.round(v)}/${m}`; };
+    const setBar = (id, v, m) => { $(id).style.width = `${clamp((v / m) * 100, 0, 100)}%`; $(id + 'T').textContent = `${Math.round(v)}`; $(id).closest('.pbar').title = `${Math.round(v)}/${m}`; };
     setBar('#pbHp', p.hp, mx.hp); setBar('#pbFood', p.food, mx.food); setBar('#pbEnergy', p.energy, mx.energy);
     $('#pbFoodI').textContent = sp.foodIcon; $('#pbFoodRow').classList.toggle('water', p.species === 'plant');
     $('#pbFoodRow').title = sp.foodLabel;
     $('#pbHp').parentElement.parentElement.classList.toggle('low', p.hp < mx.hp * 0.3);
     $('#pbEnergyRow').classList.toggle('resisting', p.flow);
-    $('#petAbilName').textContent = sp.active.name;
-    $('#petAbilCost').textContent = `${sp.active.cost}⚡ enerji`;
-    $('#petAbility').disabled = !p.alive || p.energy < sp.active.cost;
+    skillBtns.forEach(b => {
+      b.classList.toggle('hidden', !p.alive);
+      b.querySelector('.ps-name').textContent = sp.active.name;
+      b.querySelector('.ps-cost').textContent = `${sp.active.cost}⚡`;
+      b.disabled = p.energy < sp.active.cost;
+      b.title = `${sp.active.name}: ${sp.active.desc} (${sp.active.cost} enerji)`;
+    });
     $('#flowBtn').classList.toggle('on', p.flow); $('#flowBtn').setAttribute('aria-pressed', String(p.flow));
-    $('#flowSmall').textContent = p.flow ? 'açık · odak' : 'kapalı';
+    $('#flowSmall').textContent = p.flow ? 'Flow açık' : 'Flow';
     $('#flowBtn').title = p.flow ? `Enerji ${10 - (p.flowCount % 10)} soru sonra azalacak` : 'Flow: müzik ödülleri durur, enerji 10 soruda bir azalır';
     document.body.classList.toggle('pet-flow', p.flow);
     const ph = phase(); document.body.classList.toggle('pet-night', ph === 'night' || ph === 'dawn'); document.body.classList.toggle('pet-evening', ph === 'evening');
@@ -439,8 +452,12 @@ export function initPet(core, quiz) {
     }
   }
   let emoteTimer = 0, emoteOut = 0;
-  function emote(kind, ms = 1800) {
+  // Duygu öncelikle beden diliyle anlatılır; simge balonu seyrek çıkar (20 sn'de bir), yalnızca önemli anlarda zorlanır.
+  let lastEmote = 0;
+  function emote(kind, ms = 1800, force = false) {
     const p = P(); if (!p || actorEl.classList.contains('hidden')) return;
+    if (!force && Date.now() - lastEmote < 20000) return;
+    lastEmote = Date.now();
     if (kind === 'food') kind = FOOD_EMOTE[p.species] || 'star';
     const svg = EM[kind]; if (!svg) return;
     clearTimeout(emoteTimer); clearTimeout(emoteOut);
@@ -452,7 +469,7 @@ export function initPet(core, quiz) {
   function react(mood, ms = 1200, anim = '', em = '') {
     tempMood = mood; tempUntil = Date.now() + ms;
     if (anim) { setAnim(anim, ms); }
-    if (em) emote(em, Math.max(1300, ms + 300));
+    if (em && Math.random() < 0.35) emote(em, Math.max(1300, ms + 300));
     drawSprite();
     setTimeout(() => drawSprite(), ms + 30);
   }
@@ -703,16 +720,27 @@ export function initPet(core, quiz) {
   function dogBite() {
     awakeUntil = Date.now() + 20000;
     tempMood = 'poked'; tempUntil = Date.now() + 1400;
-    setAnim('bite', 1100); setTimeout(() => { emote('anger', 1600); shakeActor(); }, 280);
+    setAnim('bite', 1100); setTimeout(() => { emote('anger', 1600, true); shakeActor(); }, 280);
     say('Uyurken dürtme.', 2200);
     setTimeout(() => { awakeUntil = 0; drawSprite(); }, 9000); // hemen geri uyur
   }
   // kısa dokunuş: her tür kendi mizacıyla tepki verir
+  // Her dokunuşa tepki vermez: bir tepkiden sonra bir süre umursamaz, çoğu zaman yalnızca göz ucuyla bakar.
+  let lastTapReact = 0, tapStreak = 0;
   function tap() {
     const p = P(); if (!p?.alive) return;
-    const sp = p.species, r = Math.random();
+    const sp = p.species, now = Date.now();
+    if (isSleeping() && sp === 'dog' && p.stage >= DOG_BITE_STAGE) { dogBite(); lastTapReact = now; return; }
+    tapStreak = now - lastTapReact < 9000 ? tapStreak + 1 : 0;
+    const ignore = now - lastTapReact < 7000 || Math.random() < (sp === 'cat' ? 0.55 : sp === 'gecko' || sp === 'owl' ? 0.5 : sp === 'plant' ? 0.6 : 0.3);
+    if (ignore) {
+      // ısrar edilirse ancak o zaman kısa ve sessiz bir bakış (balonsuz)
+      if (tapStreak >= 3 && !isSleeping() && sp !== 'plant') { tapStreak = 0; lastTapReact = now; setAnim('look', 900); }
+      return;
+    }
+    lastTapReact = now;
+    const r = Math.random();
     if (isSleeping()) {
-      if (sp === 'dog' && p.stage >= DOG_BITE_STAGE) { dogBite(); return; }
       if (sp === 'plant') { emote('dots', 1400); return; }
       awakeUntil = Date.now() + 45000;
       if (sp === 'cat') { react('poked', 1300, 'poked', 'anger'); facing *= -1; return; }
@@ -769,7 +797,6 @@ export function initPet(core, quiz) {
     else { react('happy', 1000, 'hop', 'note'); say('Güzel bir akıştı! Biraz dinlenelim mi? 😊', 2600); core.toast('Flow modu kapandı'); }
     renderPanel();
   });
-  $('#petAbility').addEventListener('click', useAbility);
 
   function useAbility() {
     const p = P(); if (!p?.alive) return;
@@ -777,7 +804,7 @@ export function initPet(core, quiz) {
     if (p.energy < ab.cost) { react('groggy', 1400, 'yawn', 'dots'); sayNow('Enerjim yetmiyor… biraz dinlenmem lazım 😪'); return; }
     if (isSleeping()) awakeUntil = Date.now() + 60000;
     const t = quiz.petTarget();
-    if (!t) { core.toast('Yetenekler pop quiz kartındaki cevaplanmamış sorularda çalışır.'); emote('ask', 1600); sayNow('Bir soru açalım, sonra yardım ederim 🤓', 2400); return; }
+    if (!t) { core.toast('Yetenekler pop quiz kartındaki cevaplanmamış sorularda çalışır.'); emote('ask', 1600, true); sayNow('Bir soru açalım, sonra yardım ederim 🤓', 2400); return; }
     // kedi: önce lazer avı, soru avın sonunda atlanır
     if (ab.id === 'skip') {
       if (abilityBusy) return;
@@ -787,7 +814,7 @@ export function initPet(core, quiz) {
         abilityBusy = false;
         const q = P(); if (!q) return;
         if (quiz.skip()) { sayNow('Yakaladım! Bu soruyu sonraya sakladım 🐾', 3200); spawn('✦', 'spark', 3); }
-        else { q.energy = Math.min(maxes(q).energy, q.energy + ab.cost); save(true); emote('ask', 1500); sayNow('Soru değişti, enerjini geri verdim 🤔', 2400); }
+        else { q.energy = Math.min(maxes(q).energy, q.energy + ab.cost); save(true); emote('ask', 1500, true); sayNow('Soru değişti, enerjini geri verdim 🤔', 2400); }
         renderPanel();
       });
       return;
@@ -801,17 +828,17 @@ export function initPet(core, quiz) {
     } else if (ab.id === 'ward') {
       p.ward = 4; ok = true; msg = 'Dört tur öndeyim. Sonraki 4 soruda yanlışların yarı acıtır.';
     } else if (ab.id === 'prey') {
-      if (p.prey) { emote('dots', 1400); sayNow('Zaten bekliyorum.', 1800); return; }
+      if (p.prey) { emote('dots', 1400, true); sayNow('Zaten bekliyorum.', 1800); return; }
       p.prey = true; ok = true; msg = 'Kıpırdamıyorum. Sonraki doğru cevap ×2 XP.';
     } else if (ab.id === 'sniff') {
       const n = t.style === 'type' ? 0 : quiz.eliminate(1); p.shieldFor = t.item.id; ok = true;
       msg = n ? 'Kazdım, kokladım: bir şık yanlış! Bu soruda seni koruyorum 🛡️' : 'Bu soruda seni koruyorum, yanlışta canım gitmez 🛡️';
     }
-    if (!ok) { emote('ask', 1500); sayNow('Şu an bunu yapamam 🤔', 2000); return; }
+    if (!ok) { emote('ask', 1500, true); sayNow('Şu an bunu yapamam 🤔', 2000); return; }
     p.energy = Math.max(0, p.energy - ab.cost); save(true);
     // her türün kendi yetenek animasyonu; mesaj animasyonun doruğunda gelir
-    if (ab.id === 'sniff') { tempMood = 'focus'; tempUntil = Date.now() + 2200; setAnim('dig', 3400); setTimeout(() => { emote('shield', 1800); spawn('✦', 'spark', 2); sayNow(msg, 4200); }, 2300); }
-    else { setAnim('ability', 2600); setTimeout(() => { emote('idea', 1500); spawn('✦', 'spark', 3); sayNow(msg, 4400); }, 1100); }
+    if (ab.id === 'sniff') { tempMood = 'focus'; tempUntil = Date.now() + 2200; setAnim('dig', 3400); setTimeout(() => { emote('shield', 1800, true); spawn('✦', 'spark', 2); sayNow(msg, 4200); }, 2300); }
+    else { setAnim('ability', 2600); setTimeout(() => { emote('idea', 1500, true); spawn('✦', 'spark', 3); sayNow(msg, 4400); }, 1100); }
     renderPanel();
   }
 
@@ -999,7 +1026,7 @@ export function initPet(core, quiz) {
     const p = P();
     p.alive = false; p.hp = 0; p.flow = false; p.death = { cat: cat || 'en', at: Date.now() };
     deathPending = true; evoQueue.length = 0;
-    tempMood = null; setAnim('dead', 99999); drawSprite(true); emote('cloud', 1400);
+    tempMood = null; setAnim('dead', 99999); drawSprite(true); emote('cloud', 1400, true);
     setTimeout(openDeath, 1500);
   }
   function catLevelText(cat) {
@@ -1051,11 +1078,11 @@ export function initPet(core, quiz) {
     const bar = (v, c) => `<span class="pcb"><i style="width:${Math.round(v / 140 * 100)}%;background:${c}"></i></span>`;
     $('#pcGrid').innerHTML = ORDER.map(id => {
       const s = PET_SPECS[id];
-      return `<button class="pc-card" data-sp="${id}"><div class="pc-art">${petSVG(id, 1, { mood: 'happy' })}</div><strong>${esc(s.name)} <small>${esc(PET_SPECIES[id].label)}</small></strong>
+      return `<button class="pc-card" data-sp="${id}"><div class="pc-art">${petSVG(id, 0, { mood: 'happy' })}</div><strong>${esc(s.name)} <small>${esc(PET_SPECIES[id].label)}</small></strong>
         <div class="pc-stats"><span>❤️${bar(s.hp, '#E5534B')}</span><span>${s.foodIcon}${bar(s.food, id === 'plant' ? '#7FA7BF' : '#F0A04B')}</span><span>⚡${bar(s.energy, '#E9C23C')}</span></div>
         <p class="pc-soul">${esc(s.soul.split('. ').slice(0, 2).join('. ').replace(/\.?$/, '.'))}</p>
         <div class="pc-skill"><b>${esc(s.passive.name)}</b> ${esc(s.passive.desc)}</div><div class="pc-skill act"><b>✨ ${esc(s.active.name)}</b> ${esc(s.active.desc)}</div>
-        <div class="pc-evo">${[0, 2, 5].map(st => `<span>${petSVG(id, st)}</span>`).join('<em>›</em>')}</div></button>`;
+        <div class="pc-evo-q">Nasıl büyüyeceği sürpriz.</div></button>`;
     }).join('');
     $('#pcNameBox').classList.add('hidden'); chosen = null;
     chooser.classList.add('show');
@@ -1089,7 +1116,7 @@ export function initPet(core, quiz) {
     const p = P(); if (!p) { openChooser(); return; }
     const sp = PET_SPECS[p.species], mx = maxes(p);
     $('#piTitle').textContent = `${p.name} · ${stageName(p.species, p.stage)}`;
-    $('#piLine').innerHTML = [0, 1, 2, 3, 4, 5].map(st => `<div class="pi-stage ${st < p.stage ? 'past' : st === p.stage ? 'now' : 'future'}">${petSVG(p.species, st, { coat: p.coat })}<small>${st <= p.stage ? esc(stageName(p.species, st)) : '???'}</small></div>`).join('');
+    $('#piLine').innerHTML = [0, 1, 2, 3, 4, 5].map(st => `<div class="pi-stage ${st < p.stage ? 'past' : st === p.stage ? 'now' : 'future'}">${st <= p.stage ? petSVG(p.species, st, { coat: p.coat }) : '<span class="pi-unknown">?</span>'}<small>${st <= p.stage ? esc(stageName(p.species, st)) : '???'}</small></div>`).join('');
     $('#piSkills').innerHTML = `<p class="pi-soul">${esc(sp.soul)}</p><div><b>🌀 ${esc(sp.passive.name)} (pasif)</b><span>${esc(sp.passive.desc)}</span></div><div><b>✨ ${esc(sp.active.name)} (aktif · ${sp.active.cost}⚡)</b><span>${esc(sp.active.desc)}</span></div><div><b>💪 Güçlü yanı</b><span>${esc(sp.perk)}</span></div>`;
     $('#piStats').innerHTML = `<span>❤️ ${Math.round(p.hp)}/${mx.hp}</span><span>${sp.foodIcon} ${Math.round(p.food)}/${mx.food}</span><span>⚡ ${Math.round(p.energy)}/${mx.energy}</span><span>✅ ${p.correct} doğru</span><span>⭐ ${p.stars}</span><span>💫 ${p.revives || 0} kez canlandı</span>`;
     $('#piName').value = p.name; $('#piRoam').checked = p.roam; $('#piNotify').checked = p.notify;

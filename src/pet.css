@@ -1,25 +1,25 @@
 /* ---------- pet yuvası (seviye çubuğu ile soru tipi arasında) ---------- */
-.pet-home{display:grid;grid-template-columns:132px 1fr;gap:12px;align-items:stretch;background:#fffdf8;border:1px solid #e6ded3;border-radius:22px;padding:10px 12px 10px 10px;margin:0 0 14px;box-shadow:0 8px 22px rgba(31,28,34,.06);position:relative}
-.pet-hab{position:relative;border-radius:16px;background:linear-gradient(180deg,#f3efff 0%,#fbf6ea 62%,#efe6d6 100%);overflow:hidden;min-height:118px;cursor:pointer;border:1px solid #ece4d7}
+.pet-home{display:flex;flex-direction:column;gap:8px;background:#fffdf8;border:1px solid #e6ded3;border-radius:22px;padding:8px 8px 10px;margin:0 0 14px;box-shadow:0 8px 22px rgba(31,28,34,.06);position:relative}
+.pet-hab{position:relative;border-radius:16px;background:linear-gradient(180deg,#f3efff 0%,#fbf6ea 62%,#efe6d6 100%);overflow:hidden;min-height:170px;cursor:pointer;border:1px solid #ece4d7}
 .pet-hab:before{content:"";position:absolute;left:0;right:0;bottom:0;height:26px;background:#eadfcd;border-top:1px solid #e0d2bc}
 .pet-hab-bg{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center}
-.pet-hab-bg svg{width:118px;height:118px;margin-bottom:-6px}
+.pet-hab-bg svg{width:150px;height:150px;margin-bottom:-8px}
 .pet-away{position:absolute;left:6px;right:6px;top:8px;text-align:center;font-size:10px;font-weight:800;color:#817a80;opacity:0;transition:opacity .3s}
 .pet-away.show{opacity:1}
 body.pet-night .pet-hab{background:radial-gradient(circle at 78% 22%,#fff6c8 0 6px,transparent 7px),radial-gradient(circle at 30% 30%,#fff 0 1px,transparent 1.5px),radial-gradient(circle at 55% 16%,#fff 0 1px,transparent 1.5px),linear-gradient(180deg,#2b2a4a 0%,#4a4570 70%,#5a527a 100%)}
 body.pet-night .pet-hab:before{background:#3d3756;border-top-color:#4a4466}
 body.pet-evening .pet-hab{background:linear-gradient(180deg,#f7c9a8 0%,#e9b7c9 55%,#efe0d0 100%)}
-.pet-info{min-width:0;display:flex;flex-direction:column;gap:5px}
-.pet-title{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+.pet-info{min-width:0;display:flex;flex-direction:column;gap:4px;padding:0 4px}
+.pet-title{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .pet-name{border:0;background:none;padding:0;font-size:16px;font-weight:900;letter-spacing:-.03em;color:#201d23;cursor:pointer}
 .pet-stars{font-size:11px}
 .pet-form{font-size:10.5px;font-weight:750;color:#817a80}
 .pet-status{font-size:11px;font-weight:750;color:#514b54}
-.pet-bars{display:grid;gap:4px;margin-top:1px}
-.pbar{display:grid;grid-template-columns:18px 1fr 54px;align-items:center;gap:6px;font-size:11px}
-.pbar .pbi{font-size:12px;text-align:center}
-.pbar b{font-size:10px;font-weight:800;color:#6f6870;text-align:right;font-variant-numeric:tabular-nums}
-.pbt{position:relative;height:9px;border-radius:99px;background:#ece6dc;overflow:hidden}
+.pet-bars{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:1px}
+.pbar{display:grid;grid-template-columns:12px 1fr auto;align-items:center;gap:4px;font-size:10px}
+.pbar .pbi{font-size:10px;text-align:center}
+.pbar b{font-size:9px;font-weight:800;color:#8a8389;text-align:right;font-variant-numeric:tabular-nums}
+.pbt{position:relative;height:5px;border-radius:99px;background:#ece6dc;overflow:hidden}
 .pbt i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
 .pbar.hp i{background:linear-gradient(90deg,#E5534B,#FF8A7A)}
 .pbar.hp.low i{animation:pbLow 1s ease-in-out infinite}
@@ -34,17 +34,19 @@ body.pet-evening .pet-hab{background:linear-gradient(180deg,#f7c9a8 0%,#e9b7c9 5
 @keyframes shieldPulse{50%{transform:scale(1.25);filter:drop-shadow(0 0 4px #8f7cff)}}
 .pet-catchup{display:flex;flex-wrap:wrap;gap:5px}
 .pet-catchup span{font-size:10px;font-weight:850;background:#eee9ff;color:#4f3bd4;border-radius:99px;padding:3px 8px}
-.pet-actions{display:flex;gap:7px;margin-top:3px}
-.pet-abil,.flow-btn{flex:1;display:flex;align-items:center;gap:7px;border:1.5px solid #e6ded3;background:#fbf8f2;border-radius:13px;padding:6px 9px;text-align:left;min-height:40px;color:#201d23}
-.pet-abil:disabled{opacity:.5}
-.pa-txt{display:flex;flex-direction:column;line-height:1.1;min-width:0}
-.pa-txt strong{font-size:11.5px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pa-txt small{font-size:9.5px;color:#817a80;font-weight:750}
+.flow-btn{margin-left:auto;display:inline-flex;align-items:center;gap:4px;border:1.5px solid #e6ded3;background:#fbf8f2;border-radius:99px;padding:3px 9px;font-size:10.5px;font-weight:850;color:#201d23;min-height:26px}
+.pet-skill{display:inline-flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}
+.pet-skill.hidden{display:none}
+.pet-skill .ps-cost{font-size:9.5px;font-weight:800;opacity:.7}
+.pet-skill.hintbtn{background:#e9e3ff;border-color:#d4caff;color:#3a2a8c;box-shadow:0 4px 0 #c9bdf7;min-width:0;padding-inline:11px}
+.pet-skill:disabled{opacity:.45}
+#quizCard:has(#qzTyped:not(.hidden)) .ps-choice{display:none}
+@media(max-width:400px){.pet-skill.hintbtn .ps-cost{display:none}.pet-skill.hintbtn{padding-inline:9px}}
 .flow-btn.on{border-color:transparent;background:linear-gradient(#fbf8f2,#fbf8f2) padding-box,linear-gradient(90deg,#4f3bd4,#36aeb8,#4f3bd4) border-box;background-size:auto,200% 100%;animation:flowBorder 2.4s linear infinite;box-shadow:0 0 0 3px rgba(79,59,212,.12)}
 .flow-btn.on .flow-ico{animation:shieldPulse 1.8s ease-in-out infinite}
 @keyframes flowBorder{to{background-position:0 0,200% 0}}
 body.pet-flow .quiz-card,body.pet-flow #legacyBlock .challenge{box-shadow:0 0 0 2px rgba(79,59,212,.22),0 18px 40px rgba(79,59,212,.12)}
-@media(max-width:420px){.pet-home{grid-template-columns:108px 1fr;gap:9px}.pet-hab-bg svg{width:104px;height:104px}.pbar{grid-template-columns:16px 1fr 46px}}
+@media(max-width:420px){.pet-hab{min-height:156px}.pet-hab-bg svg{width:136px;height:136px}.pet-bars{gap:7px}}
 
 /* ---------- dolaşan pet ---------- */
 body{position:relative}
@@ -142,8 +144,7 @@ body.pet-night .pet-sprite svg{filter:brightness(.82) saturate(.66) hue-rotate(-
 .pcb{height:6px;border-radius:9px;background:#ece6dc;overflow:hidden;display:block}.pcb i{display:block;height:100%;border-radius:9px}
 .pc-skill{font-size:10.5px;line-height:1.4;color:#514b54}.pc-skill b{color:#201d23}
 .pc-skill.act b{color:#4f3bd4}
-.pc-evo{display:flex;align-items:center;justify-content:center;gap:2px;margin-top:2px;opacity:.9}
-.pc-evo span svg{width:34px;height:34px}.pc-evo em{font-style:normal;color:#b9b0a6;font-size:12px}
+.pc-evo-q{margin-top:4px;font-size:11px;color:var(--muted,#8a8076);font-style:italic;text-align:center}
 .pc-name{margin-top:14px;border-top:1px solid #ece4d7;padding-top:12px}
 .pc-name label{font-size:12px;font-weight:850}
 .pc-row{display:flex;gap:8px;margin-top:6px}
@@ -192,7 +193,7 @@ body.pet-night .pet-sprite svg{filter:brightness(.82) saturate(.66) hue-rotate(-
 .pi-stage svg{width:100%;height:auto;aspect-ratio:1}
 .pi-stage small{display:block;font-size:9px;font-weight:800;color:#6f6870;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pi-stage.now{background:#f4f0ff;box-shadow:inset 0 0 0 2px #4f3bd4}
-.pi-stage.future svg{filter:brightness(0) opacity(.18)}
+.pi-unknown{display:grid;place-items:center;width:100%;aspect-ratio:1;font:700 20px/1 var(--font,inherit);color:#b9b0a6;border:2px dashed #d8cfc5;border-radius:14px}
 .pi-skills{display:grid;gap:7px;margin-bottom:10px}
 .pi-skills div{background:#fbf8f2;border-radius:12px;padding:9px 11px;font-size:11.5px;line-height:1.45}
 .pi-skills b{display:block;font-size:12px;margin-bottom:2px}
