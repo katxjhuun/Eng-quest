@@ -2,8 +2,9 @@
 // Durum app.pet içinde saklanır (yedeğe ve kalıcı kayda otomatik girer).
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { petSVG, homeSVG, stageName, PET_SPECIES, randomCoat } from './pet-art.js';
+import { petSVG, homeSVG, stageName, PET_SPECIES, randomCoat, shinyFilter } from './pet-art.js';
 import { Puppet } from './pets/figure.js';
+import { TYPES, SPECIES_TYPE, ROLES, SIGNATURE, SHINY, SHINY_CHANCE, HINT_VOICE, loreParts, randomRole, battleStats, BEATS } from './pets/codex.js';
 import { CAT_XP_STEP, catLabel } from './quiz.js';
 import { SUBJECT_ORDER } from './data/subjects.js';
 
@@ -149,7 +150,7 @@ export function initPet(core, quiz) {
 
   // ---------- durum ----------
   function maxes(p = P()) {
-    const s = PET_SPECS[p.species], k = 1 + 0.06 * p.stage;
+    const s = PET_SPECS[p.species], k = (1 + 0.06 * p.stage) * (p.shiny ? 1.1 : 1);
     return { hp: Math.round(s.hp * k), food: Math.round(s.food * k), energy: Math.round(s.energy * k) };
   }
   function normalize() {
@@ -171,6 +172,9 @@ export function initPet(core, quiz) {
     // kedi/köpek tüy rengi: yoksa rastgele atanır ve kalıcı olur
     if (QUAD.includes(p.species) && !(Number.isInteger(p.coat) && p.coat >= 0 && p.coat < 8)) p.coat = randomCoat();
     if (p.death && typeof p.death !== 'object') p.death = null;
+    if (!ROLES[p.role]) p.role = randomRole();
+    p.shiny = p.shiny === true;
+    if (!Array.isArray(p.lore)) p.lore = [];
     return p;
   }
   function save(touch = false) { core.saveLocal(touch); if (touch) core.cloudSync?.(); }
@@ -240,7 +244,15 @@ export function initPet(core, quiz) {
   function evolveBy(n) {
     const p = P();
     for (let i = 0; i < n; i++) {
-      if (p.stage < 5) { const from = p.stage; p.stage++; const mx = maxes(p); p.hp = Math.min(mx.hp, p.hp + mx.hp * 0.25); p.energy = Math.min(mx.energy, p.energy + 20); evoQueue.push({ type: 'evo', from, to: p.stage }); }
+      if (p.stage < 5) {
+        const from = p.stage, oldRole = p.role; p.stage++;
+        p.role = randomRole(oldRole);
+        const shinyNow = !p.shiny && Math.random() < SHINY_CHANCE; if (shinyNow) p.shiny = true;
+        const mx = maxes(p); p.hp = Math.min(mx.hp, p.hp + mx.hp * 0.25); p.energy = Math.min(mx.energy, p.energy + 20);
+        evoQueue.push({ type: 'evo', from, to: p.stage, role: p.role, oldRole, shiny: shinyNow });
+        const parts = loreParts(PET_SPECS[p.species].soul), next = parts.findIndex((_, k) => !p.lore.includes(k));
+        if (next >= 0) evoQueue.push({ type: 'lore', idx: next });
+      }
       else { p.stars++; evoQueue.push({ type: 'star', stars: p.stars }); }
     }
     p.evolvedAt = Date.now(); save(true);
@@ -271,6 +283,7 @@ export function initPet(core, quiz) {
       if (p.species === 'goat' && p.mirrorBonus && right) { m *= 1.5; p.mirrorBonus = false; }
       if (p.species === 'gecko' && p.prey && right) { m *= 2; p.prey = false; setTimeout(() => { emote('bug', 1600, true); sayNow('Av geldi. ×2 XP', 2400); renderPanel(); }, 900); }
     }
+    if (p && p.alive && p.shiny) m *= 1.1;
     return Math.round(delta * m);
   }
   core.setXpMod(xpMod);
@@ -328,13 +341,17 @@ export function initPet(core, quiz) {
   const deathEl = layer('petDeath', 'death', `<div class="pet-modal"><div class="death-scene"><div class="death-ghost" id="deathPet"></div><div class="death-grave">🪦</div></div><h2 id="deathTitle"></h2><p id="deathLead"></p><div class="death-opts"><button class="death-opt" id="petRevive"><b>💫 Canlandır</b><span id="reviveTxt"></span></button><button class="death-opt" id="petNew"><b>🥚 Yeni pet</b><span id="newTxt"></span></button></div></div>`);
   const infoEl = layer('petInfo', 'info', `<div class="pet-modal"><div class="modal-head"><div><div class="eyebrow">PETİN</div><h2 id="piTitle"></h2></div><button class="closebtn" id="piClose" aria-label="Kapat">×</button></div><div class="pi-line" id="piLine"></div><div class="pi-skills" id="piSkills"></div><div class="pi-stats" id="piStats"></div><label class="field-label" for="piName">Adı</label><div class="pc-row"><input id="piName" class="setting-input" maxlength="16"><button class="secondarybtn" id="piSave">Kaydet</button></div><label class="toggle-row"><span>Ekranda dolaşsın<small>Kapalıysa yuvasında kalır.</small></span><input type="checkbox" id="piRoam"></label><label class="toggle-row" id="piNotifyRow"><span>Acıkınca bildirim gönder<small>Uzun süre girmezsen telefonuna haber verir.</small></span><input type="checkbox" id="piNotify"></label><div class="setting-note" id="piMemorial"></div></div>`);
 
+  const loreEl = layer('petLore', 'lore', `<div class="pet-modal lore-card"><div class="eyebrow" id="loreEye">PETİNİN GÜNLÜĞÜ</div><div class="lore-art" id="loreArt"></div><p class="lore-text" id="loreText"></p><div class="lore-count" id="loreCount"></div><button class="primarybtn" id="loreOk">Okudum</button></div>`);
+  const codexEl = layer('petCodex', 'codex', `<div class="pet-modal codex"><div class="modal-head"><div><div class="eyebrow">ANSİKLOPEDİ</div><h2>Petler</h2></div><button class="closebtn" id="cxClose" aria-label="Kapat">×</button></div><div class="cx-tabs" id="cxTabs"></div><div id="cxBody"></div></div>`);
+
   // ayarlara kısa yol
   const setGrid = document.querySelector('#settingsOverlay .settings-grid');
   if (setGrid) {
     const sec = document.createElement('section'); sec.className = 'setting-section'; sec.id = 'petSettings'; sec.dataset.tab = 'pet';
-    sec.innerHTML = `<h3>Petin</h3><label class="toggle-row"><span>Pet özelliği<small>Kapatınca pet, can/enerji ve pet yetenekleri gizlenir; petin donar ve açtığında kaldığı yerden devam eder.</small></span><input type="checkbox" id="petEnabled"></label><p id="petSetLead">Ad, dolaşma, bildirimler ve evrim çizgisi.</p><button class="secondarybtn" id="openPetInfo" style="width:100%">🐾 Pet bilgisi ve ayarları</button>`;
+    sec.innerHTML = `<h3>Petin</h3><label class="toggle-row"><span>Pet özelliği<small>Kapatınca pet, can/enerji ve pet yetenekleri gizlenir; petin donar ve açtığında kaldığı yerden devam eder.</small></span><input type="checkbox" id="petEnabled"></label><p id="petSetLead">Ad, dolaşma, bildirimler ve evrim çizgisi.</p><button class="secondarybtn" id="openPetInfo" style="width:100%">🐾 Pet bilgisi ve ayarları</button><button class="secondarybtn" id="openCodex" style="width:100%;margin-top:8px">📖 Pet ansiklopedisi</button>`;
     setGrid.insertBefore(sec, setGrid.children[1] || null);
     sec.querySelector('#openPetInfo').addEventListener('click', () => openInfo());
+    sec.querySelector('#openCodex').addEventListener('click', () => openCodex());
     const tg = sec.querySelector('#petEnabled');
     const syncSet = () => { tg.checked = !off(); sec.querySelector('#openPetInfo').classList.toggle('hidden', off()); sec.querySelector('#petSetLead').classList.toggle('hidden', off()); };
     syncSet(); document.querySelector('#settingsBtn')?.addEventListener('click', syncSet);
@@ -403,6 +420,8 @@ export function initPet(core, quiz) {
     if (force) artKey = '';
     const key = `${mood}|${baseNow()}`;
     if (key !== artKey) { artKey = key; sprite.dataset.mood = mood; sprite.dataset.pose = baseNow(); }
+    const f = p.shiny ? shinyFilter(p.species) : '';
+    if (sprite.style.filter !== f) { sprite.style.filter = f; actorEl.classList.toggle('is-shiny', !!p.shiny); }
   }
   function statusText(p) {
     if (!p.alive) return '🕊️ Öldü';
@@ -1025,19 +1044,20 @@ export function initPet(core, quiz) {
     if (evolving || !evoQueue.length) return;
     if (deathPending) return;
     const ev = evoQueue.shift(), p = P(); if (!p) { evoQueue.length = 0; return; }
+    if (ev.type === 'lore') { showLore(ev.idx); return; }
     evolving = true;
     const oldEl = $('#evoOld'), newEl = $('#evoNew'), title = $('#evoTitle'), sub = $('#evoSub'), ok = $('#evoOk');
-    evoEl.classList.remove('done', 'flashing', 'star'); ok.disabled = true;
+    evoEl.classList.remove('done', 'flashing', 'star', 'shiny'); ok.disabled = true;
     if (ev.type === 'star') {
       evoEl.classList.add('star', 'done');
-      oldEl.innerHTML = ''; newEl.innerHTML = petSVG(p.species, p.stage, { mood: 'happy', coat: p.coat });
+      oldEl.innerHTML = ''; newEl.innerHTML = petSVG(p.species, p.stage, { mood: 'happy', coat: p.coat, shiny: p.shiny });
       title.textContent = `⭐ ${p.name} bir yıldız kazandı!`;
       sub.textContent = `Son formuna ulaştı; her yeni seviye bir yıldız ekler. Toplam: ${ev.stars} ⭐`;
       evoEl.classList.add('show'); sparkBurst(); ok.disabled = false; return;
     }
     const fromName = stageName(p.species, ev.from), toName = stageName(p.species, ev.to);
-    oldEl.innerHTML = petSVG(p.species, ev.from, { mood: 'surprised', coat: p.coat });
-    newEl.innerHTML = petSVG(p.species, ev.to, { mood: 'happy', coat: p.coat });
+    oldEl.innerHTML = petSVG(p.species, ev.from, { mood: 'surprised', coat: p.coat, shiny: p.shiny && !ev.shiny });
+    newEl.innerHTML = petSVG(p.species, ev.to, { mood: 'happy', coat: p.coat, shiny: p.shiny });
     title.textContent = 'Bir şeyler oluyor…'; sub.textContent = `${p.name} parlıyor!`;
     evoEl.classList.add('show', 'flicker');
     oldEl.classList.add('on'); newEl.classList.remove('on');
@@ -1049,7 +1069,9 @@ export function initPet(core, quiz) {
       setTimeout(() => {
         evoEl.classList.remove('flicker'); oldEl.classList.remove('on'); newEl.classList.add('on'); evoEl.classList.add('done');
         title.textContent = `${p.name} evrimleşti!`;
-        sub.textContent = `${fromName} → ${toName}. Can, ${PET_SPECS[p.species].foodLabel.toLocaleLowerCase('tr')} ve enerji sınırları büyüdü.`;
+        const R = ROLES[ev.role || p.role];
+        sub.innerHTML = `${esc(fromName)} → ${esc(toName)}. Can, ${esc(PET_SPECS[p.species].foodLabel.toLocaleLowerCase('tr'))} ve enerji sınırları büyüdü.<br><b>Yeni rolü: ${R.icon} ${esc(R.name)}</b>${ev.shiny ? `<br><b class="evo-shiny">✨ Nadir form! ${esc(SHINY.name[p.species])} oldu: ${esc(SHINY.perks.join(' · '))}</b>` : ''}`;
+        if (ev.shiny) evoEl.classList.add('shiny');
         sparkBurst(); ok.disabled = false; ok.focus({ preventScroll: true });
         drawSprite(true); renderPanel();
       }, 380);
@@ -1071,6 +1093,87 @@ export function initPet(core, quiz) {
     renderPanel();
   });
 
+  // ---------- günlük: petin ruh yazısından tek seferlik parçalar ----------
+  function showLore(idx) {
+    const p = P(); if (!p) return;
+    const parts = loreParts(PET_SPECS[p.species].soul); if (!parts[idx]) { if (evoQueue.length) setTimeout(runEvoQueue, 200); return; }
+    evolving = true;
+    $('#loreEye').textContent = `${p.name.toLocaleUpperCase('tr')} · GÜNLÜK ${idx + 1}`;
+    $('#loreArt').innerHTML = petSVG(p.species, p.stage, { mood: 'idle', coat: p.coat, shiny: p.shiny });
+    $('#loreText').textContent = parts[idx];
+    $('#loreCount').textContent = `${Math.min(parts.length, p.lore.length + 1)} / ${parts.length} parça açıldı · Ansiklopedide yeniden okuyabilirsin`;
+    loreEl.classList.add('show');
+    loreEl.dataset.idx = idx;
+  }
+  $('#loreOk').addEventListener('click', () => {
+    const p = P(), idx = +loreEl.dataset.idx;
+    if (p && !p.lore.includes(idx)) {
+      p.lore.push(idx);
+      const app = A(); app.petLoreSeen = app.petLoreSeen || {}; const arr = app.petLoreSeen[p.species] = app.petLoreSeen[p.species] || [];
+      if (!arr.includes(idx)) arr.push(idx);
+      save(true);
+    }
+    loreEl.classList.remove('show'); evolving = false;
+    if (evoQueue.length) setTimeout(runEvoQueue, 300);
+  });
+
+  // ---------- ansiklopedi ----------
+  let cxTab = null;
+  function openCodex(tab) {
+    const own = A().pet?.species;
+    cxTab = tab || cxTab || own || ORDER[0];
+    $('#cxTabs').innerHTML = [...ORDER.map(id => `<button data-cx="${id}" class="${id === cxTab ? 'on' : ''}" aria-label="${esc(PET_SPECS[id].name)}">${petSVG(id, 0, { mood: 'idle' })}</button>`), `<button data-cx="types" class="cx-txt ${cxTab === 'types' ? 'on' : ''}">Tipler</button>`, `<button data-cx="roles" class="cx-txt ${cxTab === 'roles' ? 'on' : ''}">Roller</button>`].join('');
+    $('#cxBody').innerHTML = cxTab === 'types' ? codexTypes() : cxTab === 'roles' ? codexRoles() : codexPet(cxTab);
+    document.querySelector('#settingsOverlay.show') && document.querySelector('#closeSettings')?.click();
+    codexEl.classList.add('show');
+  }
+  const typeChip = t => `<span class="cx-type" style="--tc:${TYPES[t].color}">${TYPES[t].icon} ${esc(TYPES[t].name)}</span>`;
+  function codexPet(id) {
+    const s = PET_SPECS[id], app = A(), mine = app.pet && app.pet.species === id ? app.pet : null;
+    const t = SPECIES_TYPE[id], sig = SIGNATURE[id];
+    const seen = new Set([...(mine ? mine.lore : []), ...((app.petLoreSeen || {})[id] || [])]);
+    const parts = loreParts(s.soul);
+    const maxStage = Math.max(mine ? mine.stage : -1, ...(app.petMemorial || []).filter(m => m.species === id).map(m => m.stage | 0), -1);
+    const st = (role) => { const b = battleStats(id, mine ? mine.stage : 0, mine ? mine.stars : 0, role, !!mine?.shiny); return `❤️ ${b.hp} · ⚔️ ${b.atk} · 🛡️ ${b.def} · 💨 ${b.spd}`; };
+    return `${petDetailHTML(id, mine ? mine.stage : 0, mine ? { coat: mine.coat, shiny: mine.shiny } : {})}
+      <div class="cx-sec"><h4>Tip</h4><p>${typeChip(t)} → ${typeChip(BEATS[t])} karşısında güçlü, ${typeChip(Object.keys(BEATS).find(k => BEATS[k] === t))} karşısında zayıf.</p></div>
+      <div class="cx-sec"><h4>İmza hamlesi (savaş)</h4><p><b>${esc(sig.name)}</b> · ${esc(sig.desc)}</p></div>
+      ${mine ? `<div class="cx-sec"><h4>Senin ${esc(mine.name)}</h4><p>Rol: <b>${ROLES[mine.role].icon} ${esc(ROLES[mine.role].name)}</b> (her evrimde değişir)${mine.shiny ? ` · <b class="evo-shiny">✨ ${esc(SHINY.name[id])}</b>` : ''}<br>Savaş değerleri: ${st(mine.role)}</p></div>` : `<div class="cx-sec"><h4>Savaş değerleri (ilk evre, yakın dövüşçü)</h4><p>${st('melee')}</p></div>`}
+      <div class="cx-sec"><h4>Evreler</h4><div class="cx-stages">${[0, 1, 2, 3, 4, 5].map(k => `<div class="${k <= maxStage ? '' : 'locked'}">${k <= maxStage ? petSVG(id, k, { coat: mine?.coat, shiny: mine?.shiny }) : '<span>?</span>'}<small>${k <= maxStage ? esc(stageName(id, k)) : '???'}</small></div>`).join('')}</div></div>
+      <div class="cx-sec"><h4>Günlük</h4>${parts.map((x, k) => seen.has(k) ? `<p class="cx-lore">“${esc(x)}”</p>` : `<p class="cx-lore locked">🔒 Bu parça bir evrimde açılır.</p>`).join('')}</div>
+      <div class="cx-sec"><h4>Nadir form</h4><p>${esc(SHINY.name[id])}: her evrimde küçük bir şansla gelir. ${esc(SHINY.perks.join(' · '))}.</p></div>`;
+  }
+  function codexTypes() {
+    return `<div class="cx-sec"><p>Her tip birini yener, birine yenilir; diğerlerine nötrdür. Güçlü vuruş ×1,5, zayıf vuruş ×0,67.</p>
+      ${Object.keys(BEATS).map(t => `<p>${typeChip(t)} ➜ ${typeChip(BEATS[t])}</p>`).join('')}
+      <h4>Petlerin tipleri</h4><p>${ORDER.map(id => `${esc(PET_SPECS[id].name)} ${TYPES[SPECIES_TYPE[id]].icon}`).join(' · ')}</p></div>`;
+  }
+  function codexRoles() {
+    return `<div class="cx-sec"><p>Rol, pet ilk sahiplenildiğinde ve her evrimde rastgele belirlenir.</p>${Object.values(ROLES).map(r => `<div class="cx-role"><h4>${r.icon} ${esc(r.name)}</h4><p>${esc(r.desc)}</p><ul>${r.moves.map(m => `<li><b>${esc(m.name)}</b> ${esc(m.desc)}</li>`).join('')}</ul></div>`).join('')}</div>`;
+  }
+  $('#cxTabs').addEventListener('click', e => { const b = e.target.closest('[data-cx]'); if (b) openCodex(b.dataset.cx); });
+  $('#cxClose').addEventListener('click', () => codexEl.classList.remove('show'));
+  codexEl.addEventListener('click', e => { if (e.target === codexEl) codexEl.classList.remove('show'); });
+
+  // ---------- kendi bakışından ipucu balonları ----------
+  let hintCool = 3, hintFor = null;
+  function petHint(force = false) {
+    const p = P(); if (!p || !p.alive || isSleeping() || actorEl.classList.contains('hidden')) return false;
+    const h = quiz.answerHint?.(); if (!h || hintFor === h.text) return false;
+    const voices = HINT_VOICE[p.species] || []; const cands = voices.map(f => { try { return f(h); } catch { return null; } }).filter(Boolean);
+    if (!cands.length) return false;
+    hintFor = h.text; hintCool = 5 + Math.floor(Math.random() * 4);
+    react('focus', 1200, 'look', 'idea');
+    sayNow(pick(cands), 5200);
+    return true;
+  }
+  window.addEventListener('dl:answer', e => { if (e.detail && !e.detail.right && P() && hintCool <= 3) setTimeout(() => { if (Math.random() < 0.45) petHint(); }, 1700); });
+  window.addEventListener('dl:question', () => {
+    if (!P()) return;
+    hintCool--;
+    if (hintCool <= 0 && Math.random() < 0.35) setTimeout(() => petHint(), 1400);
+  });
+
   // ---------- ölüm ----------
   function die(cat) {
     const p = P();
@@ -1086,7 +1189,7 @@ export function initPet(core, quiz) {
   function openDeath() {
     const p = P(); if (!p || p.alive) { deathPending = false; return; }
     const cat = p.death?.cat || 'en', label = catLabel(cat), lv = catLevelText(cat);
-    $('#deathPet').innerHTML = petSVG(p.species, p.stage, { mood: 'dead', pose: 'flat', coat: p.coat });
+    $('#deathPet').innerHTML = petSVG(p.species, p.stage, { mood: 'dead', pose: 'flat', coat: p.coat, shiny: p.shiny });
     $('#deathTitle').textContent = `${p.name} öldü…`;
     $('#deathLead').textContent = `Canı ${label} sorusunda tükendi. Ona ne olsun istersin?`;
     $('#reviveTxt').innerHTML = `${esc(label)} seviyen sıfırlanır (${esc(lv)} → ${cat === 'en' ? 'A1' : 'Sv 1'}). Telafi: eski XP’ne (${catXpOf(cat)} XP) ulaşana kadar bu konuda <b>2× XP</b>. ${esc(p.name)} aynı formuyla geri döner.`;
@@ -1123,10 +1226,10 @@ export function initPet(core, quiz) {
   // ---------- pet seçimi ----------
   let chosen = null;
   // seçim ekranı ve ansiklopedi için tek pet kartı
-  function petDetailHTML(id, stage = 0) {
+  function petDetailHTML(id, stage = 0, art = {}) {
     const s = PET_SPECS[id];
     const bar = (label, icon, v, c) => `<div class="pcd-bar"><span>${icon}</span><span class="pcb"><i style="width:${Math.round(v / 140 * 100)}%;background:${c}"></i></span><em>${v}</em></div>`;
-    return `<div class="pcd"><div class="pcd-art">${petSVG(id, stage, { mood: 'happy' })}</div><div class="pcd-main"><h3>${esc(s.name)} <small>${esc(PET_SPECIES[id].label)}</small></h3>
+    return `<div class="pcd"><div class="pcd-art">${petSVG(id, stage, { mood: 'happy', ...art })}</div><div class="pcd-main"><h3>${esc(s.name)} <small>${esc(PET_SPECIES[id].label)}</small></h3>
       ${bar('Can', '❤️', s.hp, '#E5534B')}${bar(s.foodLabel, s.foodIcon, s.food, id === 'plant' ? '#7FA7BF' : '#F0A04B')}${bar('Enerji', '⚡', s.energy, '#E9C23C')}</div></div>
       <p class="pc-soul">${esc(s.soul.split('. ').slice(0, 2).join('. ').replace(/\.?$/, '.'))}</p>
       <div class="pc-skill"><b>${esc(s.passive.name)}</b> ${esc(s.passive.desc)}</div><div class="pc-skill act"><b>✨ ${esc(s.active.name)} · ${s.active.cost}⚡</b> ${esc(s.active.desc)}</div>`;
@@ -1157,6 +1260,7 @@ export function initPet(core, quiz) {
     const app = A(), now = Date.now();
     const p = { v: 1, species: chosen, name: ($('#pcName').value.trim() || PET_SPECS[chosen].name).slice(0, 16), stage: 0, stars: 0, hp: 0, food: 0, energy: 0, stuffed: 0, alive: true, born: now, lastTick: now, lastSeen: now, flow: false, flowCount: 0, answers: 0, correct: 0, streak: 0, roam: true, notify: true };
     if (QUAD.includes(chosen)) p.coat = randomCoat();
+    p.role = randomRole(); p.lore = []; p.shiny = false;
     app.pet = p; const mx = maxes(p); p.hp = mx.hp; p.food = Math.round(mx.food * 0.7); p.energy = mx.energy;
     if (!app.petLevels) app.petLevels = levelsNow();
     else { const now2 = levelsNow(); for (const [k, v] of Object.entries(now2)) app.petLevels[k] = Math.max(app.petLevels[k] ?? v, v); }
@@ -1172,7 +1276,7 @@ export function initPet(core, quiz) {
     const p = P(); if (!p) { openChooser(); return; }
     const sp = PET_SPECS[p.species], mx = maxes(p);
     $('#piTitle').textContent = `${p.name} · ${stageName(p.species, p.stage)}`;
-    $('#piLine').innerHTML = [0, 1, 2, 3, 4, 5].map(st => `<div class="pi-stage ${st < p.stage ? 'past' : st === p.stage ? 'now' : 'future'}">${st <= p.stage ? petSVG(p.species, st, { coat: p.coat }) : '<span class="pi-unknown">?</span>'}<small>${st <= p.stage ? esc(stageName(p.species, st)) : '???'}</small></div>`).join('');
+    $('#piLine').innerHTML = [0, 1, 2, 3, 4, 5].map(st => `<div class="pi-stage ${st < p.stage ? 'past' : st === p.stage ? 'now' : 'future'}">${st <= p.stage ? petSVG(p.species, st, { coat: p.coat, shiny: p.shiny }) : '<span class="pi-unknown">?</span>'}<small>${st <= p.stage ? esc(stageName(p.species, st)) : '???'}</small></div>`).join('');
     $('#piSkills').innerHTML = `<p class="pi-soul">${esc(sp.soul)}</p><div><b>🌀 ${esc(sp.passive.name)} (pasif)</b><span>${esc(sp.passive.desc)}</span></div><div><b>✨ ${esc(sp.active.name)} (aktif · ${sp.active.cost}⚡)</b><span>${esc(sp.active.desc)}</span></div><div><b>💪 Güçlü yanı</b><span>${esc(sp.perk)}</span></div>`;
     $('#piStats').innerHTML = `<span>❤️ ${Math.round(p.hp)}/${mx.hp}</span><span>${sp.foodIcon} ${Math.round(p.food)}/${mx.food}</span><span>⚡ ${Math.round(p.energy)}/${mx.energy}</span><span>✅ ${p.correct} doğru</span><span>⭐ ${p.stars}</span><span>💫 ${p.revives || 0} kez canlandı</span>`;
     $('#piName').value = p.name; $('#piRoam').checked = p.roam; $('#piNotify').checked = p.notify;
@@ -1382,7 +1486,7 @@ export function initPet(core, quiz) {
   }
 
   return {
-    ensure, reload, setEnabled, enabled: () => !off(), render: renderPanel, openChooser, openInfo, xpMod, snapshot, admin,
+    ensure, reload, setEnabled, openCodex, enabled: () => !off(), render: renderPanel, openChooser, openInfo, xpMod, snapshot, admin,
     onPause() { const p = P(); if (p) { tick(); p.lastSeen = Date.now(); save(); schedule(); } },
     onResume() { cancelNotes(); tick(); greetIfAway(); renderPanel(); },
     debug: { die: () => { const p = P(); if (p) { p.hp = 1; } }, evolve: n => evolveBy(n || 1), phase, react, say, tick, emote, setAnim, baseNow, puppet, ability: useAbility, tap, pet, mischief: () => catMischief(), bored: v => { catBored = v; }, isSleeping, mood: currentMood, guard: () => guardUntil },

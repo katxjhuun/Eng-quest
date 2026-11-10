@@ -319,6 +319,7 @@ export function initQuiz(core) {
   }
 
   function optionText(item, idx) { return idx === 0 ? item.a : item.opts[idx - 1]; }
+  let shownId = null;
   function render({ speak = false } = {}) {
     const app = A(), cat = app.cat;
     headline(); renderTabs(); renderModeBtn();
@@ -326,6 +327,7 @@ export function initQuiz(core) {
     if (c.legacy) { showLegacy(true); core.renderLegacy(); core.renderProgress(); notifyLive(null); return; }
     showLegacy(false);
     const item = findItem(c.id), q = Q();
+    if (shownId !== c.id && !c.done) { shownId = c.id; setTimeout(() => window.dispatchEvent(new CustomEvent('dl:question', { detail: { id: c.id, cat: item.cat, style: c.style } })), 0); }
     const catOfItem = item.cat, catInfo = CATS.find(x => x.id === catOfItem);
     const m = MODES.find(x => x.id === c.style);
     $('#qzTag').textContent = `${catInfo.icon} ${catInfo.label.toLocaleUpperCase('tr')} · ${MODE_TAG[m.id] || m.label}`;
@@ -600,7 +602,8 @@ export function initQuiz(core) {
     answerHint() {
       const t = this.petTarget(); if (!t) return null;
       const a = String(t.item.a); const letters = [...a].filter(ch => SLOT_RE.test(ch)).length;
-      return { first: a.trim()[0] || '', letters, words: a.trim().split(/\s+/).length, text: a };
+      const wrongOpts = t.style === 'type' ? [] : t.c.order.filter(i => i !== 0 && !(t.c.elim || []).includes(i)).map(i => t.item.opts[i - 1]);
+      return { first: a.trim()[0] || '', last: a.trim().slice(-1), letters, words: a.trim().split(/\s+/).length, text: a, style: t.style, wrongOpts, cat: t.item.cat, tries: t.c.tries || 0 };
     },
     renderAll() { render(); },
     resetDeptCache() { Object.keys(vocabCache).forEach(k => delete vocabCache[k]); const q = Q(); if (q.cur.en && !q.cur.en.legacy && String(q.cur.en.id).startsWith('dv-') && !q.cur.en.done) q.cur.en = newCur('en'); },

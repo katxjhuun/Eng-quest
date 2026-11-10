@@ -24,8 +24,12 @@ export function petSVG(species, stage, opts = {}) {
   if (!Object.prototype.hasOwnProperty.call(SPECIES, species)) species = 'chick';
   stage = Math.max(0, Math.min(5, stage | 0));
   const quad = SPECIES[species].quad;
-  return staticSVG(species, stage, { ...opts, cls: quad ? `quad q-${species}` : '' });
+  const svg = staticSVG(species, stage, { ...opts, cls: quad ? `quad q-${species}` : '' });
+  return opts.shiny ? svg.replace('<svg', `<svg style="filter:${shinyFilter(species)}"`) : svg;
 }
+// nadir (parlak) form: türe özgü renk kayması
+const SHINY_HUE = { plant: 160, chick: 200, cat: 150, dog: 190, owl: 120, gecko: 250, whale: 300, doodle: 210, goat: 40 };
+export function shinyFilter(species) { return `hue-rotate(${SHINY_HUE[species] || 180}deg) saturate(1.3) brightness(1.05)`; }
 
 export const PET_SPECIES = SPECIES;
 export function speciesList() { return Object.keys(SPECIES); }
