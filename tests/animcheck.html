@@ -1,0 +1,43 @@
+<!doctype html><meta charset="utf-8"><div id="h" style="width:132px;height:132px"></div>
+<script type="module">
+import { Puppet, clipNames, staticSVG } from '../src/pets/figure.js';
+const SP = ['cat','dog','chick','owl','gecko','plant','whale','doodle','goat'];
+const BASES = ['idle','walk','run','sleep','lie','dead'];
+const MOODS = ['idle','happy','sad','hungry','angry','surprised','focus','groggy','full','sleep','love','cry'];
+const snap = p => [...p.svg.querySelectorAll('[data-k]')].map(e => (e.getAttribute('transform') || '') + '|' + (e.getAttribute('opacity') || '') + '|' + (e._h ? e._h.length + e._h.slice(40, 90) : '')).join(';');
+const res = { errors: [], still: [], noEffect: [], ok: 0, statics: 0 };
+for (const sp of SP) for (let st = 0; st < 6; st++) {
+  // statik çizim
+  try { const s = staticSVG(sp, st, { mood: 'idle' }) + staticSVG(sp, st, { mood: 'dead' }) + staticSVG(sp, st, { mood: 'sleep' }); if (!s.includes('<g')) res.errors.push(`${sp}${st} static empty`); else res.statics++; } catch (e) { res.errors.push(`${sp}${st} static: ${e.message}`); }
+  // temel durumlar: hareket ediyor mu
+  for (const base of BASES) {
+    const h = document.createElement('div'); document.body.appendChild(h);
+    try {
+      const p = new Puppet(h); p.setForm(sp, st, 1); p.setBase(base); p.setMood(base === 'sleep' ? 'sleep' : base === 'dead' ? 'dead' : 'idle');
+      const frames = new Set();
+      for (let i = 0; i < 40; i++) { if (base === 'walk' || base === 'run') p.travel(3, base, 132, 1, 0); p.tick(1 / 20); frames.add(snap(p)); }
+      if (frames.size < 2 && base !== 'dead') res.still.push(`${sp}${st}:${base}`); else res.ok++;
+    } catch (e) { res.errors.push(`${sp}${st}:${base}: ${e.message}`); }
+    h.remove();
+  }
+  // klipler: idle'a göre fark yaratıyor mu
+  for (const clip of clipNames()) {
+    const h = document.createElement('div'); document.body.appendChild(h);
+    try {
+      const a = new Puppet(h); a.setForm(sp, st, 1); a.play(clip, 1500);
+      const b2 = document.createElement('div'); document.body.appendChild(b2);
+      const b = new Puppet(b2); b.setForm(sp, st, 1);
+      a.t = b.t = 0; a.blinkAt = b.blinkAt = 99; a.lookAt = b.lookAt = 99;
+      let diff = false;
+      for (let i = 0; i < 24; i++) { a.tick(1 / 20); b.tick(1 / 20); if (snap(a) !== snap(b)) diff = true; }
+      const expectNone = ['idle','sit','home','full','lie','sleep','dead','flee'].includes(clip);
+      if (!diff && !expectNone) res.noEffect.push(`${sp}${st}:${clip}`); else res.ok++;
+      b2.remove();
+    } catch (e) { res.errors.push(`${sp}${st}:${clip}: ${e.message}`); }
+    h.remove();
+  }
+  // ruh hâlleri
+  for (const mood of MOODS) { const h = document.createElement('div'); document.body.appendChild(h); try { const p = new Puppet(h); p.setForm(sp, st, 2); p.setMood(mood); for (let i = 0; i < 6; i++) p.tick(1 / 20); res.ok++; } catch (e) { res.errors.push(`${sp}${st}:mood ${mood}: ${e.message}`); } h.remove(); }
+}
+window.__res = res;
+</script>
