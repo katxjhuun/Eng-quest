@@ -11,7 +11,7 @@ export const C = {
   bark: '#7E5A3C', barkD: '#58402C',
 };
 // tüy kodları (yalnızca tüy için kullanılır)
-const K = { gt: '#DCD2BF', gtD: '#BBAF9A', wh: '#4A6379', whD: '#33475C', dd: '#D9965E', ddD: '#BC7A44', cat: '#1E1B1D', catD: '#2E2A2D', dog: '#9B9088', dogD: '#33475B', gk: '#24585B', gkD: '#173E41', ow: '#4A6379', owD: '#33475C', ds: '#C99A2F', dsD: '#9E7621', ir: '#B4532B' };
+const K = { gt: '#DCD2BF', gtD: '#BBAF9A', wh: '#4A6379', whD: '#33475C', dd: '#EE7230', ddD: '#D25A20', cat: '#1E1B1D', catD: '#2E2A2D', dog: '#9B9088', dogD: '#33475B', gk: '#24585B', gkD: '#173E41', ow: '#4A6379', owD: '#33475C', ds: '#C99A2F', dsD: '#9E7621', ir: '#B4532B' };
 const MK = '#1E1B1C';   // desen mürekkebi (yarı saydam; her tüy renginde görünür)
 
 const P = (d, f, x = '') => `<path d="${d}" fill="${f}" ${x}/>`;
@@ -519,8 +519,8 @@ function doodleSide() {
   return [
     part('legNF', [116, 150], [P('M106 150 L126 150 L126 186 L106 186 Z', K.ddD)]),
     part('body', [96, 150], [P('M62 108 L128 108 L128 152 L62 152 Z', K.dd), P('M104 108 L128 108 L128 152 L104 152 Z', K.ddD), P('M62 146 L128 146 L128 152 L62 152 Z', K.ddD)], [
-      only([2, 3, 4, 5], 'lump', [128, 130], P('M128 120 A14 14 0 0 1 128 148 Z', '#C9A45A')),
-      only([4, 5], 'lump2', [62, 130], P('M62 118 A12 12 0 0 0 62 142 Z', '#C9A45A'))]),
+      only([2, 3, 4, 5], 'lump', [128, 130], P('M128 120 A14 14 0 0 1 128 148 Z', '#F2B33D')),
+      only([4, 5], 'lump2', [62, 130], P('M62 118 A12 12 0 0 0 62 142 Z', '#F2B33D'))]),
     part('legNB', [74, 150], [P('M62 150 L84 150 L84 186 L62 186 Z', K.dd)]),
     part('head', [96, 110], [], [
       part('skull', [100, 90], [P('M64 66 C64 62 66 60 70 60 L124 60 A34 34 0 0 1 158 94 L158 110 L62 110 L62 70 C62 68 63 67 64 66 Z', K.dd),
@@ -566,7 +566,7 @@ export const FIGS = {
     fur: [K.wh, K.whD], stagePal: { 0: ['#7A93A8', '#5E7890'], 1: ['#6A86A0', '#4E6A86'], 2: ['#5A7896', '#3E5C7A'], 3: ['#4A6A8A', '#33506E'], 4: ['#3E5C7A', '#2A4460'], 5: ['#2E4560', '#1E3048'] },
     form: [{ body: 0.86, head: 1.1 }, { body: 0.92 }, {}, {}, { body: 1.04 }, { body: 1.08 }] },
   doodle: { views: { sit: doodleSide }, side: true, gait: 'walk', leg: 36, amp: 20, lid: [0.4, 1], food: 'crumb',
-    fur: [K.dd, K.ddD], stagePal: { 0: ['#E8B48A', '#D49A6C'], 1: ['#E2A576', '#C98A58'], 2: ['#D9965E', '#BC7A44'], 3: ['#CC874C', '#AE6B36'], 4: ['#BC7A44', '#9C5E2C'], 5: ['#A0683A', '#7E4E26'] },
+    fur: [K.dd, K.ddD], stagePal: { 0: ['#F59A5C', '#E57E3E'], 1: ['#F2894A', '#DE6E2E'], 2: ['#EF7A38', '#D86224'], 3: ['#EC6C2C', '#D0561C'], 4: ['#E85F22', '#C64C16'], 5: ['#E25218', '#BA4012'] },
     form: [{ body: 0.86 }, { body: 0.92 }, {}, {}, { body: 1.04 }, { body: 1.08 }] },
   plant: { views: { sit: st => [plantSeed, plantSprout, plantDaisy, plantTulip, plantPot, plantTree][st]() }, side: false, gait: 'hop', hop: 22, food: 'water',
     form: [{}, {}, {}, {}, {}, {}] },
