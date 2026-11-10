@@ -4,6 +4,9 @@ import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { petSVG, homeSVG, stageName, PET_SPECIES, randomCoat, shinyFilter } from './pet-art.js';
 import { Puppet } from './pets/figure.js';
+import { initBattleUI } from './battle/ui.js';
+import { MONSTERS, monsterSVG } from './battle/monsters.js';
+const monsterArt = id => monsterSVG(id), monsterName = id => MONSTERS[id]?.name || id;
 import { TYPES, SPECIES_TYPE, ROLES, SIGNATURE, SHINY, SHINY_CHANCE, HINT_VOICE, loreParts, randomRole, battleStats, BEATS } from './pets/codex.js';
 import { CAT_XP_STEP, catLabel } from './quiz.js';
 import { SUBJECT_ORDER } from './data/subjects.js';
@@ -229,15 +232,20 @@ export function initPet(core, quiz) {
     if (off()) return 0;
     const app = A(), p = P(); const now = levelsNow();
     if (!app.petLevels) { app.petLevels = now; save(); return 0; }
-    let gains = 0;
+    let gains = 0; const gainedKeys = [];
     for (const [k, v] of Object.entries(now)) {
       const prev = app.petLevels[k];
       if (prev == null) { app.petLevels[k] = v; continue; }
-      if (v > prev) { gains += v - prev; app.petLevels[k] = v; }
+      if (v > prev) { gains += v - prev; app.petLevels[k] = v; gainedKeys.push({ k, v }); }
     }
     checkCatchUp();
-    if (gains && p && p.alive) evolveBy(gains);
-    else if (gains) save();
+    if (gains && p && p.alive) {
+      // evrim kapısı: önce boss yenilmeli
+      p.bossPending = (p.bossPending | 0) + gains;
+      p.bossKeys = [...(p.bossKeys || []), ...gainedKeys];
+      save(true); renderPanel();
+      setTimeout(() => bossPrompt(), 900);
+    } else if (gains) save();
     return gains;
   }
   const evoQueue = []; let evolving = false, deathPending = false;
@@ -296,7 +304,7 @@ export function initPet(core, quiz) {
     <div class="pet-hab" id="petHab" title="Petini çağır"><div class="pet-hab-bg" id="petHabBg"></div><div class="pet-away" id="petAway">🐾 Dolaşıyor · dokun, gelsin</div></div>
     <div class="pet-info">
       <div class="pet-title"><button class="pet-name" id="petNameBtn" aria-label="Pet bilgisi"><span id="petName">Pet</span> <span class="pet-stars" id="petStars"></span></button><span class="pet-form" id="petForm"></span>
-        <button class="flow-btn" id="flowBtn" aria-pressed="false"><span class="flow-ico">🌊</span><span id="flowSmall">Flow</span></button></div>
+        <button class="flow-btn arena-btn" id="arenaBtn" aria-label="Arena">⚔️<span id="arenaSmall">Arena</span></button><button class="flow-btn" id="flowBtn" aria-pressed="false"><span class="flow-ico">🌊</span><span id="flowSmall">Flow</span></button></div>
       <div class="pet-status" id="petStatus"></div>
       <div class="pet-bars">
         <div class="pbar hp"><span class="pbi">❤️</span><div class="pbt"><i id="pbHp"></i></div><b id="pbHpT"></b></div>
@@ -460,6 +468,7 @@ export function initPet(core, quiz) {
       b.disabled = p.energy < sp.active.cost;
       b.title = `${sp.active.name}: ${sp.active.desc} (${sp.active.cost} enerji)`;
     });
+    $('#arenaBtn').classList.toggle('boss', !!p.bossPending); $('#arenaSmall').textContent = p.bossPending ? (p.bossNeedQ ? 'Boss · 1 soru' : 'Boss!') : 'Arena';
     $('#flowBtn').classList.toggle('on', p.flow); $('#flowBtn').setAttribute('aria-pressed', String(p.flow));
     $('#flowSmall').textContent = p.flow ? 'Flow açık' : 'Flow';
     $('#flowBtn').title = p.flow ? `Enerji ${10 - (p.flowCount % 10)} soru sonra azalacak` : 'Flow: müzik ödülleri durur, enerji 10 soruda bir azalır';
@@ -1093,6 +1102,54 @@ export function initPet(core, quiz) {
     renderPanel();
   });
 
+  // ---------- savaş ve evrim kapısındaki boss ----------
+  const battle = initBattleUI({ core, petSVG, getPet: P, onChange: (ev, d) => { if (ev === 'battle-end') renderPanel(); } });
+  $('#arenaBtn').addEventListener('click', e => { e.stopPropagation(); const p = P(); if (p?.bossPending && !p.bossNeedQ) bossPrompt(true); else battle.openArena(); });
+  const bossEl = layer('petBoss', 'bossgate', `<div class="pet-modal boss-card"><div class="eyebrow">EVRİM KAPISI</div><div class="boss-art" id="bossArt"></div><h2 id="bossTitle"></h2><p id="bossLead"></p><div class="pc-row"><button class="secondarybtn" id="bossLater">Şimdi değil</button><button class="primarybtn" id="bossGo">⚔️ Meydan oku</button></div></div>`);
+  let bossBusy = false;
+  function bossPrompt(force = false) {
+    const p = P(); if (!p || !p.alive || !p.bossPending || bossBusy) return;
+    if (p.bossNeedQ) { if (force) core.toast('Önce bir soruyu doğru cevapla, sonra boss’a yeniden meydan okuyabilirsin.'); return; }
+    if (evolving || deathPending || document.querySelector('.pet-overlay.show, .overlay.show, .bt-overlay.show')) { if (!force) return setTimeout(() => bossPrompt(), 4000); }
+    const stageTo = Math.min(6, p.stage + 1), id = ['bossSayfa', 'bossSaat', 'bossSinav', 'bossGolge', 'bossBilinmez', 'bossSonsuz'][Math.min(5, stageTo - 1)];
+    $('#bossArt').innerHTML = monsterArt(id);
+    $('#bossTitle').textContent = `${monsterName(id)} yolunu kesti!`;
+    $('#bossLead').textContent = `${p.name} seviye atladı; evrimleşmek için bu bossu yenmesi gerekiyor. ${p.stage < 3 ? 'Kaybedersen bir soruyu doğru cevaplayıp yeniden deneyebilirsin.' : 'Dikkat: bu evrede kaybedersen kazandığın seviyenin XP’si sıfırlanır.'} Takımını Arena’dan kurabilirsin.`;
+    bossEl.classList.add('show');
+  }
+  $('#bossLater').addEventListener('click', () => { bossEl.classList.remove('show'); core.toast('Boss bekliyor: ⚔️ Arena düğmesinden meydan okuyabilirsin.'); });
+  $('#bossGo').addEventListener('click', async () => {
+    bossEl.classList.remove('show');
+    const p = P(); if (!p) return;
+    bossBusy = true;
+    const r = await battle.boss(Math.min(6, p.stage + 1));
+    bossBusy = false;
+    const q = P(); if (!q) return;
+    if (r === 'win') {
+      const n = q.bossPending | 0; q.bossPending = 0; q.bossKeys = []; q.bossNeedQ = false;
+      evolveBy(n);
+    } else if (q.stage < 3) {
+      q.bossNeedQ = true; save(true); renderPanel();
+      sayNow('Bir soru daha bilelim, sonra tekrar deneriz.', 4200);
+    } else {
+      // yüksek evrede yenilgi: kazanılan seviyenin XP'si sıfırlanır
+      const app = A();
+      for (const { k, v } of q.bossKeys || []) {
+        if (k === 'en') app.xp = Math.min(app.xp, core.thresholdFor ? core.thresholdFor(Math.max(0, v - 1)) : core.levelStartXp());
+        else if (app.quiz?.catXp) app.quiz.catXp[k] = Math.min(app.quiz.catXp[k] || 0, Math.max(0, v - 1) * CAT_XP_STEP);
+        if (app.petLevels) app.petLevels[k] = Math.max(0, v - 1);
+      }
+      q.bossPending = 0; q.bossKeys = []; q.bossNeedQ = false;
+      save(true); core.renderProgress(); quiz.renderAll(); renderPanel();
+      core.toast('Boss kazandı: bu seviyenin XP’si sıfırlandı. Yeniden kazanınca boss tekrar gelir.');
+    }
+  });
+  window.addEventListener('dl:answer', e => {
+    const p = P(); if (!p || !p.bossNeedQ || !e.detail?.right) return;
+    p.bossNeedQ = false; save(true); renderPanel();
+    setTimeout(() => { sayNow('Hazırız. Boss’a yeniden meydan okuyalım mı?', 3600); bossPrompt(); }, 1200);
+  });
+
   // ---------- günlük: petin ruh yazısından tek seferlik parçalar ----------
   function showLore(idx) {
     const p = P(); if (!p) return;
@@ -1486,7 +1543,7 @@ export function initPet(core, quiz) {
   }
 
   return {
-    ensure, reload, setEnabled, openCodex, enabled: () => !off(), render: renderPanel, openChooser, openInfo, xpMod, snapshot, admin,
+    ensure, reload, setEnabled, openCodex, battle, bossPrompt, enabled: () => !off(), render: renderPanel, openChooser, openInfo, xpMod, snapshot, admin,
     onPause() { const p = P(); if (p) { tick(); p.lastSeen = Date.now(); save(); schedule(); } },
     onResume() { cancelNotes(); tick(); greetIfAway(); renderPanel(); },
     debug: { die: () => { const p = P(); if (p) { p.hp = 1; } }, evolve: n => evolveBy(n || 1), phase, react, say, tick, emote, setAnim, baseNow, puppet, ability: useAbility, tap, pet, mischief: () => catMischief(), bored: v => { catBored = v; }, isSleeping, mood: currentMood, guard: () => guardUntil },

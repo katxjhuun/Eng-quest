@@ -1,0 +1,2 @@
+<!doctype html><meta charset="utf-8"><style>body{margin:0;background:#f6f1e8;font-family:sans-serif}#g{display:grid;grid-template-columns:repeat(6,160px);gap:8px;padding:10px}.c{background:#fbf8f2;border-radius:14px;text-align:center;font-size:12px;font-weight:800}.c svg{width:150px;height:150px}</style>
+<div id="g"></div><script type="module">import {MONSTERS,monsterSVG} from '../src/battle/monsters.js';document.getElementById('g').innerHTML=Object.keys(MONSTERS).map(k=>`<div class="c">${monsterSVG(k)}<div>${MONSTERS[k].name}</div></div>`).join('')</script>
