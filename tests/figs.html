@@ -7,7 +7,7 @@ svg{width:100%;height:100%;display:block}</style>
 <div id="app"></div>
 <script type="module">
 import { Puppet } from '../src/pets/figure.js';
-const SP = ['cat','dog','chick','owl','gecko','plant'];
+const SP = (new URLSearchParams(location.search).get('sp') || 'cat,dog,chick,owl,gecko,plant,whale,doodle,goat').split(',');
 const STATES = [['idle',null],['sleep',null],['lie',null],['dead',null],['happy','hop'],['eat','eat'],['angry','lunge'],['jump','surprised'],['look','headturn'],['groom','groom'],['stretch','stretch'],['ability','ability'],['sad','sad']];
 const mode = new URLSearchParams(location.search).get('m') || 'grid';
 const all = [];

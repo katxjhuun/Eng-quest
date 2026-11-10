@@ -3,7 +3,7 @@
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { petSVG, homeSVG, stageName, PET_SPECIES, randomCoat } from './pet-art.js';
-import { Puppet } from './pets/clay/engine.js';
+import { Puppet } from './pets/figure.js';
 import { CAT_XP_STEP, catLabel } from './quiz.js';
 import { SUBJECT_ORDER } from './data/subjects.js';
 

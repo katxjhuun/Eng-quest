@@ -145,6 +145,11 @@ function computePose(st) {
       A('head', { r: (run ? 3 : 1.5) * Math.sin(TAU * ph * 2) });
       A('tail', { r: (run ? 10 : 6) * Math.sin(TAU * ph) });
       if (run) A('body', { r: 2.5 * Math.sin(TAU * ph) });
+    } else if (def.gait === 'float') {
+      // süzülme: havada, ayak yok → kayma sorunu yok; yüzgeç çırpar, kuyruk dalgalanır
+      const u = ph;
+      A('wingL', { r: 16 * Math.sin(TAU * u * 2) }); A('wingR', { r: -16 * Math.sin(TAU * u * 2) });
+      A('tail', { r: 9 * Math.sin(TAU * u * 2 - 0.8) }); A('root', { y: -2.5 * Math.sin(TAU * u * 2) });
     } else {
       // zıplama: yerde (u<.28) çömelir, havada ilerler
       const u = ph, air = u > 0.28 ? bell((u - 0.28) / 0.72) : 0, ground = u <= 0.28 ? bell(u / 0.28) : 0;
@@ -161,6 +166,8 @@ function computePose(st) {
     idlePersonality(def, st, A, t, mood, side);
   }
 
+  // havada duran (balina): yerden yüksekte, uyurken alçalır
+  if (def.gait === 'float') { A('root', { y: -(def.hover || 30) * (asleep ? 0.45 : 1) + (moving ? 0 : 3 * Math.sin(t * 1.2)) }); if (!moving && !asleep) { A('wingL', { r: 8 * Math.sin(t * 1.6) }); A('wingR', { r: -8 * Math.sin(t * 1.6) }); A('tail', { r: 5 * Math.sin(t * 1.6 - 0.8) }); } }
   // --- ruh hâli duruşu (yerinde)
   if (!moving && base !== 'dead') {
     if (mood === 'sad' || mood === 'hungry' || mood === 'cry') { A('head', side ? { r: 7, y: 2 } : { y: 4 }); A('earL', { r: -14 }); A('earR', { r: 14 }); A('tail', { r: 10 }); A('wingL', { r: 4 }); A('wingR', { r: -4 }); }
@@ -265,6 +272,17 @@ function idlePersonality(def, st, A, t, mood, side) {
     const lk = cyc(12, 0.86, 0.94); A('lick', { o: lk > 0.05 ? 1 : 0, y: 6 * Math.sin(t * 14) * lk });
     const turn = cyc(12, 0.62, 0.82); A('head', { r: (side ? -9 : 7) * turn }); A('pup', { sx: 1 + 1.2 * turn });
     if (!side) { st.lookBias = (st.lookBias || 0) + 0.8 * turn; A('tail', { r: 3 * Math.sin(t * 0.9) }); }
+  } else if (sp === 'goat') {
+    A('tail', { r: -10 * Math.abs(Math.sin(t * 9)) * cyc(5, 0.2, 0.3) });
+    A('jaw', { y: 0.8 * Math.abs(Math.sin(t * 6)) });
+    A('head', { r: (side ? 8 : 6) * cyc(13, 0.1, 0.4) - 5 * cyc(13, 0.55, 0.8), y: 3 * cyc(13, 0.55, 0.8) });
+    A('earL', { r: 10 * cyc(5, 0.6, 0.66) });
+  } else if (sp === 'whale') {
+    A('head', { r: -4 * cyc(9, 0.3, 0.7) }); A('spout', { sy: 1 + 0.5 * cyc(14, 0.4, 0.5) });
+    A('body', { r: 1.5 * Math.sin(t * 0.6) });
+  } else if (sp === 'doodle') {
+    A('body', { r: 1.2 * Math.sin(t * 0.4) }); A('head', { y: 1 + Math.sin(t * 0.3) });
+    A('tuft', { r: 25 * Math.sin(t * 0.5) }); A('wingL', { r: 4 }); A('wingR', { r: -4 });
   } else if (sp === 'plant') {
     A('body', { r: 1.4 * Math.sin(t * 0.7) });
     A('wingR', { r: 5 * Math.sin(t * 0.7) }); A('wingL', { r: -2 * Math.sin(t * 0.7) });
@@ -341,6 +359,7 @@ export class Puppet {
     const run = mode === 'run';
     let cycle;
     if (this.def.gait === 'walk') cycle = gaitDims(this.def, run, this.def.form?.[this.stage]?.leg || 1).D * this.k;   // ayak yerde sabit kalır
+    else if (this.def.gait === 'float') cycle = 90;
     else cycle = (run ? 1.4 : 1) * this.def.hop * this.k;
     this.ph = (this.ph + units / Math.max(1, cycle)) % 1;
   }

@@ -11,7 +11,7 @@ export const C = {
   bark: '#7E5A3C', barkD: '#58402C',
 };
 // tüy kodları (yalnızca tüy için kullanılır)
-const K = { cat: '#1E1B1D', catD: '#2E2A2D', dog: '#9B9088', dogD: '#33475B', gk: '#24585B', gkD: '#173E41', ow: '#4A6379', owD: '#33475C', ds: '#C99A2F', dsD: '#9E7621', ir: '#B4532B' };
+const K = { gt: '#DCD2BF', gtD: '#BBAF9A', wh: '#4A6379', whD: '#33475C', dd: '#9890A5', ddD: '#787089', cat: '#1E1B1D', catD: '#2E2A2D', dog: '#9B9088', dogD: '#33475B', gk: '#24585B', gkD: '#173E41', ow: '#4A6379', owD: '#33475C', ds: '#C99A2F', dsD: '#9E7621', ir: '#B4532B' };
 const MK = '#1E1B1C';   // desen mürekkebi (yarı saydam; her tüy renginde görünür)
 
 const P = (d, f, x = '') => `<path d="${d}" fill="${f}" ${x}/>`;
@@ -430,6 +430,103 @@ function geckoFront(st) {
   ];
 }
 
+
+// ---------------------------------------------------------------- KEÇİ (günah keçisi): önden ayakta, perçem bir gözünü örter
+const goatHorns = [
+  only([1, 2], 'horns', [100, 56], [B('M88 58 L84 46', 5, C.grayD), B('M112 58 L116 46', 5, C.grayD)]),
+  only([3], 'horns', [100, 56], [B('M88 58 C84 42 76 36 70 40', 6, C.grayD), B('M112 58 C116 42 124 36 130 40', 6, C.grayD)]),
+  only([4, 5], 'horns', [100, 56], [B('M88 58 C82 36 66 28 58 38 C54 44 60 50 64 46', 7, C.grayD), B('M112 58 C118 36 134 28 142 38 C146 44 140 50 136 46', 7, C.grayD)]),
+];
+function goatFront() {
+  const leg2 = (k, x, col) => part(k, [x, 140], [P(`M${x - 4} 140 L${x + 4} 140 L${x + 3} 182 L${x - 3} 182 Z`, col), P(`M${x - 5} 188 L${x + 5} 188 L${x + 4} 181 L${x - 4} 181 Z`, C.soot)]);
+  return [
+    part('tail', [128, 112], P('M124 112 L134 98 L132 114 Z', K.gtD)),
+    leg2('legFB', 78, K.gtD), leg2('legFF', 122, K.gtD),
+    part('body', [100, 150], [P('M62 116 C62 102 138 102 138 116 L140 144 C140 156 60 156 60 144 Z', K.gt), P('M100 102 C126 102 138 104 138 116 L140 144 C140 152 120 156 100 156 Z', K.gtD)]),
+    leg2('legNB', 88, K.gt), leg2('legNF', 112, K.gtD),
+    part('head', [100, 112], [], [
+      ...goatHorns,
+      part('earL', [82, 68], P('M82 64 L56 70 L60 78 L84 74 Z', K.gt)), part('earR', [118, 68], P('M118 64 L144 70 L140 78 L116 74 Z', K.gtD)),
+      part('skull', [100, 84], [P('M80 58 L120 58 L114 104 L100 118 L86 104 Z', K.gt), P('M100 58 L120 58 L114 104 L100 118 Z', K.gtD),
+        E(88, 80, 6, 4, C.cream), E(112, 80, 6, 4, C.cream), P('M92 102 L108 102 L100 114 Z', C.sandD), O(96, 106, 1.2, C.soot), O(104, 106, 1.2, C.soot)]),
+      part('pup88', [88, 80], P('M84 79 L92 79 L92 81 L84 81 Z', C.black)), part('pup112', [112, 80], P('M108 79 L116 79 L116 81 L108 81 Z', C.black)),
+      part('lid88', [88, 75], P('M81 75 L95 75 L95 85 L81 85 Z', K.gt)), part('lid112', [112, 75], P('M105 75 L119 75 L119 85 L105 85 Z', K.gtD)),
+      part('fringe', [96, 60], P('M78 56 L116 52 L108 66 L100 62 L94 88 L88 70 L82 74 Z', C.black)),
+      only([2, 3, 4, 5], 'beard', [100, 116], P('M95 114 L105 114 L100 134 Z', C.sandD)),
+      only([5], 'mark', [112, 80], O(112, 80, 2, C.rust)),
+      part('jaw', [100, 114], P('M96 113 L104 113 L100 116 Z', C.sandD))]),
+  ];
+}
+function goatWalk() {
+  return [
+    leg('legFB', 70, 140, 44, 8, K.gtD, C.soot), leg('legFF', 132, 140, 44, 8, K.gtD, C.soot),
+    part('tail', [52, 116], P('M54 116 L42 102 L48 118 Z', K.gtD)),
+    part('body', [100, 140], [P('M50 124 C50 110 62 104 80 104 L128 104 C146 104 154 112 154 124 C154 138 144 144 128 144 L74 144 C58 144 50 136 50 124 Z', K.gt),
+      P('M56 132 C70 144 120 146 150 132 C146 142 138 146 126 146 L74 146 C64 146 58 140 56 132 Z', K.gtD)]),
+    leg('legNB', 78, 140, 44, 9, K.gt, C.soot), leg('legNF', 140, 140, 44, 9, K.gt, C.soot),
+    part('head', [146, 108], [], [
+      part('neck', [146, 108], P('M134 110 L146 80 L162 84 L154 116 Z', K.gt)),
+      only([1, 2], 'horns', [158, 66], B('M156 68 L150 56', 5, C.grayD)), only([3], 'horns', [158, 66], B('M156 68 C150 54 142 50 136 54', 6, C.grayD)),
+      only([4, 5], 'horns', [158, 66], B('M156 68 C148 46 132 42 126 52 C124 58 130 62 134 58', 7, C.grayD)),
+      part('earR', [152, 74], P('M154 72 L132 78 L136 84 L156 78 Z', K.gtD)),
+      part('skull', [166, 82], [P('M150 70 C152 62 164 60 172 66 L190 86 C192 92 188 96 182 94 L160 90 C150 88 148 78 150 70 Z', K.gt), P('M172 66 L190 86 C192 92 188 96 182 94 L166 90 Z', K.gtD),
+        E(166, 74, 5, 3.6, C.cream), O(186, 90, 1.2, C.soot)]),
+      part('pup', [166, 74], P('M162 73 L170 73 L170 75 L162 75 Z', C.black)),
+      part('lid', [166, 70], P('M160 70 L172 70 L172 79 L160 79 Z', K.gt)),
+      part('fringe', [160, 66], P('M148 66 L170 60 L172 70 L164 68 L162 80 L156 70 Z', C.black)),
+      only([2, 3, 4, 5], 'beard', [176, 96], P('M172 92 L180 94 L174 110 Z', C.sandD)),
+      part('jaw', [180, 94], P('M170 92 L186 94 L172 96 Z', C.sandD))]),
+  ];
+}
+function goatSleep() {
+  return [
+    part('body', [100, 186], [P('M44 168 C44 152 62 146 84 146 L130 146 C146 146 154 156 154 168 C154 180 146 186 132 186 L60 186 C50 186 44 178 44 168 Z', K.gt),
+      P('M84 146 L130 146 C146 146 154 156 154 168 C146 156 120 150 84 146 Z', K.gtD), P('M56 180 C70 186 120 188 150 180 C148 184 144 186 132 186 L60 186 C56 186 54 182 56 180 Z', K.gtD)]),
+    part('head', [150, 166], [], [
+      only([3, 4, 5], 'horns', [156, 146], B('M156 148 C150 132 140 128 134 134', 6, C.grayD)),
+      part('skull', [166, 160], [P('M144 156 C146 146 158 142 168 146 L188 162 C192 168 188 172 182 172 L160 170 C150 168 142 164 144 156 Z', K.gt), B('M158 154 Q164 158 170 154', 1.6, C.black)]),
+      part('fringe', [156, 150], P('M144 150 L166 144 L166 154 L158 152 L154 162 Z', C.black))]),
+  ];
+}
+
+// ---------------------------------------------------------------- BALİNA: havada süzülür, yüzgeçleriyle uçabileceğini sanır
+function whaleSide() {
+  return [
+    part('wingL', [112, 128], P('M112 126 C120 140 112 154 98 160 C102 148 104 138 108 128 Z', K.whD)),
+    part('tail', [46, 118], [P('M50 112 C38 112 28 104 24 94 L30 92 C34 100 42 106 52 106 Z', K.wh), P('M26 92 L8 80 C12 90 14 96 22 100 L8 108 C18 108 26 104 30 98 Z', K.whD)]),
+    part('body', [100, 140], [P('M46 116 C46 94 78 82 116 82 C152 82 178 96 182 116 C184 132 168 146 134 148 L82 148 C58 148 46 134 46 116 Z', K.wh),
+      P('M54 128 C70 142 120 150 176 128 C170 140 156 148 134 148 L82 148 C66 148 58 140 54 128 Z', C.sand),
+      ...[0, 1, 2, 3].map(i => B(`M${70 + i * 2} ${134 + i * 3} C100 ${140 + i * 3} 140 ${140 + i * 2} 168 ${128 + i * 2}`, 1, C.sandD)),
+      P('M116 82 C152 82 178 96 182 116 C168 100 146 92 116 90 Z', K.whD)], [
+      only([3, 4, 5], 'barn', [100, 100], [[84, 92], [96, 88], [108, 90], [90, 100]].map(([x, y]) => O(x, y, 2, C.cream, 'opacity=".75"')).join('')),
+      only([5], 'stars', [120, 96], [[70, 98], [128, 92], [150, 100]].map(([x, y]) => P(`M${x} ${y - 4} L${x + 1.2} ${y - 1} L${x + 4} ${y} L${x + 1.2} ${y + 1} L${x} ${y + 4} L${x - 1.2} ${y + 1} L${x - 4} ${y} L${x - 1.2} ${y - 1} Z`, C.ochre)).join(''))]),
+    part('head', [160, 116], [], [
+      part('skull', [166, 112], [E(160, 112, 6, 5, C.cream)]),
+      part('pup', [160, 112], [O(161, 112.5, 3.2, C.black), O(159.8, 111, 0.9, C.cream)]),
+      part('lid', [160, 107], P('M153 107 L167 107 L167 118 L153 118 Z', K.wh)),
+      part('jaw', [170, 124], B('M150 126 C162 128 172 126 180 120', 1.6, K.whD)),
+      only([2, 3, 4, 5], 'spout', [150, 84], [P('M148 84 L152 84 L151 80 L149 80 Z', K.whD), B('M150 78 C146 70 140 68 136 70 M150 78 C154 70 160 68 164 70', 2, C.slate, 'opacity=".6"')])]),
+    part('wingR', [118, 132], P('M118 130 C128 144 122 160 106 168 C110 154 112 142 114 132 Z', K.wh)),
+  ];
+}
+
+// ---------------------------------------------------------------- DOODLE: hiçbir canlıya benzemeyen bodur yumru, ağır kapaklı boş bakış
+function doodleFront() {
+  return [
+    part('legFB', [88, 168], P('M80 166 L96 166 L96 186 L80 186 Z', K.ddD)), part('legFF', [112, 168], P('M104 166 L120 166 L120 186 L104 186 Z', K.ddD)),
+    part('body', [100, 180], [O(100, 132, 44, K.dd), P('M100 88 A44 44 0 0 1 100 176 C126 160 130 104 100 88 Z', K.ddD), O(124, 104, 22, K.dd), O(72, 120, 18, K.dd), P('M124 82 A22 22 0 0 1 124 126 C136 116 136 92 124 82 Z', K.ddD)], [
+      only([2, 3, 4, 5], 'lump', [78, 158], O(78, 158, 14, K.ddD)), only([4, 5], 'lump2', [130, 156], O(130, 156, 12, K.ddD)),
+      part('wingL', [58, 132], P('M58 128 L46 140 L52 146 L62 136 Z', K.dd)), part('wingR', [142, 132], P('M142 128 L154 140 L148 146 L138 136 Z', K.ddD))]),
+    part('head', [100, 150], [], [
+      part('skull', [100, 128], [E(88, 126, 7, 6, C.cream), E(112, 124, 6.4, 5.4, C.cream)]),
+      part('pup88', [88, 126], O(88, 127, 3.4, C.black)), part('pup112', [112, 124], O(112, 125, 3, C.black)),
+      part('lid88', [88, 119], P('M80 119 L96 119 L96 133 L80 133 Z', K.dd)), part('lid112', [112, 118], P('M104 118 L120 118 L120 131 L104 131 Z', K.ddD)),
+      part('jaw', [100, 144], B('M94 144 H106', 1.6, C.black))]),
+    part('tuft', [104, 82], B('M104 88 C96 80 100 70 108 72 C114 74 112 82 106 82 C102 82 102 78 105 77', 1.8, C.black)),
+    only([5], 'cloud', [104, 50], [O(94, 52, 9, C.soot, 'opacity=".75"'), O(106, 48, 11, C.soot, 'opacity=".75"'), O(118, 53, 8, C.soot, 'opacity=".75"')]),
+  ];
+}
+
 // ---------------------------------------------------------------- tür tanımları
 // view: görünüm adı → parça listesi. gait: yürüme türü ('walk' bacaklı, 'hop' sıçrama), leg: bacak boyu (adım uzunluğu buradan).
 // lid: göz kapağı ölçeği (açık / kapalı); owl'un doğal hâli yarı kapalıdır.
@@ -456,6 +553,15 @@ export const FIGS = {
     fur: [K.gk, K.gkD], coats: [['#8FB89A', '#6A947A'], ['#B9AC98', '#8E826E'], ['#B4532A', '#8A3B1E'], ['#4A6378', '#33475A'], ['#C99A2E', '#9E7620'], ['#7A5A7E', '#563E5A'], ['#2E2A2C', '#1E1B1C'], ['#9B9087', '#6F665E']],
     stagePal: { 2: ['#D8B44A', '#B08E2E'], 3: ['#8C7A5A', '#6A5A40'], 4: ['#6E9A4A', '#4E7A32'], 5: ['#24585B', '#173E41'] },
     form: [{ head: 1.25, tail: 0.7, leg: 0.85, body: 0.9 }, { head: 1.08 }, {}, { body: 1.04 }, { tail: 1.12, head: 1.04 }, { head: 1.06, body: 1.06, tail: 1.08 }] },
+  goat: { views: { sit: goatFront, walk: goatWalk, sleep: goatSleep }, side: false, walkSide: true, gait: 'walk', leg: 44, food: 'grass',
+    fur: [K.gt, K.gtD], stagePal: { 5: ['#3A3538', '#2A2629'] },
+    form: [{ head: 1.22, leg: 0.76, body: 0.88, ear: 0.9 }, { head: 1.1, leg: 0.88 }, {}, { leg: 1.04 }, { leg: 1.06, body: 1.04 }, { head: 1.04, leg: 1.06, body: 1.06 }] },
+  whale: { views: { sit: whaleSide }, side: true, gait: 'float', hover: 34, food: 'krill',
+    fur: [K.wh, K.whD], stagePal: { 0: ['#7A93A8', '#5E7890'], 1: ['#6A86A0', '#4E6A86'], 2: ['#5A7896', '#3E5C7A'], 3: ['#4A6A8A', '#33506E'], 4: ['#3E5C7A', '#2A4460'], 5: ['#2E4560', '#1E3048'] },
+    form: [{ body: 0.86, head: 1.1 }, { body: 0.92 }, {}, {}, { body: 1.04 }, { body: 1.08 }] },
+  doodle: { views: { sit: doodleFront }, side: false, gait: 'hop', hop: 16, lid: [0.55, 1], food: 'crumb',
+    fur: [K.dd, K.ddD], stagePal: { 0: ['#B8B0C0', '#A098AC'], 1: ['#A8A0B2', '#8E869C'], 2: ['#9890A5', '#787089'], 3: ['#888096', '#6A6280'], 4: ['#787088', '#5A5270'], 5: ['#5A5468', '#423C50'] },
+    form: [{ body: 0.86 }, { body: 0.92 }, {}, {}, { body: 1.04 }, { body: 1.08 }] },
   plant: { views: { sit: st => [plantSeed, plantSprout, plantDaisy, plantTulip, plantPot, plantTree][st]() }, side: false, gait: 'hop', hop: 22, food: 'water',
     form: [{}, {}, {}, {}, {}, {}] },
 };

@@ -1,3 +1,12 @@
+# dam-la 2.6.1 — 3B geri alındı, yeni petler geometrik çizimde
+
+Uzaktan güncellemeyle gelir. **Firebase kurallarında yeni türler için Yayınla gerekir (2.6.0 ile aynı).**
+- 3B kil petler kaldırıldı; 2.5.1'deki geometrik editoryal çizimlere ve hareket motoruna dönüldü (Three.js kütüphanesi de çıkarıldı, uygulama yine hafif).
+- Balina, doodle ve keçi kedi ile baykuşun çizim diliyle yeniden çizildi: kontursuz düz renk düzlemleri, iki tonlu gölge, ağır kapaklı gözler. Her biri 6 evrede değişir (balina koyulaşır, sırtında midye ve yıldızlar belirir, fıskiyesi çıkar; doodle yumrulaşıp koyulaşır, sonunda tepesinde bulut; keçinin boynuzları büyür, sakal çıkar, son evrede kapkara olur).
+- Balina havada süzülür (ayak yok, kayma yok); keçi yürürken yandan, dururken önden; doodle küçük zıplamalarla ilerler.
+- Oyun kuralları 2.6.0'daki gibi kaldı (yetenekler, pasifler, evre adları).
+
+---
 # dam-la 2.6.0 — 3B kil petler ve üç yeni pet
 
 Uzaktan güncellemeyle gelir. **Firebase kurallarında yeni türler (balina, doodle, keçi) için Yayınla'ya basılması gerekir.**
