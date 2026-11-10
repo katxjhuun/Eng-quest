@@ -32,63 +32,102 @@ export function mount(el, ctx) {
     const puzzle = lay.words; ctx.dbg?.({ base, puzzle, lay });
     const found = new Set(), revealed = new Set(), bonus = new Set();
     let hints = Math.max(1, 4 - Math.floor(t * 3)), usedHints = 0;
-    let wheel = shuffle(letters(base), rng), path = [];
+    // çember: harfler sabit düğümlerdir; karıştırınca yer değiştirirler (kayarak). Kelime parmakla harfleri bağlayarak kurulur.
+    const W = letters(base), n = W.length;
+    let slots = shuffle([...Array(n).keys()], rng);   // harf i → çemberdeki konum slots[i]
+    let path = [], drag = false, finger = null, busy = false;
     el.innerHTML = `<div class="uw"><div class="uw-board" id="uwBoard" style="--w:${lay.w};--h:${lay.h}"></div>
-      <div class="uw-cur" id="uwCur">&nbsp;</div>
-      <div class="uw-wheel" id="uwWheel"></div>
-      <div class="uw-btns"><button class="gm-chip" id="uwShuf">🔀</button><button class="gm-chip on" id="uwGo">✓ Gönder</button><button class="gm-chip" id="uwDel">⌫</button><button class="gm-chip" id="uwHint">💡 <span id="uwHn"></span></button><span class="uw-bonus" id="uwBonus"></span></div></div>`;
+      <div class="uw-cur" id="uwCur"><span></span></div>
+      <div class="uw-wheel" id="uwWheel"><svg class="uw-lines" id="uwLines" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+        ${W.map((c, i) => `<div class="uw-l" data-i="${i}">${esc(upper(c, lang))}</div>`).join('')}
+        <span class="uw-mix" id="uwMix" role="button" tabindex="0" aria-label="Harfleri karıştır">🔀</span></div>
+      <div class="uw-btns"><button class="gm-chip" id="uwHint">💡 <span id="uwHn"></span></button><span class="uw-bonus" id="uwBonus"></span></div></div>`;
     const key = (x, y) => `${x},${y}`;
     const openSet = () => { const o = new Set(revealed); for (const p of puzzle) if (found.has(p.w)) for (const [x, y] of p.cells) o.add(key(x, y)); return o; };
     const allDone = () => { const o = openSet(); return puzzle.every(p => found.has(p.w) || p.cells.every(([x, y]) => o.has(key(x, y)))); };
+    const wheelEl = el.querySelector('#uwWheel'), linesEl = el.querySelector('#uwLines'), curEl = el.querySelector('#uwCur');
+    const nodes = [...wheelEl.querySelectorAll('.uw-l')];
+    const R = n > 6 ? 37 : 35;
+    const pos = i => { const a = -Math.PI / 2 + slots[i] / n * Math.PI * 2; return [50 + Math.cos(a) * R, 50 + Math.sin(a) * R]; };
+    let fresh = new Map(); // yeni açılan kare → sıra (animasyon gecikmesi)
     function drawBoard() {
-      const open = new Set(revealed); for (const p of puzzle) if (found.has(p.w)) for (const [x, y] of p.cells) open.add(key(x, y));
+      const open = openSet();
       let h = '';
       for (let y = 0; y < lay.h; y++) for (let x = 0; x < lay.w; x++) {
-        const c = lay.cells.get(key(x, y));
-        h += c ? `<div class="uw-c${open.has(key(x, y)) ? ' on' : ''}">${open.has(key(x, y)) ? esc(upper(c, lang)) : ''}</div>` : '<div class="uw-x"></div>';
+        const k = key(x, y), c = lay.cells.get(k);
+        if (!c) { h += '<div class="uw-x"></div>'; continue; }
+        const f = fresh.get(k);
+        h += `<div class="uw-c${open.has(k) ? ' on' : ''}${f != null ? ' new' : ''}"${f != null ? ` style="--i:${f}"` : ''}>${open.has(k) ? esc(upper(c, lang)) : ''}</div>`;
       }
       el.querySelector('#uwBoard').innerHTML = h;
+      fresh = new Map();
       el.querySelector('#uwHn').textContent = hints;
-      el.querySelector('#uwBonus').textContent = bonus.size ? `+${bonus.size} bonus` : '';
+      el.querySelector('#uwBonus').textContent = bonus.size ? `✦ ${bonus.size} bonus` : '';
     }
-    function drawWheel() {
-      const n = wheel.length, R = 38;
-      el.querySelector('#uwWheel').innerHTML = wheel.map((c, i) => { const a = -Math.PI / 2 + i / n * Math.PI * 2; return `<button class="uw-l${path.includes(i) ? ' on' : ''}" data-i="${i}" style="left:${50 + Math.cos(a) * R}%;top:${50 + Math.sin(a) * R}%">${esc(upper(c, lang))}</button>`; }).join('');
-      el.querySelector('#uwCur').textContent = path.length ? upper(path.map(i => wheel[i]).join(''), lang) : ' ';
+    function placeNodes() { nodes.forEach((b, i) => { const [x, y] = pos(i); b.style.left = x + '%'; b.style.top = y + '%'; }); }
+    function drawPath() {
+      nodes.forEach((b, i) => b.classList.toggle('on', path.includes(i)));
+      const pts = path.map(pos);
+      if (finger && drag && pts.length) pts.push(finger);
+      linesEl.innerHTML = pts.length > 1 ? `<polyline points="${pts.map(p => p.join(',')).join(' ')}"/>` : '';
+      const w = path.map(i => W[i]).join('');
+      curEl.className = 'uw-cur' + (w ? ' show' : '');
+      curEl.firstElementChild.textContent = w ? upper(w, lang) : '';
+    }
+    function verdict(cls, ms = 520) {
+      busy = true; curEl.classList.add(cls);
+      setTimeout(() => { busy = false; curEl.classList.remove(cls); path = []; drawPath(); }, ms);
     }
     function submit() {
-      const w = path.map(i => wheel[i]).join(''); path = []; drawWheel();
-      if (letters(w).length < 3) return;
+      const w = path.map(i => W[i]).join('');
+      if (letters(w).length < 3) { path = []; drawPath(); return; }
       const p = puzzle.find(x => x.w === w);
       if (p) {
-        if (found.has(w)) { ctx.toast('Bunu zaten buldun.'); return; }
-        found.add(w); drawBoard();
-        if (allDone()) {
-          setTimeout(() => ctx.win(usedHints === 0 ? 3 : usedHints <= 1 ? 2 : 1, bonus.size ? `${bonus.size} bonus kelime de buldun.` : ''), 500);
-        }
-      } else if (lx.all.has(w)) { if (!bonus.has(w)) { bonus.add(w); ctx.toast(`Bonus kelime: ${upper(w, lang)}`); drawBoard(); } }
-      else { const c = el.querySelector('#uwCur'); c.textContent = upper(w, lang); c.classList.add('no'); setTimeout(() => { c.classList.remove('no'); drawWheel(); }, 450); }
+        if (found.has(w)) { verdict('dup'); return; }
+        const before = openSet();
+        found.add(w);
+        p.cells.forEach(([x, y], j) => { if (!before.has(key(x, y))) fresh.set(key(x, y), j); });
+        verdict('ok', 420); drawBoard();
+        if (allDone()) setTimeout(() => ctx.win(usedHints === 0 ? 3 : usedHints <= 1 ? 2 : 1, bonus.size ? `${bonus.size} bonus kelime de buldun.` : ''), 900);
+      } else if (lx.all.has(w)) {
+        if (!bonus.has(w)) { bonus.add(w); drawBoard(); const b = el.querySelector('#uwBonus'); b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); verdict('bonus', 600); }
+        else verdict('dup');
+      } else verdict('no');
     }
-    // dokun ya da sürükle
-    const wheelEl = el.querySelector('#uwWheel'); let dragging = false, swiped = false;
-    const at = e => { const b = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('.uw-l'); return b ? +b.dataset.i : -1; };
-    wheelEl.addEventListener('pointerdown', e => { const i = at(e); if (i < 0) return; dragging = true; swiped = false; wheelEl.setPointerCapture?.(e.pointerId); if (path.at(-1) === i) { path.pop(); } else if (!path.includes(i)) path.push(i); drawWheel(); });
-    wheelEl.addEventListener('pointermove', e => { if (!dragging) return; const i = at(e); if (i >= 0 && !path.includes(i)) { path.push(i); swiped = true; drawWheel(); } else if (i >= 0 && path.length > 1 && path.at(-2) === i) { path.pop(); drawWheel(); } });
-    wheelEl.addEventListener('pointerup', () => { if (!dragging) return; dragging = false; if (swiped && path.length >= 3) submit(); });
-    wheelEl.addEventListener('pointercancel', () => { dragging = false; });
-    el.querySelector('#uwCur').addEventListener('click', () => { if (path.length >= 3) submit(); else { path = []; drawWheel(); } });
-    el.querySelector('#uwGo').addEventListener('click', () => { if (path.length >= 3) submit(); });
-    el.querySelector('#uwDel').addEventListener('click', () => { path.pop(); drawWheel(); });
-    el.querySelector('#uwShuf').addEventListener('click', () => { wheel = shuffle(wheel, Math.random); path = []; drawWheel(); });
+    // parmak konumu → çember koordinatı (0–100)
+    const local = e => { const r = wheelEl.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * 100, (e.clientY - r.top) / r.height * 100]; };
+    const hit = ([x, y]) => { let best = -1, bd = 11.5; nodes.forEach((_, i) => { const [a, b] = pos(i), dd = Math.hypot(a - x, b - y); if (dd < bd) { bd = dd; best = i; } }); return best; };
+    wheelEl.addEventListener('pointerdown', e => {
+      if (busy || e.target.closest('#uwMix')) return;
+      const i = hit(local(e)); if (i < 0) return;
+      e.preventDefault(); drag = true; wheelEl.setPointerCapture?.(e.pointerId);
+      path = [i]; finger = local(e); drawPath();
+    });
+    wheelEl.addEventListener('pointermove', e => {
+      if (!drag) return;
+      finger = local(e);
+      const i = hit(finger);
+      if (i >= 0) {
+        if (!path.includes(i)) path.push(i);
+        else if (path.length > 1 && path.at(-2) === i) path.pop(); // geri giderek son harfi bırak
+      }
+      drawPath();
+    });
+    const up = () => { if (!drag) return; drag = false; finger = null; submit(); drawPath(); };
+    wheelEl.addEventListener('pointerup', up);
+    wheelEl.addEventListener('pointercancel', () => { drag = false; finger = null; path = []; drawPath(); });
+    const mix = () => { if (drag || busy) return; slots = shuffle(slots, Math.random); placeNodes(); const m = el.querySelector('#uwMix'); m.classList.remove('spin'); void m.offsetWidth; m.classList.add('spin'); };
+    el.querySelector('#uwMix').addEventListener('click', mix);
+    el.querySelector('#uwMix').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); mix(); } });
     el.querySelector('#uwHint').addEventListener('click', () => {
       if (hints <= 0) { ctx.toast('İpucu hakkın kalmadı.'); return; }
-      const open = new Set(revealed); for (const p of puzzle) if (found.has(p.w)) for (const [x, y] of p.cells) open.add(key(x, y));
+      const open = openSet();
       const target = puzzle.filter(p => !found.has(p.w)).flatMap(p => p.cells).filter(([x, y]) => !open.has(key(x, y)));
       if (!target.length) return;
       const [x, y] = target[Math.floor(Math.random() * target.length)];
-      revealed.add(key(x, y)); hints--; usedHints++; drawBoard();
-      if (allDone()) setTimeout(() => ctx.win(1), 500);
+      revealed.add(key(x, y)); fresh.set(key(x, y), 0); hints--; usedHints++; drawBoard();
+      if (allDone()) setTimeout(() => ctx.win(1), 700);
     });
-    drawBoard(); drawWheel();
+    placeNodes(); drawBoard(); drawPath();
   }
 }

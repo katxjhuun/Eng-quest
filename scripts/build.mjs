@@ -31,7 +31,7 @@ await build({
 });
 
 // Temalar: renkler CSS değişkenlerine çevrilir; her tema yalnızca değişkenleri değiştirir.
-const baseCss = (await readFile(path.join(root, 'src/styles.css'), 'utf8')) + '\n' + (await readFile(path.join(root, 'src/features.css'), 'utf8')) + '\n' + (await readFile(path.join(root, 'src/pet.css'), 'utf8'));
+const baseCss = (await readFile(path.join(root, 'src/styles.css'), 'utf8')) + '\n' + (await readFile(path.join(root, 'src/features.css'), 'utf8')) + '\n' + (await readFile(path.join(root, 'src/pet.css'), 'utf8')) + '\n' + (await readFile(path.join(root, 'src/games/games.css'), 'utf8'));
 const themed = buildThemedCss(baseCss);
 await mkdir(path.join(root, '.build'), { recursive: true });
 await writeFile(path.join(root, '.build/styles.css'), themed.css);

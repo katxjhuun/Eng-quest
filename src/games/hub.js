@@ -3,14 +3,13 @@
 // Oyun modülleri ayrı parçalar hâlinde, açıldıklarında yüklenir.
 
 export const GAMES = [
-  { id: 'wordle', name: 'Wordle', icon: '🟩', lang: true, desc: 'Gizli kelimeyi 6 denemede bul.', load: () => import('./wordle.js') },
-  { id: 'stack', name: 'Stack', icon: '🧩', lang: true, desc: 'Kelimeleri gizli ortak temalarına göre gruplara ayır.', load: () => import('./stack.js') },
-  { id: 'uniwords', name: 'Uniwords', icon: '🔤', lang: true, desc: 'Eldeki harflerle iç içe bulmacayı doldur.', load: () => import('./uniwords.js') },
-  { id: 'crossup', name: 'Cross Up', icon: '⚔️', lang: true, desc: 'Bota karşı sırayla harf yerleştir, puanı kap.', load: () => import('./crossup.js') },
-  { id: 'trace', name: 'Trace', icon: '⏳', desc: 'Tarihî olayları zaman çizgisine sırala.', load: () => import('./trace.js') },
-  { id: 'sudoku', name: 'Sudoku', icon: '🔢', desc: 'Her satır, sütun ve kutuda 1–9 bir kez.', load: () => import('./sudoku.js') },
-  { id: 'tetris', name: 'Tetris', icon: '🧱', desc: 'Blokları yerleştir, satırları temizle.', load: () => import('./tetris.js') },
-  { id: 'candy', name: 'Şeker', icon: '🍬', desc: 'Üç aynı şekeri yan yana getir, hedefi tamamla.', load: () => import('./candy.js') },
+  { id: 'stack', g: '#e0705a', g2: '#f0a04b', name: 'Stack', icon: '🧩', lang: true, desc: 'Kelimeleri gizli ortak temalarına göre gruplara ayır.', load: () => import('./stack.js') },
+  { id: 'uniwords', g: '#4f3bd4', g2: '#8a6cf0', name: 'Uniwords', icon: '🔤', lang: true, desc: 'Eldeki harflerle iç içe bulmacayı doldur.', load: () => import('./uniwords.js') },
+  { id: 'crossup', g: '#d0443c', g2: '#9a2f6a', name: 'Cross Up', icon: '⚔️', lang: true, desc: 'Bota karşı sırayla harf yerleştir, puanı kap.', load: () => import('./crossup.js') },
+  { id: 'trace', g: '#2f7a8a', g2: '#4fc3d9', name: 'Trace', icon: '⏳', desc: 'Olayı zaman çizgisinde doğru yere yerleştir.', load: () => import('./trace.js') },
+  { id: 'sudoku', g: '#3f8a4a', g2: '#7cc46a', name: 'Sudoku', icon: '🔢', desc: 'Her satır, sütun ve kutuda 1–9 bir kez.', load: () => import('./sudoku.js') },
+  { id: 'tetris', g: '#2b2240', g2: '#5c46a0', name: 'Tetris', icon: '🧱', desc: 'Blokları yerleştir, satırları temizle.', load: () => import('./tetris.js') },
+  { id: 'candy', g: '#e05a9a', g2: '#f0a04b', name: 'Şeker', icon: '🍬', desc: 'Üç aynı şekeri yan yana getir, hedefi tamamla.', load: () => import('./candy.js') },
 ];
 export const MAX_LEVEL = 1000;
 
@@ -47,15 +46,15 @@ export function initGames(core) {
   let cleanup = null, current = null;
 
   function hub() {
-    cleanup?.(); cleanup = null; current = null;
+    cleanup?.(); cleanup = null; current = null; root.classList.remove('full');
     $('#gmEye').textContent = 'OYUNLAR'; $('#gmTitle').textContent = 'Mini oyunlar'; $('#gmTools').innerHTML = '';
-    $('#gmBody').innerHTML = `<div class="gm-grid">${GAMES.map(g => {
-      const lang = g.lang ? langOf(g.id) : null, lv = levelOf(g.id, lang);
-      return `<button class="gm-card" data-game="${g.id}"><span class="gm-ico">${g.icon}</span><b>${esc(g.name)}</b><small>${esc(g.desc)}</small><em>Bölüm ${lv}${lang ? ` · ${lang.toUpperCase()}` : ''}</em><i style="width:${(lv - 1) / (MAX_LEVEL - 1) * 100}%"></i></button>`;
+    $('#gmBody').innerHTML = `<div class="gm-grid">${GAMES.map((g, i) => {
+      const lang = g.lang ? langOf(g.id) : null, lv = levelOf(g.id, lang), stars = st().stars[key(g.id, lang)] | 0;
+      return `<button class="gm-card" data-game="${g.id}" style="--g:${g.g};--g2:${g.g2};--i:${i}"><div class="gm-art"><span class="gm-ico">${g.icon}</span></div><div class="gm-meta"><b>${esc(g.name)}</b><small>${esc(g.desc)}</small><em>Bölüm ${lv}${lang ? ` · ${lang.toUpperCase()}` : ''}${stars ? ` <s>★ ${stars}</s>` : ''}</em></div><i style="width:${(lv - 1) / (MAX_LEVEL - 1) * 100}%"></i></button>`;
     }).join('')}</div><p class="gm-note">Zorluk ayarı yok: her oyun orta zorlukta başlar, bölüm ilerledikçe zorlaşır.</p>`;
   }
   function open(id) { root.classList.add('show'); document.body.classList.add('gm-open'); id ? play(id) : hub(); }
-  function close() { cleanup?.(); cleanup = null; root.classList.remove('show'); document.body.classList.remove('gm-open'); }
+  function close() { cleanup?.(); cleanup = null; root.classList.remove('full'); root.classList.remove('show'); document.body.classList.remove('gm-open'); }
 
   async function play(id, again = false) {
     const g = GAMES.find(x => x.id === id); if (!g) return hub();
@@ -73,6 +72,8 @@ export function initGames(core) {
       level, lang, d: difficulty(level), rng: rngFor(id, lang || '', level, again ? Date.now() : 0), esc, toast: core.toast,
       win: (stars = 3, msg = '') => finish(true, stars, msg),
       lose: (msg = '') => finish(false, 0, msg),
+      fullscreen: on => root.classList.toggle('full', !!on),
+      exit: () => hub(),
       dbg: o => { try { if (localStorage.getItem('dl-debug') === '1') window.__gm = o; } catch {} },
       setTitle: t => { $('#gmTitle').textContent = t; },
     };
@@ -85,9 +86,10 @@ export function initGames(core) {
       if (won) { s.lv[k] = Math.min(MAX_LEVEL, level + 1); s.stars[k] = (s.stars[k] | 0) + stars; core.saveLocal(true); }
       const ov = document.createElement('div');
       ov.className = 'gm-end';
-      ov.innerHTML = `<div class="gm-endcard"><div class="gm-endico">${won ? '🏆' : '💭'}</div><h3>${won ? `Bölüm ${level} tamam!` : 'Olmadı'}</h3>${won ? `<div class="gm-stars">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>` : ''}<p>${esc(msg || (won ? 'Bir sonraki bölüm biraz daha zor.' : 'Bir daha dene.'))}</p>
+      ov.innerHTML = `<div class="gm-endcard"><div class="gm-endico">${won ? '🏆' : '💭'}</div><h3>${won ? `Bölüm ${level} tamam!` : 'Olmadı'}</h3>${won ? `<div class="gm-stars">${[0, 1, 2].map(i => `<span class="${i < stars ? 'on' : ''}" style="--i:${i}">★</span>`).join('')}</div>` : ''}<p>${esc(msg || (won ? 'Bir sonraki bölüm biraz daha zor.' : 'Bir daha dene.'))}</p>
         <div class="gm-endbtns">${won ? `<button class="primarybtn" data-end="next">Sonraki bölüm →</button>` : `<button class="primarybtn" data-end="retry">Tekrar dene</button>`}<button class="secondarybtn" data-end="hub">Oyunlar</button></div></div>`;
       body.appendChild(ov);
+      if (won) import('./fx.js').then(fx => { const c = ov.querySelector('.gm-endcard'); setTimeout(() => fx.burstAt(c.querySelector('.gm-stars'), { n: 22, spread: 140, shape: 'star', size: 11 }), 350 + stars * 180); });
       ov.addEventListener('click', e => { const b = e.target.closest('[data-end]'); if (!b) return; if (b.dataset.end === 'hub') hub(); else play(id, b.dataset.end === 'retry'); });
     }
   }

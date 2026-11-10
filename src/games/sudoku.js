@@ -1,5 +1,6 @@
 // Sudoku: bölüm tohumundan çözülmüş tablo üretilir, tek çözümü koruyarak hücreler silinir.
 // Zorluk: ipucu sayısı 36'dan (orta) 24'e iner. 3 hata hakkı.
+import { replay, burstAt } from './fx.js';
 import { shuffle } from './hub.js';
 
 function solved(r) {
@@ -39,6 +40,7 @@ export function mount(el, ctx) {
   const MAX = 3;
   el.innerHTML = `<div class="sd"><div class="sd-info"><span id="sdMiss">Hata: 0 / ${MAX}</span><button class="gm-chip" id="sdNote">✎ Not</button></div><div class="sd-grid" id="sdGrid"></div><div class="sd-pad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button data-n="${n}">${n}</button>`).join('')}<button data-n="0">⌫</button></div></div>`;
   const grid = el.querySelector('#sdGrid');
+  const cellEl = i => grid.querySelector(`[data-i="${i}"]`);
   function draw() {
     const sv = cur[sel];
     grid.innerHTML = cur.map((v, i) => {
@@ -56,12 +58,25 @@ export function mount(el, ctx) {
     if (n === 0) { cur[sel] = 0; notes[sel].clear(); draw(); return; }
     if (noteMode) { notes[sel].has(n) ? notes[sel].delete(n) : notes[sel].add(n); draw(); return; }
     cur[sel] = n; notes[sel].clear();
-    if (n !== sol[sel]) { mistakes++; draw(); if (mistakes >= MAX) setTimeout(() => ctx.lose('Üç hata yaptın.'), 400); return; }
+    if (n !== sol[sel]) { mistakes++; draw(); replay(cellEl(sel), 'nope', 450); replay(el.querySelector('#sdMiss'), 'hit', 500); if (mistakes >= MAX) setTimeout(() => ctx.lose('Üç hata yaptın.'), 600); return; }
     // aynı satır/sütun/kutudaki notlardan sil
     const R = Math.floor(sel / 9), C = sel % 9;
     for (let i = 0; i < 81; i++) { const r2 = Math.floor(i / 9), c2 = i % 9; if (r2 === R || c2 === C || (Math.floor(r2 / 3) === Math.floor(R / 3) && Math.floor(c2 / 3) === Math.floor(C / 3))) notes[i].delete(n); }
     draw();
-    if (cur.every((v, i) => v === sol[i])) setTimeout(() => ctx.win(mistakes === 0 ? 3 : mistakes === 1 ? 2 : 1), 300);
+    replay(cellEl(sel), 'pop', 360);
+    // tamamlanan satır / sütun / kutu dalga hâlinde parlar
+    const units = [];
+    const rowI = [...Array(9)].map((_, k) => R * 9 + k), colI = [...Array(9)].map((_, k) => k * 9 + C);
+    const bR = Math.floor(R / 3) * 3, bC = Math.floor(C / 3) * 3, boxI = [...Array(9)].map((_, k) => (bR + Math.floor(k / 3)) * 9 + bC + k % 3);
+    for (const u of [rowI, colI, boxI]) if (u.every(i => cur[i] === sol[i])) units.push(u);
+    const lit = new Map();
+    for (const u of units) for (const i of u) { const dd = Math.abs(Math.floor(i / 9) - R) + Math.abs(i % 9 - C); lit.set(i, Math.min(lit.get(i) ?? 99, dd)); }
+    lit.forEach((dd, i) => { const c = cellEl(i); if (c) { c.style.setProperty('--d', dd); replay(c, 'wave', 900); } });
+    if (units.length) burstAt(cellEl(sel), { n: 8, spread: 50, size: 6 });
+    if (cur.every((v, i) => v === sol[i])) {
+      for (let i = 0; i < 81; i++) { const c = cellEl(i); if (c) { c.style.setProperty('--d', Math.floor(i / 9) + i % 9); replay(c, 'wave', 1500); } }
+      setTimeout(() => ctx.win(mistakes === 0 ? 3 : mistakes === 1 ? 2 : 1), 1100);
+    }
   }
   el.addEventListener('click', e => {
     const c = e.target.closest('[data-i]'); if (c) { sel = +c.dataset.i; draw(); return; }
