@@ -1,3 +1,10 @@
+# dam-la 2.6.2 — Zarif balina, çeyrek daire doodle
+
+Uzaktan güncellemeyle gelir.
+- **Balina** daha zarif: uzun ve ince damla gövde, sırtta koyu bant, boğazda ince oluklar, uzun ince yüzgeç (açık kenarlı), ince kuyruk sapı ve hilal biçimli kuyruk; küçük badem göz, uzun ağız çizgisi, ince fıskiye.
+- **Doodle** artık turuncumsu, sıkıcı çeyrek dairelerden oluşan bodur bir şey: gövde iki farklı boy çeyrek daire, baş çeyrek daire, ayaklar ve kollar küçük çeyrek daireler, tepede hardal bir çeyrek. Evreler soluk şeftaliden yanık turuncuya koyulaşır; yeni hardal çeyrekler eklenir, son evrede tepesinde koyu bir bulut.
+
+---
 # dam-la 2.6.1 — 3B geri alındı, yeni petler geometrik çizimde
 
 Uzaktan güncellemeyle gelir. **Firebase kurallarında yeni türler için Yayınla gerekir (2.6.0 ile aynı).**
