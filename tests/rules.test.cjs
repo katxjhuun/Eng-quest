@@ -42,6 +42,19 @@ t('anon with admin uid but not google', false, db.as(anonAdminUid).read('/users'
 t('google non-admin reads users', false, db.as(googleNotAdmin).read('/users'));
 t('google non-admin sends msg', false, db.as(googleNotAdmin).write('/users/u1/inbox/m5', { type: 'message', title: 'a', text: 'b', at: NOW }));
 // yönetici
+// arena (herkese açık savaş kartı)
+const card = uid => ({ uid, code: 'DL-ABCDE', pet: { species: 'owl', stage: 2, stars: 0, role: 'tank', shiny: false, coat: 0, name: 'Nöbetçi' }, wins: 3, at: NOW });
+t('anon writes own arena card', true, db.as(anon('u1')).write('/arena/DL-ABCDE', card('u1')));
+t('anon reads arena', true, db.as(anon('u2')).read('/arena'));
+t('unauth reads arena', false, db.as(null).read('/arena'));
+t('anon writes arena card with other uid', false, db.as(anon('u1')).write('/arena/DL-ABCDE', card('u2')));
+t('anon bad arena role', false, db.as(anon('u1')).write('/arena/DL-ABCDE', { ...card('u1'), pet: { ...card('u1').pet, role: 'hacker' } }));
+t('anon arena code mismatch', false, db.as(anon('u1')).write('/arena/DL-ZZZZZ', card('u1')));
+t('anon arena extra field', false, db.as(anon('u1')).write('/arena/DL-ABCDE', { ...card('u1'), email: 'a@b.c' }));
+{ const db2 = targaryen.database(rules, { ...data, arena: { 'DL-ABCDE': card('u1') } }, NOW).with({ debug: false });
+  t('anon overwrites others arena card', false, db2.as(anon('u2')).write('/arena/DL-ABCDE', { ...card('u2') }));
+  t('anon deletes others arena card', false, db2.as(anon('u2')).write('/arena/DL-ABCDE', null));
+  t('owner deletes own arena card', true, db2.as(anon('u1')).write('/arena/DL-ABCDE', null)); }
 t('admin reads users', true, db.as(admin).read('/users'));
 t('admin reads history', true, db.as(admin).read('/history'));
 t('admin sends xp', true, db.as(admin).write('/users/u1/inbox/m5', { type: 'xp', amount: 10, cat: 'mat', text: 'Bravo', at: NOW, by: 'admin' }));

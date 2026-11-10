@@ -416,3 +416,8 @@ body.bt-open{overflow:hidden}
 .bt-row[data-n="2"] .bt-art{height:104px}.bt-row[data-n="2"] .bt-art svg{width:112px;height:112px}
 .bt-stance{font-size:10px;color:#b9b2c6;font-weight:800}
 .bt-log{flex:0 0 auto}
+
+.ar-code{font-family:ui-monospace,monospace;background:#f1ece3;padding:1px 6px;border-radius:6px}
+.ar-flist{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ar-flist span{font-size:11px;background:#f1ece3;border-radius:999px;padding:3px 4px 3px 9px;display:inline-flex;align-items:center;gap:4px}
+.ar-flist button{border:0;background:#e2d9cc;border-radius:50%;width:18px;height:18px;line-height:1;font-size:12px}

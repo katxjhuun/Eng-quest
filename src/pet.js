@@ -1103,7 +1103,14 @@ export function initPet(core, quiz) {
   });
 
   // ---------- savaş ve evrim kapısındaki boss ----------
-  const battle = initBattleUI({ core, petSVG, getPet: P, onChange: (ev, d) => { if (ev === 'battle-end') renderPanel(); } });
+  const battle = initBattleUI({ core, petSVG, getPet: P, onChange: (ev, d) => { if (ev === 'battle-end') { renderPanel(); publishCard(); } } });
+  // arena kartı: arkadaşlar petini ödünç alabilsin, oyuncular meydan okuyabilsin
+  function publishCard() {
+    if (!core.arena?.ready?.()) return;
+    const p = P();
+    core.arena.publish(p && p.alive ? { species: p.species, stage: p.stage, stars: p.stars | 0, role: p.role, shiny: !!p.shiny, coat: p.coat | 0, name: p.name, wins: A().battle?.wins | 0 } : null);
+  }
+  setTimeout(publishCard, 6000); setInterval(publishCard, 120000);
   $('#arenaBtn').addEventListener('click', e => { e.stopPropagation(); const p = P(); if (p?.bossPending && !p.bossNeedQ) bossPrompt(true); else battle.openArena(); });
   const bossEl = layer('petBoss', 'bossgate', `<div class="pet-modal boss-card"><div class="eyebrow">EVRİM KAPISI</div><div class="boss-art" id="bossArt"></div><h2 id="bossTitle"></h2><p id="bossLead"></p><div class="pc-row"><button class="secondarybtn" id="bossLater">Şimdi değil</button><button class="primarybtn" id="bossGo">⚔️ Meydan oku</button></div></div>`);
   let bossBusy = false;
@@ -1397,7 +1404,7 @@ export function initPet(core, quiz) {
     if (!on) {
       cancelNotes(); deathPending = false;
       [chooser, deathEl, infoEl].forEach(el => el.classList.remove('show'));
-      core.saveLocal(false); renderPanel(); return;
+      core.saveLocal(false); renderPanel(); try { publishCard(); } catch {} return;
     }
     // kapalıyken geçen süre petten düşmesin
     const raw = app.pet; if (raw) { raw.lastTick = raw.lastSeen = Date.now(); }

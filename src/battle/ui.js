@@ -80,9 +80,13 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
       <div class="ar-stats">🏆 ${s.wins} galibiyet · 💀 ${s.losses} yenilgi · 👑 ${s.bossWins} boss</div>
       <h3 class="ar-h">Yanına katılanlar</h3><div class="ar-grid">${rosterHtml}</div>
       ${friendsHtml ? `<h3 class="ar-h">Arkadaşların</h3><div class="ar-grid">${friendsHtml}</div>` : ''}
-      <div id="arExtra"></div>`;
+      <h3 class="ar-h">Arkadaş ve oyuncular</h3>
+      <div class="ar-online">${core.arena?.ready?.() ? `<p class="ar-note">Senin kodun: <b class="ar-code">${esc(core.arena.code() || '—')}</b> · Arkadaşın bu kodla petini takımına ödünç alabilir.</p>
+        <div class="pc-row"><input id="arFriend" maxlength="8" placeholder="Arkadaş kodu (DL-XXXXX)" autocomplete="off" autocapitalize="characters"><button class="secondarybtn" id="arAdd">Ekle</button></div>
+        <div class="ar-actions" style="margin-top:8px"><button class="primarybtn" id="arPvp">🌐 Oyunculara meydan oku</button></div>` : '<p class="ar-note">Çevrimiçi değilsin; arkadaş ekleme ve oyuncu savaşları için internet bağlantısı gerekir.</p>'}</div>
+      ${s.friends.length ? `<div class="ar-flist">${s.friends.map(f => `<span>${esc(f.code)}${f.pet ? ` · ${esc(f.pet.name)}` : ' · pet yok'} <button data-unf="${esc(f.code)}" aria-label="Kaldır">×</button></span>`).join('')}</div>` : ''}`;
     hub.classList.add('show');
-    onChange?.('arena-open', { body: $('#arExtra') });
+    refreshFriends();
   }
   hub.addEventListener('click', e => {
     if (e.target === hub || e.target.closest('#arClose')) { hub.classList.remove('show'); return; }
@@ -98,7 +102,48 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
     const rm = e.target.closest('[data-rm]');
     if (rm) { s.team.splice(+rm.dataset.rm, 1); core.saveLocal(false); openArena(); return; }
     if (e.target.closest('#arTrain')) { hub.classList.remove('show'); training(); }
+    if (e.target.closest('#arPvp')) { hub.classList.remove('show'); pvp(); }
+    if (e.target.closest('#arAdd')) addFriend($('#arFriend').value);
+    const unf = e.target.closest('[data-unf]');
+    if (unf) { s.friends = s.friends.filter(f => f.code !== unf.dataset.unf); s.team = s.team.filter(x => x !== 'f:' + unf.dataset.unf); core.saveLocal(false); openArena(); }
   });
+
+  const cleanPet = pt => pt && ({ species: pt.species, stage: pt.stage | 0, stars: pt.stars | 0, role: pt.role, shiny: !!pt.shiny, coat: pt.coat | 0, name: String(pt.name || '').slice(0, 16) });
+  async function addFriend(code) {
+    code = String(code || '').trim().toUpperCase();
+    const s = state();
+    if (!/^DL-[A-Z0-9]{5}$/.test(code)) { core.toast('Kod DL-XXXXX biçiminde olmalı.'); return; }
+    if (code === core.arena.code()) { core.toast('Bu senin kendi kodun.'); return; }
+    if (s.friends.some(f => f.code === code)) { core.toast('Bu arkadaş zaten ekli.'); return; }
+    const card = await core.arena.get(code);
+    if (!card) { core.toast('Bu kodla bir arena kartı bulunamadı. Arkadaşının uygulamayı açmış ve peti olması gerekir.'); return; }
+    s.friends.push({ code, label: code, pet: cleanPet(card.pet), at: Date.now() });
+    s.friends = s.friends.slice(-20); core.saveLocal(true);
+    core.toast(`${card.pet?.name || code} arkadaş listene eklendi.`); openArena();
+  }
+  let refreshing = false;
+  async function refreshFriends() {
+    const s = state(); if (refreshing || !s.friends.length || !core.arena?.ready?.()) return;
+    refreshing = true; let changed = false;
+    for (const f of s.friends) { const c = await core.arena.get(f.code); if (c?.pet) { const np = cleanPet(c.pet); if (JSON.stringify(np) !== JSON.stringify(f.pet)) { f.pet = np; changed = true; } } }
+    refreshing = false;
+    if (changed) { core.saveLocal(false); if (hub.classList.contains('show')) openArena(); }
+  }
+  // başka oyuncuların petlerine (yapay zekâ yönetir) meydan okuma
+  async function pvp() {
+    const p = getPet(); if (!p || !p.alive) { core.toast('Petin şu an savaşamaz.'); return; }
+    core.toast('Rakip aranıyor…');
+    const list = (await core.arena.list(40)).filter(c => c.pet && !state().friends.some(f => f.code === c.code));
+    if (!list.length) { core.toast('Şu an çevrimiçi rakip bulunamadı; antrenmanla devam et.'); return; }
+    list.sort((a, b) => Math.abs((a.pet.stage | 0) - p.stage) - Math.abs((b.pet.stage | 0) - p.stage));
+    const opp = pick(list.slice(0, 6));
+    const team = [petDef(), ...allyDefs()];
+    const foes = [{ kind: 'pet', ...cleanPet(opp.pet), owner: opp.code }, ...botTeam(opp.pet.stage | 0, Math.max(0, team.length - 1), COMMON)];
+    const res = await fight(team, foes, { title: `${opp.pet.name} (${opp.code})`, eye: 'OYUNCU SAVAŞI', canFlee: true });
+    const s = state();
+    if (res.winner === 'A') { s.wins++; s.pvpWins = (s.pvpWins | 0) + 1; } else if (!res.fled) s.losses++;
+    core.saveLocal(true); onChange?.('battle-end', res);
+  }
 
   async function training() {
     const p = getPet(); if (!p) return;

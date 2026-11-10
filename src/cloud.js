@@ -3,7 +3,7 @@
 // Firebase ayarı (config.js) boşsa bu modül hiçbir şey yapmaz; uygulama tamamen çevrimdışı çalışır.
 import { initializeApp } from 'firebase/app';
 import { initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, inMemoryPersistence, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { getDatabase, ref, set, update, onValue, onDisconnect, serverTimestamp, onChildAdded, remove, goOffline, goOnline } from 'firebase/database';
+import { getDatabase, ref, set, update, onValue, onDisconnect, serverTimestamp, onChildAdded, remove, goOffline, goOnline, get, query, orderByChild, limitToLast } from 'firebase/database';
 import { FIREBASE_CONFIG, APP_VERSION } from './config.js';
 import { Platform } from './platform.js';
 
@@ -96,5 +96,30 @@ export function initCloud(core) {
     }, now ? 50 : 2500);
   };
   api.event = ev => { if (ev?.type === 'answer') api.pushStats(); };
+  // ---- arena: herkese açık pet savaş kartı (arkadaş ekleme ve oyunculara meydan okuma) ----
+  const okCode = c => /^DL-[A-Z0-9]{5}$/.test(String(c || ''));
+  api.ready = () => !!(state.uid && state.db);
+  api.myCode = () => state.shortId;
+  let lastCard = '';
+  api.arenaPublish = pet => {
+    if (!state.uid || !state.db || !okCode(state.shortId)) return Promise.resolve(false);
+    const r = ref(state.db, `arena/${state.shortId}`);
+    if (!pet) { lastCard = ''; return remove(r).then(() => true).catch(() => false); }
+    const key = JSON.stringify(pet); if (key === lastCard) return Promise.resolve(true); lastCard = key;
+    const { wins, ...pp } = pet;
+    return set(r, { uid: state.uid, code: state.shortId, pet: pp, wins: wins | 0, at: serverTimestamp() }).then(() => true).catch(e => { lastCard = ''; console.warn('[arena]', e); return false; });
+  };
+  api.arenaGet = async code => {
+    code = String(code || '').trim().toUpperCase();
+    if (!okCode(code) || !state.db) return null;
+    const snap = await get(ref(state.db, `arena/${code}`)).catch(() => null);
+    return snap && snap.exists() ? snap.val() : null;
+  };
+  api.arenaList = async (n = 30) => {
+    if (!state.db) return [];
+    const snap = await get(query(ref(state.db, 'arena'), orderByChild('at'), limitToLast(n))).catch(() => null);
+    const out = []; snap?.forEach(c => { const v = c.val(); if (v && v.code !== state.shortId) out.push(v); });
+    return out;
+  };
   return api;
 }

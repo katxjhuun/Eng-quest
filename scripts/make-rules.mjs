@@ -67,6 +67,22 @@ const rules = {
         $msg: { '.write': `${OWN} && !data.exists()`, ...msgFields, seenAt: ts() },
       },
     },
+    // Arena: oyuncuların petlerinin herkese açık savaş kartı (kimlik kodu ile). Kişisel bilgi yok; yalnızca sahibi yazar/siler.
+    arena: {
+      '.read': 'auth != null',
+      '.indexOn': ['at'],
+      $code: {
+        '.write': "auth != null && $code.matches(/^DL-[A-Z0-9]{5}$/) && (!data.exists() || data.child('uid').val() == auth.uid) && (!newData.exists() || newData.child('uid').val() == auth.uid)",
+        '.validate': "newData.hasChildren(['uid', 'code', 'pet', 'at']) && newData.child('code').val() == $code",
+        uid: str(128), code: str(8, '/^DL-[A-Z0-9]{5}$/'), wins: num(1000000), at: ts(),
+        pet: {
+          '.validate': "newData.hasChildren(['species', 'stage', 'role', 'name'])",
+          species: str(6, '/^(plant|chick|cat|dog|owl|gecko|whale|doodle|goat)$/'), stage: num(5), stars: num(9999),
+          role: str(10, '/^(tank|melee|ranger|assassin|support|magician|trickster)$/'), shiny: bool(), coat: num(7), name: str(16), $other: NO,
+        },
+        $other: NO,
+      },
+    },
     admin: { '.read': ADMIN, '.write': ADMIN, labels: { $uid: str(60) } },
     admins: { $uid: { '.read': 'auth != null && auth.uid == $uid', '.write': false } },
   },

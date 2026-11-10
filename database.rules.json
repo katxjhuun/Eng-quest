@@ -366,6 +366,58 @@
         }
       }
     },
+    "arena": {
+      ".read": "auth != null",
+      ".indexOn": [
+        "at"
+      ],
+      "$code": {
+        ".write": "auth != null && $code.matches(/^DL-[A-Z0-9]{5}$/) && (!data.exists() || data.child('uid').val() == auth.uid) && (!newData.exists() || newData.child('uid').val() == auth.uid)",
+        ".validate": "newData.hasChildren(['uid', 'code', 'pet', 'at']) && newData.child('code').val() == $code",
+        "uid": {
+          ".validate": "newData.isString() && newData.val().length <= 128"
+        },
+        "code": {
+          ".validate": "newData.isString() && newData.val().length <= 8 && newData.val().matches(/^DL-[A-Z0-9]{5}$/)"
+        },
+        "wins": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000"
+        },
+        "at": {
+          ".validate": "newData.isNumber() && newData.val() <= now + 300000"
+        },
+        "pet": {
+          ".validate": "newData.hasChildren(['species', 'stage', 'role', 'name'])",
+          "species": {
+            ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^(plant|chick|cat|dog|owl|gecko|whale|doodle|goat)$/)"
+          },
+          "stage": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5"
+          },
+          "stars": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999"
+          },
+          "role": {
+            ".validate": "newData.isString() && newData.val().length <= 10 && newData.val().matches(/^(tank|melee|ranger|assassin|support|magician|trickster)$/)"
+          },
+          "shiny": {
+            ".validate": "newData.isBoolean()"
+          },
+          "coat": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 7"
+          },
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 16"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
     "admin": {
       ".read": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && root.child('admins').child(auth.uid).val() == true",
       ".write": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && root.child('admins').child(auth.uid).val() == true",
