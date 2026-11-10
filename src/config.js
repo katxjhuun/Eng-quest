@@ -27,3 +27,9 @@ export const FIREBASE_CONFIG = {
   projectId: 'dam-la',
   appId: '1:341472859383:web:ed97e893af185fb0c76ff2'
 };
+
+// Müzik ödülünde şarkının tamamını çalmak için YouTube Data API v3 anahtarı (Google Cloud, dam-la projesi).
+// Şarkı seçimi yine Apple/Deezer listelerinden gelir; anahtar yalnızca o şarkının YouTube videosunu bulmak için kullanılır.
+// Boşsa çalar 30 saniyelik ön dinlemeyle çalışır. Anahtar gizli değildir (istemcide görünür); Google Cloud'da yalnızca
+// YouTube Data API v3 ile sınırlandırılmıştır, en kötü ihtimalle günlük kotası tükenir.
+export const YOUTUBE_API_KEY = '';

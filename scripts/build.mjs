@@ -56,7 +56,8 @@ const inlineHashes = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m =
 const FB = 'https://*.firebaseio.com https://*.firebasedatabase.app';
 const csp = [
   "default-src 'self'",
-  `script-src 'self' ${inlineHashes.join(' ')} ${FB}`,
+  `script-src 'self' ${inlineHashes.join(' ')} ${FB} https://www.youtube.com https://s.ytimg.com`,
+  "frame-src https://www.youtube-nocookie.com https://www.youtube.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "media-src 'self' data: blob: https:",
