@@ -323,7 +323,7 @@ export function initPet(core, quiz) {
 
   // ---------- DOM: katmanlar ----------
   const layer = (id, cls, html) => { const d = document.createElement('div'); d.className = `pet-overlay ${cls}`; d.id = id; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.innerHTML = html; document.body.appendChild(d); return d; };
-  const chooser = layer('petChooser', 'chooser', `<div class="pet-modal"><div class="eyebrow">YENİ ARKADAŞIN</div><h2 id="pcTitle">Bir pet seç</h2><p id="pcLead">Doğru cevaplar onu besler, yanlışlar canını yakar. Her seviye atladığında evrimleşir. Ona iyi bak!</p><div class="pc-grid" id="pcGrid"></div><div class="pc-name hidden" id="pcNameBox"><label for="pcName">Adı ne olsun?</label><div class="pc-row"><input id="pcName" maxlength="16" autocomplete="off"><button class="primarybtn" id="pcAdopt">Sahiplen 🐾</button></div></div></div>`);
+  const chooser = layer('petChooser', 'chooser', `<div class="pet-modal"><div class="eyebrow">YENİ ARKADAŞIN</div><h2 id="pcTitle">Bir pet seç</h2><p id="pcLead">Doğru cevaplar onu besler, yanlışlar canını yakar. Her seviye atladığında evrimleşir. Ona iyi bak!</p><div class="pc-grid" id="pcGrid"></div><div class="pc-detail" id="pcDetail"></div><div class="pc-name hidden" id="pcNameBox"><label for="pcName">Adı ne olsun?</label><div class="pc-row"><input id="pcName" maxlength="16" autocomplete="off"><button class="primarybtn" id="pcAdopt">Sahiplen 🐾</button></div></div></div>`);
   const evoEl = layer('petEvo', 'evo', `<div class="evo-box"><div class="evo-stage"><div class="evo-rays"></div><div class="evo-old" id="evoOld"></div><div class="evo-new" id="evoNew"></div><div class="evo-sparks" id="evoSparks"></div></div><h2 id="evoTitle">Bir şeyler oluyor…</h2><p id="evoSub"></p><button class="primarybtn" id="evoOk" disabled>Harika!</button></div><div class="evo-flash"></div>`);
   const deathEl = layer('petDeath', 'death', `<div class="pet-modal"><div class="death-scene"><div class="death-ghost" id="deathPet"></div><div class="death-grave">🪦</div></div><h2 id="deathTitle"></h2><p id="deathLead"></p><div class="death-opts"><button class="death-opt" id="petRevive"><b>💫 Canlandır</b><span id="reviveTxt"></span></button><button class="death-opt" id="petNew"><b>🥚 Yeni pet</b><span id="newTxt"></span></button></div></div>`);
   const infoEl = layer('petInfo', 'info', `<div class="pet-modal"><div class="modal-head"><div><div class="eyebrow">PETİN</div><h2 id="piTitle"></h2></div><button class="closebtn" id="piClose" aria-label="Kapat">×</button></div><div class="pi-line" id="piLine"></div><div class="pi-skills" id="piSkills"></div><div class="pi-stats" id="piStats"></div><label class="field-label" for="piName">Adı</label><div class="pc-row"><input id="piName" class="setting-input" maxlength="16"><button class="secondarybtn" id="piSave">Kaydet</button></div><label class="toggle-row"><span>Ekranda dolaşsın<small>Kapalıysa yuvasında kalır.</small></span><input type="checkbox" id="piRoam"></label><label class="toggle-row" id="piNotifyRow"><span>Acıkınca bildirim gönder<small>Uzun süre girmezsen telefonuna haber verir.</small></span><input type="checkbox" id="piNotify"></label><div class="setting-note" id="piMemorial"></div></div>`);
@@ -331,7 +331,7 @@ export function initPet(core, quiz) {
   // ayarlara kısa yol
   const setGrid = document.querySelector('#settingsOverlay .settings-grid');
   if (setGrid) {
-    const sec = document.createElement('section'); sec.className = 'setting-section'; sec.id = 'petSettings';
+    const sec = document.createElement('section'); sec.className = 'setting-section'; sec.id = 'petSettings'; sec.dataset.tab = 'pet';
     sec.innerHTML = `<h3>Petin</h3><label class="toggle-row"><span>Pet özelliği<small>Kapatınca pet, can/enerji ve pet yetenekleri gizlenir; petin donar ve açtığında kaldığı yerden devam eder.</small></span><input type="checkbox" id="petEnabled"></label><p id="petSetLead">Ad, dolaşma, bildirimler ve evrim çizgisi.</p><button class="secondarybtn" id="openPetInfo" style="width:100%">🐾 Pet bilgisi ve ayarları</button>`;
     setGrid.insertBefore(sec, setGrid.children[1] || null);
     sec.querySelector('#openPetInfo').addEventListener('click', () => openInfo());
@@ -1122,18 +1122,23 @@ export function initPet(core, quiz) {
 
   // ---------- pet seçimi ----------
   let chosen = null;
+  // seçim ekranı ve ansiklopedi için tek pet kartı
+  function petDetailHTML(id, stage = 0) {
+    const s = PET_SPECS[id];
+    const bar = (label, icon, v, c) => `<div class="pcd-bar"><span>${icon}</span><span class="pcb"><i style="width:${Math.round(v / 140 * 100)}%;background:${c}"></i></span><em>${v}</em></div>`;
+    return `<div class="pcd"><div class="pcd-art">${petSVG(id, stage, { mood: 'happy' })}</div><div class="pcd-main"><h3>${esc(s.name)} <small>${esc(PET_SPECIES[id].label)}</small></h3>
+      ${bar('Can', '❤️', s.hp, '#E5534B')}${bar(s.foodLabel, s.foodIcon, s.food, id === 'plant' ? '#7FA7BF' : '#F0A04B')}${bar('Enerji', '⚡', s.energy, '#E9C23C')}</div></div>
+      <p class="pc-soul">${esc(s.soul.split('. ').slice(0, 2).join('. ').replace(/\.?$/, '.'))}</p>
+      <div class="pc-skill"><b>${esc(s.passive.name)}</b> ${esc(s.passive.desc)}</div><div class="pc-skill act"><b>✨ ${esc(s.active.name)} · ${s.active.cost}⚡</b> ${esc(s.active.desc)}</div>`;
+  }
   function openChooser(afterDeath = false) {
     $('#pcTitle').textContent = afterDeath ? 'Yeni bir arkadaş seç' : 'Bir pet seç';
     $('#pcLead').textContent = afterDeath ? 'Yeni petin sıfırdan başlar ve her seviye atladığında evrimleşir.' : 'Her biri bir hâli taşır. Doğru cevaplar onu besler, yanlışlar canını yakar; her seviyede evrimleşir.';
-    const bar = (v, c) => `<span class="pcb"><i style="width:${Math.round(v / 140 * 100)}%;background:${c}"></i></span>`;
     $('#pcGrid').innerHTML = ORDER.map(id => {
       const s = PET_SPECS[id];
-      return `<button class="pc-card" data-sp="${id}"><div class="pc-art">${petSVG(id, 0, { mood: 'happy' })}</div><strong>${esc(s.name)} <small>${esc(PET_SPECIES[id].label)}</small></strong>
-        <div class="pc-stats"><span>❤️${bar(s.hp, '#E5534B')}</span><span>${s.foodIcon}${bar(s.food, id === 'plant' ? '#7FA7BF' : '#F0A04B')}</span><span>⚡${bar(s.energy, '#E9C23C')}</span></div>
-        <p class="pc-soul">${esc(s.soul.split('. ').slice(0, 2).join('. ').replace(/\.?$/, '.'))}</p>
-        <div class="pc-skill"><b>${esc(s.passive.name)}</b> ${esc(s.passive.desc)}</div><div class="pc-skill act"><b>✨ ${esc(s.active.name)}</b> ${esc(s.active.desc)}</div>
-        <div class="pc-evo-q">Nasıl büyüyeceği sürpriz.</div></button>`;
+      return `<button class="pc-card" data-sp="${id}" aria-label="${esc(s.name)}, ${esc(PET_SPECIES[id].label)}"><div class="pc-art">${petSVG(id, 0, { mood: 'happy' })}</div><strong>${esc(s.name)}</strong><small>${esc(PET_SPECIES[id].label)}</small></button>`;
     }).join('');
+    $('#pcDetail').innerHTML = '<p class="pc-hint">Ayrıntılarını görmek için bir pete dokun.</p>';
     $('#pcNameBox').classList.add('hidden'); chosen = null;
     chooser.classList.add('show');
   }
@@ -1141,9 +1146,10 @@ export function initPet(core, quiz) {
     const b = e.target.closest('[data-sp]'); if (!b) return;
     chosen = b.dataset.sp;
     [...$('#pcGrid').children].forEach(x => x.classList.toggle('sel', x === b));
+    $('#pcDetail').innerHTML = petDetailHTML(chosen);
     $('#pcName').value = PET_SPECS[chosen].name; $('#pcNameBox').classList.remove('hidden');
     $('#pcAdopt').textContent = `${PET_SPECS[chosen].name}’i sahiplen 🐾`;
-    $('#pcNameBox').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    $('#pcDetail').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   });
   $('#pcName').addEventListener('input', () => { if (chosen) $('#pcAdopt').textContent = `${$('#pcName').value.trim() || PET_SPECS[chosen].name}’i sahiplen 🐾`; });
   $('#pcAdopt').addEventListener('click', () => {
