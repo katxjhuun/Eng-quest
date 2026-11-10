@@ -1,3 +1,14 @@
+# dam-la 2.2.6 — Müzik ödülü pet kartının altında
+
+Uzaktan güncellemeyle gelir.
+- **Ödül penceresi kalktı:** Doğru cevapta açılan pencere, başlık ve alt yazılar yok. Yeni şarkı, pet kartının hemen altındaki çalara eklenir; soru akışı kesilmez.
+- **Şarkı geçmişi:** Kazandığın bütün ödül şarkıları saklanır (son 60). ⏮ ⏭ ile eski ve yeni şarkılar arasında gezersin; sayaç kaçıncı şarkıda olduğunu gösterir. Bir şarkı çalarken yeni ödül gelirse ⏭ üstünde rozet çıkar.
+- **Kontroller:** çal/duraklat, durdur, ileri-geri, şarkı içinde kaydırarak sarma, beğen ♡, şarkının tamamını sağlayıcıda aç ↗.
+- **Mix:** Açıkken şarkılar arasında 6 saniyelik yumuşak ses geçişi yapılır ve liste kesintisiz akar (sona gelince başa sarar). Kapalıyken şarkı bitince sıradakine geçer, listenin sonunda durur.
+- Düzeltme: Apple yedek aramasında "notExplicit" etiketli şarkılar yanlışlıkla eleniyordu; artık yalnızca gerçekten müstehcen olanlar elenir.
+
+---
+
 # dam-la 2.2.5 — Pet kaydırmaya anında uyar
 
 Uzaktan güncellemeyle gelir.

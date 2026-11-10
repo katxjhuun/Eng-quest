@@ -197,3 +197,45 @@ body{position:relative}
 .quiz-opt.elim{opacity:.38;text-decoration:line-through;pointer-events:none;filter:grayscale(1)}
 .quiz-opt.elim .opt-key:after{content:" ✂"}
 @media(prefers-reduced-motion:reduce){.pet-sprite,.pet-sprite *{animation:none!important}.pfx{animation-duration:.01s!important}.pet-emote.show{animation:none;opacity:1;transform:translateX(calc(var(--face,1)*10px))}.pet-emote svg{animation:none!important}}
+
+/* ---------- müzik ödülü çaları (pet kartının altı) ---------- */
+.music-deck{background:#fffdf8;border:1px solid #e6ded3;border-radius:22px;padding:10px 12px 9px;margin:-6px 0 14px;box-shadow:0 8px 22px rgba(31,28,34,.06);color:#201d23}
+.music-deck.fresh{animation:mdFresh .9s cubic-bezier(.2,.9,.3,1.3)}
+@keyframes mdFresh{0%{transform:translateY(-6px) scale(.98);box-shadow:0 0 0 0 rgba(101,69,213,.35)}55%{transform:none;box-shadow:0 0 0 7px rgba(101,69,213,0)}100%{box-shadow:0 8px 22px rgba(31,28,34,.06)}}
+.md-top{display:flex;align-items:center;gap:10px;min-width:0}
+.md-art-wrap{position:relative;width:46px;height:46px;flex:none;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,#6545d5,#e96ca5)}
+.md-art-wrap:before{content:"♫";position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:20px;font-weight:900;opacity:.9}
+.md-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .25s}
+.md-art.ok{opacity:1}
+.md-eq{position:absolute;right:4px;bottom:4px;display:flex;align-items:flex-end;gap:2px;height:12px;padding:2px 3px;border-radius:5px;background:rgba(20,16,30,.55);opacity:0;transition:opacity .2s}
+.md-eq i{width:2.5px;height:100%;background:#fff;border-radius:1px;transform-origin:bottom;animation:mdEq .9s ease-in-out infinite}
+.md-eq i:nth-child(2){animation-delay:-.3s}.md-eq i:nth-child(3){animation-delay:-.6s}
+@keyframes mdEq{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+.music-deck.is-playing .md-eq{opacity:1}
+.md-meta{display:flex;flex-direction:column;min-width:0;flex:1}
+.md-title{font-size:13.5px;font-weight:850;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.md-artist{font-size:11.5px;color:#7b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.md-count{flex:none;font-size:10.5px;font-weight:850;color:#8c8394;background:#f3eee6;border-radius:999px;padding:3px 7px;font-variant-numeric:tabular-nums}
+.md-seek{display:flex;align-items:center;gap:8px;margin:8px 0 4px;font-size:10px;font-weight:750;color:#8c8394;font-variant-numeric:tabular-nums}
+.md-seek input{flex:1;height:18px;margin:0;accent-color:#6545d5;background:transparent}
+.music-deck.no-preview .md-seek{opacity:.35;pointer-events:none}
+.md-ctrl{display:flex;align-items:center;gap:6px}
+.md-b{position:relative;display:grid;place-items:center;width:38px;height:38px;border-radius:12px;border:1.5px solid #e6ded3;background:#fbf8f2;color:#3a3340;padding:0;text-decoration:none;flex:none;-webkit-tap-highlight-color:transparent;transition:transform .12s,background .15s,border-color .15s,color .15s}
+.md-b svg{width:17px;height:17px;fill:currentColor}
+.md-b:active{transform:scale(.92)}
+.md-b:disabled{opacity:.35;pointer-events:none}
+.md-main{width:46px;height:46px;border-radius:50%;border:0;background:#6545d5;color:#fff;box-shadow:0 6px 14px rgba(101,69,213,.3)}
+.md-main svg{width:20px;height:20px}
+.md-mix{width:auto;padding:0 10px;grid-auto-flow:column;gap:5px;font-size:11.5px;font-weight:850}
+.md-mix svg{width:16px;height:16px;fill:none}
+.md-mix.on{border-color:transparent;color:#fff;background:linear-gradient(90deg,#6545d5,#36aeb8,#6545d5);background-size:200% 100%;animation:mdMix 2.4s linear infinite}
+@keyframes mdMix{to{background-position:200% 0}}
+.md-sp{flex:1}
+.md-sm{width:34px;height:34px;border-radius:11px}
+.md-sm svg{width:15px;height:15px}
+#mdLike svg{fill:none;stroke:currentColor;stroke-width:2}
+#mdLike.on{color:#e0457b;border-color:#f3c2d3;background:#fdf0f4}
+#mdLike.on svg{fill:currentColor}
+.md-new{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#e0457b;color:#fff;font-size:9.5px;font-weight:900;font-style:normal;line-height:16px;text-align:center}
+@media(max-width:380px){.md-b{width:34px;height:34px}.md-main{width:42px;height:42px}.md-mix span{display:none}.md-mix{padding:0 8px}}
+@media(prefers-reduced-motion:reduce){.music-deck.fresh,.md-eq i,.md-mix.on{animation:none}}

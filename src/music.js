@@ -1,4 +1,4 @@
-// dam-la — ödül penceresindeki güncel popüler şarkı önerisi
+// dam-la — müzik ödülü için güncel popüler şarkı önerisi
 // Kaynaklar (hepsi herkese açık, anahtarsız):
 //  • Apple iTunes “en çok satanlar” listesi (Türkiye / ABD), açık içerik filtreli — tarayıcıda ve telefonda çalışır
 //  • Deezer “Top Turkey” ve küresel liste — yalnızca telefondaki uygulamada (CORS nedeniyle)

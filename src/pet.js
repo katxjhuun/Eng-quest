@@ -341,7 +341,7 @@ export function initPet(core, quiz) {
     $('#petAbility').disabled = !p.alive || p.energy < sp.active.cost;
     $('#flowBtn').classList.toggle('on', p.flow); $('#flowBtn').setAttribute('aria-pressed', String(p.flow));
     $('#flowSmall').textContent = p.flow ? 'açık · odak' : 'kapalı';
-    $('#flowBtn').title = p.flow ? `Enerji ${10 - (p.flowCount % 10)} soru sonra azalacak` : 'Flow: ödül pencereleri kapanır, enerji 10 soruda bir azalır';
+    $('#flowBtn').title = p.flow ? `Enerji ${10 - (p.flowCount % 10)} soru sonra azalacak` : 'Flow: müzik ödülleri durur, enerji 10 soruda bir azalır';
     document.body.classList.toggle('pet-flow', p.flow);
     const ph = phase(); document.body.classList.toggle('pet-night', ph === 'night' || ph === 'dawn'); document.body.classList.toggle('pet-evening', ph === 'evening');
     const cu = Object.entries(A().petCatchUp || {});
@@ -625,7 +625,7 @@ export function initPet(core, quiz) {
   $('#flowBtn').addEventListener('click', () => {
     const p = P(); if (!p) return;
     p.flow = !p.flow; p.flowCount = 0; save(true);
-    if (p.flow) { react('focus', 1600, 'focus', 'spark'); spawn('✦', 'spark', 2); say('Flow açık! Ödül pencereleri kapalı, enerjim 10 soruda bir azalır 🌊', 3600); core.toast('🌊 Flow modu açık · ödül pencereleri kapandı'); }
+    if (p.flow) { react('focus', 1600, 'focus', 'spark'); spawn('✦', 'spark', 2); say('Flow açık! Müzik ödülleri durdu, enerjim 10 soruda bir azalır 🌊', 3600); core.toast('🌊 Flow modu açık · ödül pencereleri kapandı'); }
     else { react('happy', 1000, 'hop', 'note'); say('Güzel bir akıştı! Biraz dinlenelim mi? 😊', 2600); core.toast('Flow modu kapandı'); }
     renderPanel();
   });
@@ -764,7 +764,6 @@ export function initPet(core, quiz) {
   function runEvoQueue() {
     if (evolving || !evoQueue.length) return;
     if (deathPending) return;
-    if (document.querySelector('#rewardOverlay.show')) { setTimeout(runEvoQueue, 800); return; }
     const ev = evoQueue.shift(), p = P(); if (!p) { evoQueue.length = 0; return; }
     evolving = true;
     const oldEl = $('#evoOld'), newEl = $('#evoNew'), title = $('#evoTitle'), sub = $('#evoSub'), ok = $('#evoOk');
@@ -1072,7 +1071,7 @@ export function initPet(core, quiz) {
       }
       case 'flow':
         p.flow = !!msg.on; p.flowCount = 0;
-        out = { icon: '🌊', title: `Flow ${p.flow ? 'açıldı' : 'kapandı'}`, text: p.flow ? 'Yöneticin flow modunu açtı: ödül pencereleri kapalı, enerji 10 soruda bir azalır.' : 'Yöneticin flow modunu kapattı.' };
+        out = { icon: '🌊', title: `Flow ${p.flow ? 'açıldı' : 'kapandı'}`, text: p.flow ? 'Yöneticin flow modunu açtı: müzik ödülleri durdu, enerji 10 soruda bir azalır.' : 'Yöneticin flow modunu kapattı.' };
         if (p.alive) setTimeout(() => react(p.flow ? 'focus' : 'happy', 1300, p.flow ? 'focus' : 'joy', p.flow ? 'spark' : 'note'), 300); break;
       case 'roam':
         p.roam = !!msg.on; if (!p.roam) goHome();
