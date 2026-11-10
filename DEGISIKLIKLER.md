@@ -1,6 +1,7 @@
 # dam-la 2.6.3 — Gerçekçi balina, çizimdeki doodle
 
 Uzaktan güncellemeyle gelir.
+- **Balina bükülür:** gövde her karede bir omurga eğrisinden yeniden çizilir; yüzerken ve beklerken beli dalga gibi kıvrılır (kuyruğa doğru artar), kuyruk, baş ve yüzgeçler omurgayı izler. Sevinç ve yetenekte daha güçlü kıvrılır, uykuda neredeyse durur.
 - **Doodle rengi:** kahverengiye kaçan tonlar kaldırıldı; tüm evrelerde canlı turuncu (soluk turuncudan koyu kızıl turuncuya), hardal yerine sıcak sarı çeyrekler.
 - **Balina** gerçek kambur balina siluetinde: burundan kuyruk sapına tek parça gövde (düz oval değil), kuyruk yüzgeci gövdeyle aynı renkte sapın içinden çıkar, ek yeri görünmez. Uzun yassı baş, boğazdan karna uzanan oluklar, küçük sırt yüzgeci, beyaz alt yüzlü uzun göğüs yüzgeci, ağız çizgisinin hemen üstünde küçük göz; ileri evrelerde başında midyeler.
 - **Doodle** senin çizimine göre: turuncu tek parça baş levhası sağa taşar ve çeyrek daireyle aşağı kıvrılır, sol üstte tek küçük göz, altında kutu gövde ve iki bodur bacak. Yandan durur, iki bacakla adım atarak yürür (ayaklar kaymaz).

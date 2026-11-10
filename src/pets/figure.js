@@ -60,7 +60,8 @@ function partsHTML(list, stage, def, coat, pose) {
   for (const pt of list) {
     if (Array.isArray(pt.min) ? !pt.min.includes(stage) : pt.min > stage) continue;
     const ch = pose?.[pt.k], t = tf(pt.p, ch);
-    out += `<g data-k="${pt.k}"${t ? ` transform="${t}"` : ''}${ch?.o != null ? ` opacity="${r2(ch.o)}"` : ''}>${coatSwap(pt.s, def, coat, stage)}${partsHTML(pt.kids, stage, def, coat, pose)}</g>`;
+    const inner = pt.dyn ? pt.dyn(pose?.__bend, stage) : pt.s;
+    out += `<g data-k="${pt.k}"${t ? ` transform="${t}"` : ''}${ch?.o != null ? ` opacity="${r2(ch.o)}"` : ''}>${coatSwap(inner, def, coat, stage)}${partsHTML(pt.kids, stage, def, coat, pose)}</g>`;
   }
   return out;
 }
@@ -149,7 +150,7 @@ function computePose(st) {
       // süzülme: havada, ayak yok → kayma sorunu yok; yüzgeç çırpar, kuyruk dalgalanır
       const u = ph;
       A('wingL', { r: 16 * Math.sin(TAU * u * 2) }); A('wingR', { r: -16 * Math.sin(TAU * u * 2) });
-      A('tail', { r: 9 * Math.sin(TAU * u * 2 - 0.8) }); A('root', { y: -2.5 * Math.sin(TAU * u * 2) });
+      A('root', { y: -2.5 * Math.sin(TAU * u * 2) });
     } else {
       // zıplama: yerde (u<.28) çömelir, havada ilerler
       const u = ph, air = u > 0.28 ? bell((u - 0.28) / 0.72) : 0, ground = u <= 0.28 ? bell(u / 0.28) : 0;
@@ -167,7 +168,7 @@ function computePose(st) {
   }
 
   // havada duran (balina): yerden yüksekte, uyurken alçalır
-  if (def.gait === 'float') { A('root', { y: -(def.hover || 30) * (asleep ? 0.45 : 1) + (moving ? 0 : 3 * Math.sin(t * 1.2)) }); if (!moving && !asleep) { A('wingL', { r: 8 * Math.sin(t * 1.6) }); A('wingR', { r: -8 * Math.sin(t * 1.6) }); A('tail', { r: 5 * Math.sin(t * 1.6 - 0.8) }); } }
+  if (def.gait === 'float') { A('root', { y: -(def.hover || 30) * (asleep ? 0.45 : 1) + (moving ? 0 : 3 * Math.sin(t * 1.2)) }); if (!moving && !asleep) { A('wingL', { r: 8 * Math.sin(t * 1.6) }); A('wingR', { r: -8 * Math.sin(t * 1.6) }); } }
   // --- ruh hâli duruşu (yerinde)
   if (!moving && base !== 'dead') {
     if (mood === 'sad' || mood === 'hungry' || mood === 'cry') { A('head', side ? { r: 7, y: 2 } : { y: 4 }); A('earL', { r: -14 }); A('earR', { r: 14 }); A('tail', { r: 10 }); A('wingL', { r: 4 }); A('wingR', { r: -4 }); }
@@ -226,6 +227,18 @@ function computePose(st) {
     A('root', { sx: st.faceCur });
     if (Math.abs(st.faceCur) > 0.05 && Math.abs(st.hf - st.faceCur) > 0.002) A('head', { sx: st.hf / st.faceCur });
     if (st.yaw) A('root', { y: -2 * st.yaw });
+  }
+  // omurga (balina): gövde dalga gibi bükülür; kuyruk, baş ve yüzgeçler omurgayı izler
+  if (def.spine && base !== 'dead') {
+    let bA = asleep ? 1.2 : moving ? 6.5 : 3.2, bPh = moving ? st.ph * TAU * 2 : t * (asleep ? 0.8 : 1.5);
+    if (verb === 'hop' || verb === 'jump' || verb === 'ability') bA += 4 * ce;
+    if (mood === 'happy' || mood === 'love') bA += 1.5;
+    const b = { A: bA, ph: bPh };
+    pose.__bend = b;
+    for (const [k, x] of Object.entries(def.spine.follow)) {
+      const dy = def.spine.off(x, b), sl = (def.spine.off(x + 2, b) - def.spine.off(x - 2, b)) / 4;
+      A(k, { y: dy, r: Math.atan(sl) * 180 / Math.PI * (k === 'tail' ? 1.5 : 1) });
+    }
   }
   pose.__outer = outer;
   return pose;
@@ -411,6 +424,7 @@ export class Puppet {
     if (this.els.shadow) { this.els.shadow.setAttribute('rx', r2(46 * k * (1 - air * 0.5))); this.els.shadow.setAttribute('cx', r2(MIDX + o.x)); }
     for (const key of this.keys) {
       const el = this.els[key]; if (!el) continue;
+      if (this.parts[key].dyn) { const h = coatSwap(this.parts[key].dyn(pose.__bend, this.stage), this.def, this.coat, this.stage); if (el._h !== h) { el._h = h; el.innerHTML = h; } }
       const ch = pose[key], t = tf(this.parts[key].p, ch);
       if (el._t !== t) { el._t = t; t ? el.setAttribute('transform', t) : el.removeAttribute('transform'); }
       const op = ch?.o;

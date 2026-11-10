@@ -1,0 +1,9 @@
+<!doctype html><meta charset="utf-8"><style>body{margin:0;background:#ECE2CC;display:flex;flex-wrap:wrap}div{width:420px;height:300px}svg{width:100%;height:100%}</style>
+<div id="a"></div><div id="b"></div><div id="c"></div>
+<script type="module">
+import { Puppet } from '../src/pets/figure.js';
+const ps = [['a', 'walk', 5], ['b', 'idle', 3], ['c', 'walk', 0]].map(([id, base, st]) => { const p = new Puppet(document.getElementById(id)); p.setForm('whale', st, 0); p.setBase(base); return p; });
+let last = performance.now();
+function loop(now) { const dt = (now - last) / 1000; last = now; ps.forEach((p, i) => { if (p.base === 'walk') p.travel(70 * dt, 'walk', 300, 1, 0); p.tick(dt); }); requestAnimationFrame(loop); }
+requestAnimationFrame(loop);
+</script>

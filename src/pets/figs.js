@@ -489,20 +489,46 @@ function goatSleep() {
   ];
 }
 
-// ---------------------------------------------------------------- BALİNA: gerçek kambur balina silueti; gövde burundan kuyruk sapına tek parça,
-// kuyruk yüzgeci gövdeyle aynı renkte ve sapın içinden çıkar (dikiş görünmez). Havada süzülür.
+// ---------------------------------------------------------------- BALİNA: gerçek kambur balina silueti, omurga boyunca bükülür.
+// Gövde her karede bir omurga eğrisinden yeniden çizilir (tek parça, ek yeri yok); kuyruk, baş ve yüzgeçler omurgayı izler.
+const WX0 = 30, WX1 = 195;
+const lerpK = (pts, u) => { for (let i = 1; i < pts.length; i++) if (u <= pts[i][0]) { const [u0, v0] = pts[i - 1], [u1, v1] = pts[i]; const q = (u - u0) / (u1 - u0); const s = q * q * (3 - 2 * q); return v0 + (v1 - v0) * s; } return pts[pts.length - 1][1]; };
+const HT = [[0, 2.6], [0.12, 5], [0.3, 12], [0.55, 19], [0.78, 18], [0.92, 12], [0.985, 5], [1, 0]];   // sırt kalınlığı
+const HB = [[0, 2.6], [0.12, 5], [0.3, 14], [0.5, 21], [0.75, 18], [0.9, 12], [0.985, 4], [1, 0]];     // karın kalınlığı
+// omurga sapması: kuyruğa doğru büyüyen dalga (dikey, balinalar gibi); b = { A, ph }
+export function whaleOff(x, b) {
+  const u = (x - WX0) / (WX1 - WX0);
+  return (b?.A || 0) * (Math.pow(1 - u, 1.6) + 0.12) * Math.sin((b?.ph || 0) - 5.5 * (1 - u));
+}
+const cyW = x => 108 - 4 * ((x - WX0) / (WX1 - WX0));
+const smooth = pts => { let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`; for (let i = 0; i < pts.length - 1; i++) { const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+  d += ` C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)} ${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)} ${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`; } return d; };
+function whaleBody(b, stage) {
+  const N = 30, xs = Array.from({ length: N + 1 }, (_, i) => WX0 + (WX1 - WX0) * i / N);
+  const at = x => { const u = (x - WX0) / (WX1 - WX0), c = cyW(x) + whaleOff(x, b); return { u, top: c - lerpK(HT, u), bot: c + lerpK(HB, u), c }; };
+  const pts = xs.map(at);
+  const top = pts.map((q, i) => [xs[i], q.top]), bot = pts.map((q, i) => [xs[i], q.bot]).reverse();
+  const outline = smooth(top) + ' L' + smooth(bot).slice(1) + ' Z';
+  // sırt bandı (koyu) ve karın (açık) aynı omurgadan
+  const bandIx = xs.map((x, i) => i).filter(i => pts[i].u > 0.04 && pts[i].u < 0.975);
+  const band = smooth(bandIx.map(i => [xs[i], pts[i].top])) + ' L' + smooth(bandIx.slice().reverse().map(i => [xs[i], pts[i].top + lerpK(HT, pts[i].u) * 0.3])).slice(1) + ' Z';
+  const bellyIx = xs.map((x, i) => i).filter(i => pts[i].u > 0.24 && pts[i].u < 0.99);
+  const belly = smooth(bellyIx.map(i => [xs[i], pts[i].bot - lerpK(HB, pts[i].u) * 0.42])) + ' L' + smooth(bellyIx.slice().reverse().map(i => [xs[i], pts[i].bot])).slice(1) + ' Z';
+  const pleatIx = xs.map((x, i) => i).filter(i => pts[i].u > 0.56 && pts[i].u < 0.985);
+  const pleats = [0.12, 0.24, 0.34].map(k => B(smooth(pleatIx.map(i => [xs[i], pts[i].bot - lerpK(HB, pts[i].u) * k])), 0.7, C.sandD)).join('');
+  // sırt yüzgeci
+  const df = at(WX0 + 0.22 * (WX1 - WX0)), dx = WX0 + 0.22 * (WX1 - WX0);
+  const dorsal = P(`M${(dx - 6).toFixed(1)} ${(df.top + 1.5).toFixed(1)} C${(dx - 2).toFixed(1)} ${(df.top - 5).toFixed(1)} ${(dx + 3).toFixed(1)} ${(df.top - 9).toFixed(1)} ${(dx + 9).toFixed(1)} ${(df.top - 11).toFixed(1)} C${(dx + 7).toFixed(1)} ${(df.top - 6).toFixed(1)} ${(dx + 7).toFixed(1)} ${(df.top - 2).toFixed(1)} ${(dx + 9).toFixed(1)} ${(df.top + 1.5).toFixed(1)} Z`, K.whD);
+  let extra = '';
+  if (stage >= 3) extra += [0.9, 0.93, 0.96, 0.88].map((u, i) => { const x = WX0 + u * (WX1 - WX0), q = at(x); return O(+x.toFixed(1), +(q.top + 2 + (i % 2) * 2).toFixed(1), 1.3, C.cream, 'opacity=".75"'); }).join('');
+  if (stage >= 5) extra += [0.3, 0.5, 0.68].map(u => { const x = WX0 + u * (WX1 - WX0), q = at(x); return O(+x.toFixed(1), +(q.top + 4).toFixed(1), 1.2, C.ochre); }).join('');
+  return P(outline, K.wh) + P(band, K.whD) + P(belly, C.sand) + pleats + dorsal + extra;
+}
 function whaleSide() {
-  const BODY = 'M34 103 C52 98 84 86 124 85 C152 84 174 88 186 96 C192 100 196 103 195 106 C190 110 180 114 166 120 C146 128 118 132 96 129 C72 126 50 115 34 108 Z';
   return [
     part('wingL', [128, 122], P('M130 120 C122 128 112 136 100 140 C108 132 116 124 124 118 Z', K.whD)),
     part('tail', [36, 105], P('M44 103 C34 101 26 97 19 91 C14 87 8 85 2 85 C8 89 12 94 14 100 C10 106 6 111 2 117 C10 115 16 111 22 108 C30 106 36 107 44 108 Z', K.wh)),
-    part('body', [110, 128], [P(BODY, K.wh),
-      P('M34 103 C52 98 84 86 124 85 C152 84 174 88 186 96 C170 92 150 91 124 92 C96 93 66 99 40 105 Z', K.whD),
-      P('M66 120 C90 128 126 131 150 126 C166 122 180 114 190 109 C182 116 168 122 152 127 C126 133 94 132 66 120 Z', C.sand),
-      ...[0, 1, 2, 3].map(i => B(`M${188 - i} ${110.5 + i * 1.6} C172 ${118 + i * 1.6} 150 ${125 + i * 1.4} ${118 + i * 4} ${128 + i * 0.6}`, 0.7, C.sandD)),
-      P('M66 99 C70 93 75 89 82 87 C80 92 80 96 82 99 Z', K.whD)], [
-      only([3, 4, 5], 'barn', [180, 96], [[176, 94], [182, 97], [172, 92], [186, 100]].map(([x, y]) => O(x, y, 1.3, C.cream, 'opacity=".75"')).join('')),
-      only([5], 'stars', [110, 96], [[78, 96], [112, 90], [140, 90]].map(([x, y]) => O(x, y, 1.2, C.ochre)).join(''))]),
+    { k: 'body', p: [110, 128], s: '', kids: [], min: 0, dyn: whaleBody },
     part('head', [170, 108], [], [
       part('skull', [160, 104], P('M154 104 Q159 101 164 104 Q159 106 154 104 Z', C.cream)),
       part('pup', [159, 104], [O(159.5, 104.1, 1.6, C.black), O(159, 103.4, 0.5, C.cream)]),
@@ -562,9 +588,9 @@ export const FIGS = {
   goat: { views: { sit: goatFront, walk: goatWalk, sleep: goatSleep }, side: false, walkSide: true, gait: 'walk', leg: 44, food: 'grass',
     fur: [K.gt, K.gtD], stagePal: { 5: ['#3A3538', '#2A2629'] },
     form: [{ head: 1.22, leg: 0.76, body: 0.88, ear: 0.9 }, { head: 1.1, leg: 0.88 }, {}, { leg: 1.04 }, { leg: 1.06, body: 1.04 }, { head: 1.04, leg: 1.06, body: 1.06 }] },
-  whale: { views: { sit: whaleSide }, side: true, gait: 'float', hover: 34, food: 'krill',
+  whale: { views: { sit: whaleSide }, side: true, gait: 'float', hover: 34, food: 'krill', spine: { off: whaleOff, follow: { tail: 36, head: 166, wingR: 140, wingL: 128 } },
     fur: [K.wh, K.whD], stagePal: { 0: ['#7A93A8', '#5E7890'], 1: ['#6A86A0', '#4E6A86'], 2: ['#5A7896', '#3E5C7A'], 3: ['#4A6A8A', '#33506E'], 4: ['#3E5C7A', '#2A4460'], 5: ['#2E4560', '#1E3048'] },
-    form: [{ body: 0.86, head: 1.1 }, { body: 0.92 }, {}, {}, { body: 1.04 }, { body: 1.08 }] },
+    form: [{}, {}, {}, {}, {}, {}] },
   doodle: { views: { sit: doodleSide }, side: true, gait: 'walk', leg: 36, amp: 20, lid: [0.4, 1], food: 'crumb',
     fur: [K.dd, K.ddD], stagePal: { 0: ['#F59A5C', '#E57E3E'], 1: ['#F2894A', '#DE6E2E'], 2: ['#EF7A38', '#D86224'], 3: ['#EC6C2C', '#D0561C'], 4: ['#E85F22', '#C64C16'], 5: ['#E25218', '#BA4012'] },
     form: [{ body: 0.86 }, { body: 0.92 }, {}, {}, { body: 1.04 }, { body: 1.08 }] },
