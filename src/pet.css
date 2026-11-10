@@ -51,7 +51,7 @@ body.pet-flow .quiz-card,body.pet-flow #legacyBlock .challenge{box-shadow:0 0 0 
 /* ---------- dolaşan pet ---------- */
 body{position:relative}
 .pet-layer{position:absolute;inset:0;overflow:hidden;overflow:clip;pointer-events:none;z-index:35}
-.pet-actor{position:absolute;pointer-events:auto;left:0;top:0;width:76px;height:76px;z-index:35;will-change:transform;touch-action:none;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .3s}
+.pet-actor{position:absolute;pointer-events:auto;left:0;top:0;width:100px;height:100px;z-index:35;will-change:transform;touch-action:none;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .3s}
 .pet-actor.hidden{display:block!important;opacity:0;pointer-events:none}
 /* Pet çizimi ve tüm hareketi src/pets/ oynatıcısından gelir (her karede iskelet pozu); burada yalnızca kap kutusu var. */
 .pet-sprite{position:absolute;inset:0}
@@ -63,7 +63,7 @@ body.pet-night .pet-sprite svg{filter:brightness(.82) saturate(.66) hue-rotate(-
 .pet-sprite[data-mood="sad"] svg,.pet-sprite[data-mood="hungry"] svg{filter:saturate(.58) brightness(.95)}
 .pet-sprite[data-mood="dead"] svg{filter:grayscale(.85) opacity(.8)}
 /* açık tüylü kedi/köpek: açık zeminde silüet kaybolmasın diye ince kontur */
-.pet-svg.coat-light{filter:drop-shadow(0 0 .7px rgba(43,34,48,.6)) drop-shadow(0 1px 1px rgba(43,34,48,.12))}
+
 /* kedinin lazer noktası (Pati Atla) */
 .pet-laser{position:absolute;left:0;top:0;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:#ff2d2d;box-shadow:0 0 0 3px rgba(255,59,59,.28),0 0 14px 5px rgba(255,45,45,.45);z-index:36;pointer-events:none;animation:laserJit .14s linear infinite}
 @keyframes laserJit{50%{margin:-4px 0 0 -5px}}

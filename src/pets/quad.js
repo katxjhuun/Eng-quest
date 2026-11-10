@@ -8,35 +8,36 @@ export const G = 108;
 // ---------------------------------------------------------------- tüy renkleri (rastgele atanır)
 export const COATS = {
   // lo-fi: kırık, tozlu tonlar (doygun turuncu/sarı yok)
-  cat: ['#2B2629', '#C08658', '#8A8890', '#D8C7AA', '#6E5242', '#E6E0D6', '#55505A', '#AE8660'],
-  dog: ['#2B2629', '#6E5040', '#BE9862', '#D9C9AE', '#8C8E94', '#E6E0D6', '#A06A4C', '#3E3639'],
+  // logo dili: düz, canlı pasteller (nane, pembe, lila, tereyağı, gök) + mürekkep siyahı
+  cat: ['#95F0BF', '#F4A3C4', '#B9A6F5', '#FFD66B', '#86D3F4', '#23202A', '#FFB28A', '#EDE7DC'],
+  dog: ['#F6C27A', '#9FD8F3', '#EDE7DC', '#C3AEF4', '#8FE6C2', '#2C2830', '#F49AB8', '#FFE07A'],
 };
 // göz rengi tüyle eşleşir (kedi: amber/yeşil/gri-mavi; köpek: koyu kahve)
 const IRIS = { cat: ['#C9A24A', '#8FA36A', '#C9A24A', '#7E9AA6', '#B98E45', '#7E9AA6', '#9DB07A', '#B98E45'], dog: ['#6B4A33', '#3A2A22', '#4A3326', '#5A3E2C', '#4A3326', '#5A3E2C', '#3A2A22', '#7A5638'] };
 export function coatColors(b) {
-  const L = lum(b), dark = L < 0.1, light = L > 0.45;
+  const L = lum(b), dark = L < 0.06, light = L > 0.45;
   return {
     b, dark, light,
-    far: dark ? shade(b, 0.045) : shade(b, -0.12),
+    far: dark ? shade(b, 0.07) : shade(b, -0.1),
     mark: dark ? shade(b, 0.16) : shade(b, light ? -0.22 : -0.34),
     under: dark ? shade(b, 0.28) : shade(b, 0.5),
-    white: '#FFFFFF', pupil: dark ? '#141116' : '#231d27', line: dark || L < 0.3 ? '#FFFFFF' : '#2a2026', lid: b,
-    rim: light ? shade(b, -0.3) : L < 0.2 ? '#7A6E70' : null,
+    white: '#FFFFFF', pupil: dark ? '#141116' : '#231d27', line: dark ? '#F3EDF6' : '#17131B', lid: b,
+    rim: null,
   };
 }
 
 // ---------------------------------------------------------------- evrim formları
 const CAT = [
-  { name: 'kitten', k: 0.8, hs: 1.26, leg: 0.72, len: 0.7, th: 0.96, tail: 4.4, tailLen: 0.72 },
-  { name: 'tabby', k: 0.88, hs: 1.1, leg: 0.88, len: 0.88, th: 0.98, tail: 4.8, tailLen: 1, marks: 'stripes' },
-  { name: 'lynx', k: 0.94, hs: 1.06, leg: 1.02, len: 0.92, th: 1.03, tail: 5.6, tailLen: 0.34, tufts: true, ruff: true, marks: 'spots' },
+  { name: 'kitten', k: 0.92, hs: 1.26, leg: 0.72, len: 0.7, th: 0.96, tail: 4.4, tailLen: 0.72 },
+  { name: 'tabby', k: 0.96, hs: 1.1, leg: 0.88, len: 0.88, th: 0.98, tail: 4.8, tailLen: 1, marks: 'stripes' },
+  { name: 'lynx', k: 0.99, hs: 1.06, leg: 1.02, len: 0.92, th: 1.03, tail: 5.6, tailLen: 0.34, tufts: true, ruff: true, marks: 'spots' },
   { name: 'puma', k: 1, hs: 1, leg: 1.05, len: 1.06, th: 1, tail: 5, tailLen: 1.15 },
   { name: 'leopard', k: 1.03, hs: 1, leg: 1.05, len: 1.12, th: 1.02, tail: 5, tailLen: 1.15, marks: 'rosettes' },
   { name: 'panther', k: 1.08, hs: 1.02, leg: 1.08, len: 1.16, th: 1.03, tail: 5.2, tailLen: 1.22, glow: '#D9B45A' },
 ];
 const DOG = [
-  { name: 'puppy', k: 0.8, hs: 1.22, leg: 0.72, len: 0.72, th: 1.03, ears: 'floppy', tail: 5.4, tailLen: 0.42 },
-  { name: 'pup', k: 0.88, hs: 1.06, leg: 0.92, len: 0.88, th: 1, ears: 'mixed', tail: 5, tailLen: 0.66 },
+  { name: 'puppy', k: 0.92, hs: 1.22, leg: 0.72, len: 0.72, th: 1.03, ears: 'floppy', tail: 5.4, tailLen: 0.42 },
+  { name: 'pup', k: 0.96, hs: 1.06, leg: 0.92, len: 0.88, th: 1, ears: 'mixed', tail: 5, tailLen: 0.66 },
   { name: 'shepherd', k: 0.96, hs: 1, leg: 1.02, len: 1, th: 1.03, ears: 'pointy', tail: 6.2, tailLen: 0.86, marks: 'saddle', collar: '#9E5A4E' },
   { name: 'youngwolf', k: 0.99, hs: 0.98, leg: 1.04, len: 1.04, th: 1, ears: 'pointy', tail: 7, tailLen: 0.9, marks: 'wolf', bush: true },
   { name: 'wolf', k: 1.04, hs: 0.98, leg: 1.08, len: 1.1, th: 1.04, ears: 'pointy', tail: 7.6, tailLen: 0.95, marks: 'wolf', bush: true, ruff: true },
@@ -495,6 +496,10 @@ function catHead(F, p, col) {
     : 'M-11.6 9.2 C-14.4 4 -14.2 -5 -11.6 -8.6 Q0 -11.6 11.6 -8.6 C14.2 -5 14.4 4 11.6 9.2 Q0 13.6 -11.6 9.2 Z', fill: b }));
   o.push(ear('erN', [7.5, -8.5], 'M3 -9.6 L9.2 -20.4 L12.4 -6.6 Z', p.earA));
   if (F.marks === 'stripes') o.push(op('hmk', 'path', { d: 'M-3.4 -10.6 l0.8 4 M0.6 -11.2 l0 4.4 M4.6 -10.6 l-0.8 4', ...strokeA(col.mark, 1.7) }));
+  // logodaki gibi: düğüm burun ve kontura taşan gevşek bıyıklar
+  const ink = col.dark ? '#F3EDF6' : '#17131B';
+  o.push(op('nz', 'path', { d: 'M-0.6 3.4 c1.4 -1.3 3 -0.5 2.3 0.9 c-0.7 1.3 -2.7 0.8 -2 -0.5 l2.9 1.4', ...strokeA(ink, 0.75) }));
+  o.push(op('wh', 'path', { d: 'M10.6 4.6 l7.4 -1.8 M10.8 6 l7.6 0.3 M10.4 7.4 l6.4 2.4 M-10.4 4.6 l-6 -1.8 M-10.6 6 l-6.2 0.3 M-10.2 7.4 l-5.2 2', ...strokeA(ink, 0.6) }));
   if (F.marks === 'rosettes' || F.marks === 'spots') o.push(op('hmk', 'path', { d: 'M-7 -6.4 h0.1 M8 -6.8 h0.1 M0.4 -8 h0.1', ...strokeA(col.mark, 2.2) }));
   return o;
 }

@@ -3,7 +3,7 @@
 import * as quad from './quad.js';
 import * as bean from './bean.js';
 import * as lizard from './lizard.js';
-import { blend, Spring, EASE, clamp, r1, TAU } from './anim.js';
+import { blend, Spring, EASE, clamp, r1, TAU, pastel } from './anim.js';
 import { propOps } from './props.js';
 import { op } from './face.js';
 
@@ -55,29 +55,86 @@ function str(ops) {
   return s;
 }
 
-// ---------------------------------------------------------------- bir karenin çizimi
-function frameOps(rig, S, pose, T, uid, face) {
-  const { F, col, k } = S;
-  const kids = rig.draw(F, pose, col, T, uid);
-  const front = [], back = [], world = [];
-  for (const pr of pose.props || []) (pr.world ? world : pr.back ? back : front).push(pr);
-  const sx = (pose.sx ?? 1) * k, sy = (pose.sy ?? 1) * k;
-  const root = op('root', 'g', { transform: `translate(${r1(60 + (pose.rx || 0) * k)} ${r1(G + (pose.ry || 0) * k)}) rotate(${r1(pose.rr || 0)}) scale(${r1(sx * 1000) / 1000} ${r1(sy * 1000) / 1000}) translate(-60 -${G})`, filter: `url(#${uid}gr)` },
-    [...propOps(back, 'pb'), ...kids, ...propOps(front, 'pf')]);
-  // lo-fi doku: gövdenin üstüne ince, durağan film greni (yalnızca çizili alana)
-  const grain = op('grdefs', 'defs', {}, [op('gr', 'filter', { id: uid + 'gr', x: '-5%', y: '-5%', width: '110%', height: '110%', 'color-interpolation-filters': 'sRGB' }, [
-    op('t', 'feTurbulence', { type: 'fractalNoise', baseFrequency: '2.4', numOctaves: '1', seed: '7', result: 'n' }),
-    op('m', 'feColorMatrix', { in: 'n', type: 'matrix', values: '0 0 0 0 0.16  0 0 0 0 0.13  0 0 0 0 0.12  0 0 0 0.34 -0.14', result: 'g' }),
-    op('c', 'feComposite', { in: 'g', in2: 'SourceGraphic', operator: 'in', result: 'gi' }),
-    op('o', 'feMerge', {}, [op('a', 'feMergeNode', { in: 'SourceGraphic' }), op('b', 'feMergeNode', { in: 'gi' })]),
+// ---------------------------------------------------------------- mürekkep geçişi (logo dili)
+// Uygulamanın logosundaki kedi gibi: düz pastel dolgu, el çizimi siyah kontur, titreyen çizgi (line boil).
+// Rig'ler şekilleri çizer; bu geçiş renkleri pastelleştirir, gölge/parıltı katmanlarını atar ve dolgulara kontur ekler.
+const FILLS = new Set(['path', 'ellipse', 'circle', 'rect', 'polygon']);
+const NO_INK = /^(e[LR]|mo$|tg|tgt|lk|bl[12]$|shadow|glow|tr1|sw$|mk|hmk|dt\d|cv|sp\d|thorn|ribs|bark|down|fluff|shellD|fs\d|nost|jaw|wh|nz)/;
+function ink(ops, I) {
+  const out = [];
+  for (const o of ops) {
+    if (!o) continue;
+    if (o.t === 'defs' || o.t === 'clipPath' || o.t === 'filter') { out.push(o); continue; }
+    const a = o.a ? { ...o.a } : {};
+    const opa = a.opacity != null ? Number(a.opacity) : 1;
+    // yumuşak gölge ve parıltılar düz tasarımda yok (göz ve gözyaşı hariç)
+    if (FILLS.has(o.t) && opa < 0.7 && opa > 0 && !/^(e[LR]|tr1|glow|tw$)/.test(o.k)) continue;
+    if (a.fill && a.fill !== 'none') a.fill = pastel(a.fill);
+    if (a.stroke && a.stroke !== 'none') a.stroke = pastel(a.stroke);
+    if (FILLS.has(o.t) && a.fill && a.fill !== 'none' && !a.stroke && !NO_INK.test(o.k)) {
+      a.stroke = I; a['stroke-width'] = 1.25; a['vector-effect'] = 'non-scaling-stroke'; a['stroke-linejoin'] = 'round';
+    }
+    out.push(o.kids ? { ...o, a, kids: ink(o.kids, I) } : { ...o, a });
+  }
+  return out;
+}
+// el çizimi kontur + titreme: siluetin dışına mürekkep çizgisi, saniyede ~8 kez değişen hafif dalgalanma
+function inkFilter(id, I, seed) {
+  return op('inkdefs', 'defs', {}, [op('ink', 'filter', { id, x: '-12%', y: '-12%', width: '124%', height: '124%', 'color-interpolation-filters': 'sRGB' }, [
+    // önce aşındır: ince çizgiler (bıyık, tüy) kontur kazanmaz, yalnızca gövde parçaları çerçevelenir
+    op('e', 'feMorphology', { in: 'SourceAlpha', operator: 'erode', radius: '0.7', result: 'er' }),
+    op('d', 'feMorphology', { in: 'er', operator: 'dilate', radius: '2.2', result: 'dl' }),
+    op('f', 'feFlood', { 'flood-color': I, result: 'fl' }),
+    op('c', 'feComposite', { in: 'fl', in2: 'dl', operator: 'in', result: 'ol' }),
+    op('m', 'feMerge', { result: 'mg' }, [op('a', 'feMergeNode', { in: 'ol' }), op('b', 'feMergeNode', { in: 'SourceGraphic' })]),
+    op('t', 'feTurbulence', { type: 'fractalNoise', baseFrequency: '0.09', numOctaves: '2', seed: String(seed), result: 'n' }),
+    op('x', 'feDisplacementMap', { in: 'mg', in2: 'n', scale: '1.7', xChannelSelector: 'R', yChannelSelector: 'G' }),
   ])]);
-  // gölge: yerde kalır, yükseldikçe küçülür
+}
+// baş gruplarını (yan görünüş) ayrıca döndürür: dönüşte baş gövdeden önce izleyiciye döner
+function headTurn(ops, ratio) {
+  if (Math.abs(ratio - 1) < 0.002) return ops;
+  return ops.map(o => {
+    if (o && o.t === 'g' && (o.k === 'head' || o.k === 'headG') && o.a?.transform) {
+      const m = /translate\(([-\d.]+)/.exec(o.a.transform); const hx = m ? m[1] : 60;
+      return { ...o, a: { ...o.a, transform: `translate(${hx} 0) scale(${r1(ratio * 1000) / 1000} 1) translate(${-hx} 0) ${o.a.transform}` } };
+    }
+    return o;
+  });
+}
+// ön yüzlü gövdeler (civciv, bitki, baykuş): dönerken yüz gövdenin üstünde kayar — küre döner gibi
+function faceSlide(ops, dx, sq) {
+  if (!dx && sq === 1) return ops;
+  return ops.map(o => {
+    if (!o?.kids) return o;
+    if (o.k === 'face' && o.t === 'g') return { ...o, a: { ...o.a, transform: `translate(${r1(dx)} 0) translate(60 0) scale(${r1(sq * 1000) / 1000} 1) translate(-60 0)` } };
+    return { ...o, kids: faceSlide(o.kids, dx, sq) };
+  });
+}
+
+// ---------------------------------------------------------------- bir karenin çizimi
+// turn: { f: gövde yönü (-1..1), hf: baş yönü, yaw: 0..1 dönüş derinliği, seed }
+function frameOps(rig, S, pose, T, uid, turn) {
+  const { F, col, k } = S;
+  const front = rig === bean;
+  let kids = rig.draw(F, pose, col, T, uid);
+  const I = col.dark ? '#F3EDF6' : '#17131B';
+  const back = [], fr = [], world = [];
+  for (const pr of pose.props || []) (pr.world ? world : pr.back ? back : fr).push(pr);
+  const f = turn.f * (pose.spin ?? 1);
+  if (front && turn.yaw) kids = faceSlide(kids, -Math.sign(turn.f) * turn.yaw * (F.w || 40) * 0.32, 1 - 0.38 * turn.yaw);
+  if (!front) kids = headTurn(kids, turn.hf / (Math.abs(f) < 0.05 ? 0.05 * Math.sign(f || 1) : f));
+  const sx = (pose.sx ?? 1) * k, sy = (pose.sy ?? 1) * k;
+  const root = op('root', 'g', { transform: `translate(${r1(60 + (pose.rx || 0) * k)} ${r1(G + (pose.ry || 0) * k)}) rotate(${r1(pose.rr || 0)}) scale(${r1(sx * 1000) / 1000} ${r1(sy * 1000) / 1000}) translate(-60 -${G})` },
+    ink([...propOps(back, 'pb'), ...kids, ...propOps(fr, 'pf')], I));
+  // gölge: yerde kalır, yükseldikçe küçülür; dönüşün ortasında gövde izleyiciye döndüğü için kısalmaz
   const fp = rig.footprint(F, pose);
   const alt = clamp(-(pose.ry || 0) / 45, 0, 0.7);
   const shadow = op('shadow', 'ellipse', { cx: r1(60 + (fp.cx - 60 + (pose.rx || 0)) * k), cy: G + 1.4, rx: r1(fp.w * 0.5 * k * (1 - alt * 0.6) * (pose.sx ?? 1)), ry: r1(2.6 * (1 - alt * 0.5)), fill: '#1f1b24', opacity: r1((0.13 * (1 - alt)) * 100) / 100 });
-  const f = face * (pose.spin ?? 1);
-  const wk = world.length ? [op('world', 'g', { transform: `translate(60 ${G}) scale(${k}) translate(-60 -${G})` }, propOps(world, 'pw'))] : [];
-  return [grain, op('face', 'g', { transform: Math.abs(f - 1) < 0.001 ? null : `translate(60 0) scale(${r1(f * 1000) / 1000} 1) translate(-60 0)` }, [shadow, root, ...wk])];
+  const wk = world.length ? [op('world', 'g', { transform: `translate(60 ${G}) scale(${k}) translate(-60 -${G})` }, ink(propOps(world, 'pw'), I))] : [];
+  const fs = front ? Math.sign(f || 1) : f;
+  const body = op('face', 'g', { transform: Math.abs(fs - 1) < 0.001 ? null : `translate(60 0) scale(${r1(fs * 1000) / 1000} 1) translate(-60 0)` }, [root, ...wk]);
+  return [inkFilter(uid + 'ink', '#17131B', turn.seed), shadow, op('inkG', 'g', { filter: `url(#${uid}ink)` }, [body])];
 }
 
 // ---------------------------------------------------------------- oynatıcı
@@ -113,7 +170,7 @@ export class Puppet {
     this.rig = rigOf(species);
     this.S = this.rig.setup(species, stage, coat);
     // açık tüylü kedi/köpek açık zeminde kaybolmasın: ince kontur (CSS)
-    if (this.svg) this.svg.setAttribute('class', `pet-svg pet-live${this.S.col.light ? ' coat-light' : ''}`);
+    if (this.svg) this.svg.setAttribute('class', 'pet-svg pet-live');
     this.springs = {};
     if (!first) this.fade(0.3);
   }
@@ -154,7 +211,7 @@ export class Puppet {
   face(f) {
     f = f < 0 ? -1 : 1;
     if (f === this.facing) return;
-    this.turnFrom = this.faceCur; this.facing = f; this.turnT = 0;
+    this.turnFrom = Math.sign(this.faceCur) || 1; this.facing = f; this.turnT = 0;
   }
   ctx(T) { return { B: this.S.B, F: this.S.F, t: T, mood: this.mood, ph: this.ph, food: this.rig.food?.(this.S.F) || this.S.F.food || 'fish', stage: this.stage, species: this.species }; }
   pose(dt) {
@@ -225,15 +282,20 @@ export class Puppet {
     if (!this.S || !this.svg) return;
     dt = Math.min(0.1, Math.max(0, dt));
     this.t += dt;
-    if (this.turnT < 1) { this.turnT = Math.min(1, this.turnT + dt / 0.22); }
+    // 3B dönüş: önce baş izleyiciye döner, gövde onu izler; gövde ortada çizgiye inmez (önden görünüm)
+    if (this.turnT < 1) { this.turnT = Math.min(1, this.turnT + dt / 0.42); }
     const u = EASE.io(this.turnT);
-    this.faceCur = this.turnT >= 1 ? this.facing : this.turnFrom + (this.facing - this.turnFrom) * u;
+    const hu = EASE.io(clamp(this.turnT * 1.6, 0, 1));
+    const side = (q, from, to, min) => { const c = Math.cos(q * Math.PI); return (q < 0.5 ? from : to) * Math.max(min, Math.abs(c)); };
+    this.faceCur = this.turnT >= 1 ? this.facing : side(u, this.turnFrom, this.facing, 0.46);
+    const hf = this.turnT >= 1 ? this.facing : side(hu, this.turnFrom, this.facing, 0.55);
+    const yaw = this.turnT >= 1 ? 0 : Math.sin(u * Math.PI);
     let p = this.secondary(this.pose(dt), dt);
     if (this.cond) p = { ...p, ...this.cond };
-    // dönerken hafif sıçrama
-    if (this.turnT < 1) { p = { ...p, ry: (p.ry || 0) - 2.5 * Math.sin(u * Math.PI), sy: (p.sy ?? 1) * (1 + 0.04 * Math.sin(u * Math.PI)) }; }
-    const face = Math.abs(this.faceCur) < 0.08 ? 0.08 * Math.sign(this.faceCur || 1) : this.faceCur;
-    sync(this.svg, frameOps(this.rig, this.S, p, this.t, this.uid, face));
+    // dönerken ağırlık aktarımı: hafif yükselip yere geri oturur
+    if (yaw) { p = { ...p, ry: (p.ry || 0) - 2.2 * yaw, sy: (p.sy ?? 1) * (1 + 0.035 * yaw) }; }
+    const seed = 1 + (Math.floor(this.t * 7.5) % 4);
+    sync(this.svg, frameOps(this.rig, this.S, p, this.t, this.uid, { f: this.faceCur, hf, yaw, seed }));
   }
   // anlık durum (yönetici/test için)
   get state() { return { base: this.base, clip: this.clipName && this.clip ? this.clipName : '', mood: this.mood, facing: this.facing }; }
@@ -253,8 +315,8 @@ export function staticSVG(species, stage, opts = {}) {
   if (opts.belly && rig.belly) p = rig.belly(p, opts.belly, S.F);
   if (opts.cond) p = { ...p, ...opts.cond };
   const uid = 'ps' + (++staticSeq);
-  const ops = frameOps(rig, S, p, opts.t || 0, uid, opts.face || 1);
-  return `<svg class="pet-svg ${opts.cls || ''}${S.col.light ? ' coat-light' : ''}" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${str(ops)}</svg>`;
+  const ops = frameOps(rig, S, p, opts.t || 0, uid, { f: opts.face || 1, hf: opts.face || 1, yaw: 0, seed: 1 + (staticSeq % 4) });
+  return `<svg class="pet-svg ${opts.cls || ''}" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${str(ops)}</svg>`;
 }
 
 // tüm klip adları (test sayfası için)

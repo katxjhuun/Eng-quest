@@ -5,6 +5,7 @@
 //   pets/puppet.js — canlı oynatıcı + statik çizim
 // Bu dosya tür bilgilerini ve statik çizim kapısını (petSVG) dışarı açar; panel ve yönetici paneli bunu kullanır.
 import { staticSVG } from './pets/puppet.js';
+import { pastel } from './pets/anim.js';
 
 const SPECIES = {
   chick: { label: 'Civciv', home: 'nest', stages: ['Yumurtacık', 'Pıtırcık', 'Tombiş', 'Kanatçık', 'Tavus Yavrusu', 'Tavus Kuşu'] },
@@ -45,5 +46,7 @@ export function homeSVG(species) {
     rock: P('M14 110 C14 100 30 94 52 95 C70 96 78 100 80 110 Z', 'fill="#A39787"') + P('M70 110 C72 104 84 101 96 103 C104 104 108 107 108 110 Z', 'fill="#B4A896"') + P('M30 100 C40 97 52 97 60 99', ln('#8F8476', 1.6)),
     branch: P('M6 104 C30 100 70 101 114 96', ln('#7E6650', 5)) + P('M84 99 C90 92 98 90 104 91 C99 95 92 98 84 99 Z', 'fill="#8C9A78"') + P('M22 102 C18 96 12 95 8 96 C12 100 16 102 22 102 Z', 'fill="#7F8E6E"'),
     house: P('M86 112 L86 82 L101 70 L116 82 L116 112 Z', 'fill="#C7AE88"') + P('M82 84 L101 66 L120 84', ln('#94594D', 4)) + P('M94 112 L94 98 C94 92 108 92 108 98 L108 112 Z', 'fill="#3a3340"'),  }[h] || '';
-  return `<svg class="pet-home-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${body}</svg>`;
+  // petlerle aynı dil: pastel dolgu, mürekkep kontur
+  const inked = body.replace(/#[0-9A-Fa-f]{6}/g, c => pastel(c)).replace(/fill="(#[0-9a-f]{6})"/gi, 'fill="$1" stroke="#17131B" stroke-width="1.3" stroke-linejoin="round" vector-effect="non-scaling-stroke"');
+  return `<svg class="pet-home-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><filter id="homeInk" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.09" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6" xChannelSelector="R" yChannelSelector="G"/></filter></defs><g filter="url(#homeInk)">${inked}</g></svg>`;
 }

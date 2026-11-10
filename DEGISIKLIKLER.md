@@ -1,3 +1,18 @@
+# dam-la 2.4.0 — Logo dilinde petler, 3B dönüş, sakin tepkiler
+
+Uzaktan güncellemeyle gelir.
+- **Yeni görsel dil (logodaki kedi gibi):** düz, canlı pastel renkler (nane, pembe, lila, tereyağı, gök mavisi), el çizimi siyah mürekkep kontur ve saniyede birkaç kez titreyen çizgi. Gözler siyah "gözlük" bademler, üstünde iki beyaz eğik parıltı; kedide düğüm burun ve kontura taşan bıyıklar. Yuvalar da aynı çizgide.
+- **Daha büyük petler:** dolaşan pet 76'dan 100 piksele çıktı; yavru formlar daha tombul ve iri başlı çizildi.
+- **3B dönüş:** artık ayna gibi daralıp ters dönmüyor. Önce başını sana çevirir, gövde onu izler; dönüşün ortasında yüzü önden görünür. Civciv, bitki ve baykuşta yüz gövdenin üstünde kayar, küre döner gibi.
+- **Duygu beden dilinde:** göz kapağı çizgisi (kızgın, üzgün, uykulu) ve bakış ifadeyi taşır; emote balonu en fazla 20 saniyede bir çıkar, tepkilerin çoğu balonsuz.
+- **Her dokunuşa tepki vermez:** bir tepkiden sonra 7 saniye umursamaz; kedi, gecko ve baykuş dokunuşların yarısını görmezden gelir. Israr edersen sessizce dönüp bakar. Uyuyan kurt yine ısırır.
+- **Yetenek düğmesi soru kartında:** yazmalı soruda İpucu'nun yanında, seçenekli soruda Soruyu dinle'nin yanında.
+- **Geniş yuva, ince barlar:** can, açlık ve enerji tek satırda küçük barlar; yuva alanı tam genişlikte. Flow düğmesi ismin yanına taşındı.
+- **Evrimler sürpriz:** seçim ekranı ve bilgi sayfası gelecek formları göstermez.
+- **Kutucuklu sorular:** uzun cevaplarda kelimeler bölünmeden alt satıra geçer; her kelimenin altında ince bir çizgi, kelimeler arasında boşluk var.
+- **AI sesi:** seçtiğin ses hemen kaydedilir ve "Sesi dene" seçili sesle okur (önceden ses listesi yenilenince seçim eski sese dönüyordu). AI sesi çalışmazsa sessizce cihaz sesine geçmek yerine haber verir. Telefonda ses adları kısaldı (ör. "Heart · US ♀").
+
+---
 # dam-la 2.3.0 — Petler büyüdü: lo-fi görünüm, mizaçlar, baykuş ve gecko
 
 Uzaktan güncellemeyle gelir. Veritabanı kuralları güncellendi (baykuş ve gecko türleri): Firebase konsolunda yayınlanmalı.

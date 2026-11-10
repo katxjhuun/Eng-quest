@@ -10,9 +10,9 @@ const F_ = c => ({ fill: c });
 const S_ = (c, w) => ({ fill: 'none', stroke: c, 'stroke-width': r1(w), 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
 
 // rastgele atanan renk (morf); kullanıcı seçemez
-export const COATS = ['#C2AA68', '#8FA895', '#9A92AA', '#B27C62', '#C3B498', '#6E7A82', '#7E8A5E', '#BE9A8C'];
+export const COATS = ['#7FE0D2', '#FF9EC4', '#FFD66B', '#B9A6F5', '#9BE58B', '#86D3F4', '#FFB28A', '#EDE7DC'];
 const IRIS = ['#B88A3E', '#C9A24A', '#D0B070', '#8FA36A', '#B88A3E', '#C9A24A', '#D0B070', '#9DB07A'];
-const ALT = ['#9FB58A', '#C2A26A', '#B49A82', '#8FA6A8', '#A39BB8', '#9AAE96', '#C2A27A', '#94A6B5'];
+const ALT = ['#FF9EC4', '#86D3F4', '#9BE58B', '#FFD66B', '#B9A6F5', '#FFB28A', '#7FE0D2', '#F4A3C4'];
 
 const FORMS = [
   { name: 'hatchling', k: 1.02, L: 22, rb: 6.6, hs: 1.42, leg: 1.05, tail: 26, tw: 5.6, fat: 0.25, marks: 'bands' },
@@ -299,7 +299,7 @@ export function draw(F, p, col, T, uid) {
   // tek göz (yandan): iri, yarık göz bebeği, kapaksız ve dikkatli
   const ec = { ...col, iris: F.glow || col.iris, pupil: '#141014', line: '#2a2026', lid: body, slit: true };
   const eyeOps = eyes('ring', 5, 5, -2, 3.1, p.eye || 'open', p.blink || 0, p.look || 0, p.lookY || 0, ec).filter(e => e.k.startsWith('eR'));
-  hk.push(op('erim', 'circle', { cx: 5, cy: -2, r: 3.7, ...F_(shade(body, -0.22)) }), ...eyeOps);
+  hk.push(...eyeOps);
   hk.push(op('nost', 'circle', { cx: 13.4, cy: -1.4, r: 0.5, ...F_(shade(body, -0.4)) }));
   o.push(op('headG', 'g', { transform: `translate(${r1(H[0])} ${r1(H[1])}) rotate(${r1(p.headA || 0)}) scale(${r1(hs * 100) / 100})` }, hk));
   return o;

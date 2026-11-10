@@ -128,3 +128,21 @@ export function lum(h) {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 export function mix(a, b, t) { const A = hex2rgb(a), B = hex2rgb(b); return rgb2hex(lerp(A[0], B[0], t), lerp(A[1], B[1], t), lerp(A[2], B[2], t)); }
+
+// Logo dili: soluk tonları düz, canlı pastellere çevirir (koyu mürekkep ve göz renkleri olduğu gibi kalır).
+const pastelCache = new Map();
+export function pastel(h) {
+  if (typeof h !== 'string' || !/^#[0-9a-f]{6}$/i.test(h)) return h;
+  let v = pastelCache.get(h); if (v) return v;
+  let [r, g, b] = hex2rgb(h).map(x => x / 255);
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, dd = mx - mn;
+  if (l < 0.3) { pastelCache.set(h, h); return h; }
+  let hh = 0, s = dd ? dd / (1 - Math.abs(2 * l - 1)) : 0;
+  if (dd) { hh = mx === r ? ((g - b) / dd) % 6 : mx === g ? (b - r) / dd + 2 : (r - g) / dd + 4; hh *= 60; if (hh < 0) hh += 360; }
+  const S = s < 0.07 ? s * 0.6 : Math.min(0.82, 0.38 + s * 1.25);
+  const L = Math.min(0.9, 0.5 + l * 0.38);
+  const C = (1 - Math.abs(2 * L - 1)) * S, X = C * (1 - Math.abs((hh / 60) % 2 - 1)), m = L - C / 2;
+  const [R, G2, B] = hh < 60 ? [C, X, 0] : hh < 120 ? [X, C, 0] : hh < 180 ? [0, C, X] : hh < 240 ? [0, X, C] : hh < 300 ? [X, 0, C] : [C, 0, X];
+  v = rgb2hex((R + m) * 255, (G2 + m) * 255, (B + m) * 255);
+  pastelCache.set(h, v); return v;
+}

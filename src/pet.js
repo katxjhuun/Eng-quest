@@ -485,7 +485,7 @@ export function initPet(core, quiz) {
   }
 
   // ---------- hareket motoru ----------
-  const W = 76, H = 76;
+  const W = 100, H = 100;
   const pos = { x: -200, y: -200 }, target = { x: 0, y: 0 };
   let awayShown = false;
   let mode = 'home', moving = false, speed = 70, facing = 1, nextThink = 0, lastTs = 0, onArrive = null, visible = false;

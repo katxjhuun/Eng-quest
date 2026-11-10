@@ -53,32 +53,28 @@ function eye(fam, k, x, y, r, style, blink, lx, ly, col, d) {
       if (style === 'up') { py -= r * 0.32; }
       const ry = R * open;
       const yy = y + (R - ry) * 0.35;
-      if (fam === 'owl') {
-        // baykuş: koyu çerçeve, amber iris, iri bebek (dikkatliyken daralır)
-        out.push(op(k + 'r', 'ellipse', { cx: r1(x), cy: r1(yy), rx: r1(R * 1.18), ry: r1(ry * 1.18 + 0.4), fill: col.rimCol || '#2a2428' }));
-        out.push(op(k + 'w', 'ellipse', { cx: r1(x), cy: r1(yy), rx: r1(R), ry: r1(ry), fill: col.iris || '#D9A441' }));
-        const op_ = style === 'focus' || style === 'angry' ? 0.42 : style === 'wide' ? 0.78 : 0.6;
-        out.push(op(k + 'p', 'ellipse', { cx: r1(x + px * 0.6), cy: r1(yy + py * 0.6 * open), rx: r1(R * op_), ry: r1(Math.min(R * op_, ry * 0.92)), fill: '#141014' }));
-        if (open > 0.5) out.push(op(k + 'h', 'circle', { cx: r1(x + px * 0.6 - R * 0.25), cy: r1(yy - ry * 0.3), r: r1(R * 0.14), fill: '#F4EBDD', opacity: '.55' }));
-      } else if (ring) {
-        // renkli iris; kedi: yarık bebek (heyecanla açılır), köpek: koyu yuvarlak bebek
-        const slit = col.slit;
-        out.push(op(k + 'w', 'ellipse', { cx: r1(x), cy: r1(yy), rx: r1(R), ry: r1(ry), fill: col.iris || W }));
-        const wide = style === 'wide' || style === 'up' ? 1 : style === 'happy' ? 0.7 : 0;
-        const prx = slit ? R * (0.2 + 0.42 * wide) : pr * 1.15, pry = slit ? ry * 0.86 : Math.min(pr * 1.15, ry * 0.9);
-        out.push(op(k + 'p', 'ellipse', { cx: r1(x + px), cy: r1(yy + py * open), rx: r1(prx), ry: r1(pry), fill: PU }));
-        if (open > 0.5) out.push(op(k + 'h', 'circle', { cx: r1(x + px - R * 0.3), cy: r1(yy - ry * 0.32), r: r1(R * 0.16), fill: '#F6EEE2', opacity: '.5' }));
-      } else {
-        // nokta göz: küçük koyu oval, parıltı yok; üstte ince kapak çizgisi (sakin, düşünceli bakış)
-        out.push(op(k + 'w', 'ellipse', { cx: r1(x + px * 0.5), cy: r1(yy + py * 0.5), rx: r1(R * 0.6), ry: r1(ry * 0.74), fill: PU }));
-        if (open > 0.5 && col.glint) out.push(op(k + 'p', 'circle', { cx: r1(x + px * 0.5 + R * 0.18), cy: r1(yy + py * 0.5 - ry * 0.3), r: r1(R * 0.14), fill: W, opacity: '.45' }));
-        if (open > 0.3 && col.lidLine) out.push(op(k + 'q', 'path', { d: `M${P(x - R * 0.85, yy - ry * 0.55)} Q${P(x, yy - ry * 1.05)} ${P(x + R * 0.85, yy - ry * 0.55)}`, ...stroke(col.lidLine, R * 0.32) }));
+      // Logo dili: siyah badem "gözlük" gözler, üstünde iki beyaz eğik parıltı çizgisi. İfade kapakla ve bakışla verilir.
+      const INK = '#141016', slash = (kk, x0, y0, len, w) => op(kk, 'path', { d: `M${P(x0 + len * 0.22, y0 - len * 0.5)} L${P(x0 - len * 0.22, y0 + len * 0.5)}`, fill: 'none', stroke: '#FFFFFF', 'stroke-width': r1(w), 'stroke-linecap': 'round' });
+      const big = fam === 'owl' ? 1.12 : ring ? 1.5 : 1.55;
+      const ax = R * big * (fam === 'owl' ? 1 : 1.12), ay = ry * big * (fam === 'owl' ? 1 : 0.8);
+      const rot = fam === 'owl' ? 0 : -9 * d;   // dışa doğru hafif eğik, logodaki gibi
+      const cx = x + px * 0.18, cy = yy + py * 0.12;
+      if (fam === 'owl') out.push(op(k + 'r', 'ellipse', { cx: r1(x), cy: r1(yy), rx: r1(ax * 1.2), ry: r1(ay * 1.2 + 0.3), fill: col.iris || '#D9A441' }));
+      out.push(op(k + 'w', 'ellipse', { cx: r1(cx), cy: r1(cy), rx: r1(ax), ry: r1(Math.max(0.3, ay)), fill: INK, transform: rot ? `rotate(${rot} ${r1(cx)} ${r1(cy)})` : null, ...(col.dark || col.eyeRing ? { stroke: col.eyeRing || '#F3EDF6', 'stroke-width': r1(R * 0.18) } : {}) }));
+      if (open > 0.45) {
+        // parıltılar bakış yönüne göre kayar; şaşkınlıkta büyür, dalgınken neredeyse kaybolur
+        const sl = style === 'wide' ? 1.15 : style === 'half' || style === 'sad' ? 0.6 : 0.9;
+        const hx = cx - ax * 0.32 + px * 0.5, hy = cy - ay * 0.05 + py * 0.25;
+        out.push(slash(k + 'h', hx, hy, ay * 1.05 * sl, Math.max(0.45, R * 0.17)));
+        out.push(slash(k + 'h2', hx + ax * 0.32, hy - ay * 0.12, ay * 0.55 * sl, Math.max(0.4, R * 0.15)));
       }
       if (lid > 0 && open > 0.25) {
         // kapak: gövde renginde bir parça gözün üstünü örter
         const top = yy - ry - 0.6, cut = yy - ry + ry * 2 * lid;
         const yl = cut - tilt * R, yr = cut + tilt * R;
-        out.push(op(k + 'l', 'path', { d: `M${P(x - R - 0.8, top)} L${P(x + R + 0.8, top)} L${P(x + R + 0.8, yr)} L${P(x - R - 0.8, yl)} Z`, fill: col.lid }));
+        const E = R * 1.35, tp = yy - ry * 1.4;
+        out.push(op(k + 'l', 'path', { d: `M${P(x - E, tp)} L${P(x + E, tp)} L${P(x + E, yr)} L${P(x - E, yl)} Z`, fill: col.lid }));
+        out.push(op(k + 'll', 'path', { d: `M${P(x - E * 0.92, yl + tilt * R * 0.08)} L${P(x + E * 0.92, yr - tilt * R * 0.08)}`, fill: 'none', stroke: col.dark ? '#F3EDF6' : '#141016', 'stroke-width': r1(Math.max(0.6, R * 0.22)), 'stroke-linecap': 'round' }));
       }
     }
   }
