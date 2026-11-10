@@ -1,8 +1,8 @@
 // dam-la — pet bloğunun altındaki müzik ödülü çaları.
 // Şarkı SEÇİMİ her zamanki listelerden gelir (Apple/Deezer popüler listeleri, music.js).
-// ÇALMA: YouTube anahtarı tanımlıysa ▶'a basınca şarkının tamamı YouTube'un resmi oynatıcısında çalar
-// (oynatıcı kurallar gereği görünür durur). Anahtar yoksa, kota dolduysa ya da video gömülemiyorsa
-// sağlayıcının 30 saniyelik ön dinlemesine düşer. Geçmişte ileri-geri, durdur, sar ve Mix (crossfade) vardır.
+// ÇALMA: ▶ varsayılan olarak sağlayıcının 30 saniyelik ön dinlemesini çalar (yalnızca ses, reklamsız).
+// "Tamamı" açıksa şarkının tamamı YouTube'un resmi oynatıcısında çalar; YouTube kuralları gereği video
+// görünür kalır ve YouTube reklam gösterebilir. Kota dolarsa ya da video gömülemiyorsa ön dinlemeye düşer.
 import { Platform } from './platform.js';
 import { toggleLike, isLiked, httpsUrl } from './music.js';
 import { YOUTUBE_API_KEY } from './config.js';
@@ -30,6 +30,7 @@ const ICON = {
   stop: '<svg viewBox="0 0 24 24"><rect x="5.5" y="5.5" width="13" height="13" rx="2"/></svg>',
   mix: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h3.5c5 0 6 10 11 10H21M18 14l3 3-3 3M3 17h3.5c1.6 0 2.7-1 3.6-2.4M13.9 9.4C14.8 8 15.9 7 17.5 7H21M18 4l3 3-3 3"/></svg>',
   heart: '<svg viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-9.3-9.2C1.4 7.9 3.6 4.5 7 4.5c2 0 3.6 1.1 5 3 1.4-1.9 3-3 5-3 3.4 0 5.6 3.4 4.3 6.8-1.8 4.6-9.3 9.2-9.3 9.2z"/></svg>',
+  full: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg>',
   out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
 };
 
@@ -144,6 +145,7 @@ export function initMusicDeck({ toast = () => {}, stopOtherAudio = () => {} } = 
   let hist = (readJson(HIST_KEY, []) || []).filter(t => t && t.id && t.title).map(clean).slice(-MAX_HIST);
   let pos = Math.min(Math.max(0, Number(readJson(POS_KEY, hist.length - 1)) || 0), Math.max(0, hist.length - 1));
   let mix = readJson(MIX_KEY, false) === true;
+  let full = false; // açıkken şarkılar YouTube'da tam çalar (video + olası reklam)
   let fresh = 0;
 
   const el = document.createElement('section');
@@ -162,6 +164,7 @@ export function initMusicDeck({ toast = () => {}, stopOtherAudio = () => {} } = 
       <button class="md-b" id="mdStop" aria-label="Durdur">${ICON.stop}</button>
       <button class="md-b" id="mdNext" aria-label="Sonraki şarkı">${ICON.next}<em class="md-new hidden" id="mdNew"></em></button>
       <button class="md-b md-mix" id="mdMix" aria-pressed="false" aria-label="Mix: şarkılar arası geçiş">${ICON.mix}<span>Mix</span></button>
+      <button class="md-b md-mix md-full" id="mdFull" aria-pressed="false" aria-label="Tamamını dinle (YouTube)">${ICON.full}<span>Tamamı</span></button>
       <span class="md-sp"></span>
       <button class="md-b md-sm" id="mdLike" aria-pressed="false" aria-label="Beğen">${ICON.heart}</button>
       <a class="md-b md-sm" id="mdOpen" target="_blank" rel="noopener noreferrer" aria-label="Şarkıyı sağlayıcıda aç">${ICON.out}</a>
@@ -218,6 +221,8 @@ export function initMusicDeck({ toast = () => {}, stopOtherAudio = () => {} } = 
     const like = isLiked(t.id); $('#mdLike').classList.toggle('on', like); $('#mdLike').setAttribute('aria-pressed', String(like));
     $('#mdOpen').href = t.link || `https://music.apple.com/search?term=${encodeURIComponent(t.title + ' ' + t.artist)}`;
     $('#mdMix').classList.toggle('on', mix); $('#mdMix').setAttribute('aria-pressed', String(mix));
+    $('#mdFull').classList.toggle('on', full); $('#mdFull').setAttribute('aria-pressed', String(full));
+    $('#mdFull').classList.toggle('hidden', !YOUTUBE_API_KEY);
     const newer = Math.min(fresh, hist.length - 1 - pos);
     $('#mdNew').classList.toggle('hidden', newer <= 0); $('#mdNew').textContent = newer > 0 ? String(newer) : '';
     drawState();
@@ -228,7 +233,7 @@ export function initMusicDeck({ toast = () => {}, stopOtherAudio = () => {} } = 
     el.classList.toggle('is-playing', A().playing);
     el.classList.toggle('video-on', slots.some(s => s.kind === 'yt' && s.id));
     const t = track();
-    el.classList.toggle('no-source', !!t && !t.previewUrl && !ytAvailable());
+    el.classList.toggle('no-source', !!t && !t.previewUrl && !(full && ytAvailable()));
   }
   function drawTime() {
     const s = A(), d = s.duration, t = s.time;
@@ -255,7 +260,7 @@ export function initMusicDeck({ toast = () => {}, stopOtherAudio = () => {} } = 
 
   // Bir yuvaya şarkıyı yükle: önce YouTube'da tam hali, olmazsa ön dinleme
   async function startOn(slot, t, { autoplay, tok }) {
-    if (ytAvailable()) {
+    if (full && ytAvailable()) {
       el.classList.add('yt-loading');
       try {
         const cands = await ytCandidates(t);
@@ -270,7 +275,7 @@ export function initMusicDeck({ toast = () => {}, stopOtherAudio = () => {} } = 
       el.classList.remove('yt-loading');
       if (tok !== token) return 'stale';
     }
-    if (!t.previewUrl) { slot.clear(); if (slot === A()) { wantPlay = false; drawState(); toast('Bu şarkı burada çalınamadı; ↗ ile sağlayıcıda dinleyebilirsin.'); } return 'none'; }
+    if (!t.previewUrl) { slot.clear(); if (slot === A()) { wantPlay = false; drawState(); toast(full || !YOUTUBE_API_KEY ? 'Bu şarkı burada çalınamadı; ↗ ile sağlayıcıda dinleyebilirsin.' : 'Bu şarkının kısa sürümü yok; "Tamamı" ile dinleyebilirsin.'); } return 'none'; }
     slot.loadAudio(t);
     if (autoplay) slot.play().catch(() => { if (slot === A()) { wantPlay = false; drawState(); } });
     drawState(); return 'audio';
@@ -342,6 +347,15 @@ export function initMusicDeck({ toast = () => {}, stopOtherAudio = () => {} } = 
     mix = !mix; writeJson(MIX_KEY, mix); render();
     toast(mix ? '🎚 Mix açık · şarkılar arasında yumuşak geçiş, liste kesintisiz akar' : 'Mix kapalı');
     if (mix && A().playing && hist.length > 1) go(pos < hist.length - 1 ? pos + 1 : 0, { play: true, fade: true });
+  });
+  $('#mdFull').addEventListener('click', () => {
+    full = !full; render();
+    toast(full ? '▶ Tamamı açık · şarkılar YouTube\'da tam çalar (video ve reklam olabilir)' : 'Kısa dinleme · yalnızca ses, reklamsız');
+    // çalan şarkıyı yeni modda baştan başlat; kapanınca YouTube oynatıcılarını durdur
+    const playingNow = A().playing || wantPlay;
+    cancelFade(); slots.forEach(s => { s.pause(); if (!full) s.haltYt(); });
+    if (!full) slots.forEach(s => s.clear());
+    if (playingNow) go(pos, { play: true, fade: false }); else { A().clear(); drawState(); }
   });
   $('#mdLike').addEventListener('click', () => { const t = track(); if (!t) return; const on = toggleLike(t); render(); toast(on ? '♥ Beğendiklerine eklendi' : 'Beğenilerden çıkarıldı'); });
   const seek = $('#mdSeek');

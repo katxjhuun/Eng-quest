@@ -1,3 +1,11 @@
+# dam-la 2.2.8 — Ödül şarkıları önce yalnızca ses
+
+Uzaktan güncellemeyle gelir.
+- ▶ artık her zaman 30 saniyelik **yalnızca ses** çalar: video yok, reklam yok.
+- Şarkının tamamını isteyen çalardaki **Tamamı** (▭▶) düğmesini açar; o zaman şarkı YouTube oynatıcısında tam çalar (YouTube kuralları gereği video görünür ve reklam çıkabilir). Kapatınca kısa dinlemeye döner.
+
+---
+
 # dam-la 2.2.7 — Ödül şarkılarının tamamı YouTube'dan
 
 Uzaktan güncellemeyle gelir.

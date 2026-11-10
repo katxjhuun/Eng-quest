@@ -237,6 +237,8 @@ body{position:relative}
 .md-main svg{width:20px;height:20px}
 .md-mix{width:auto;padding:0 10px;grid-auto-flow:column;gap:5px;font-size:11.5px;font-weight:850}
 .md-mix svg{width:16px;height:16px;fill:none}
+.md-full.on{background:#e0457b;animation:none;color:#fff;border-color:transparent}
+.md-b.hidden{display:none}
 .md-mix.on{border-color:transparent;color:#fff;background:linear-gradient(90deg,#6545d5,#36aeb8,#6545d5);background-size:200% 100%;animation:mdMix 2.4s linear infinite}
 @keyframes mdMix{to{background-position:200% 0}}
 .md-sp{flex:1}
@@ -246,5 +248,5 @@ body{position:relative}
 #mdLike.on{color:#e0457b;border-color:#f3c2d3;background:#fdf0f4}
 #mdLike.on svg{fill:currentColor}
 .md-new{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#e0457b;color:#fff;font-size:9.5px;font-weight:900;font-style:normal;line-height:16px;text-align:center}
-@media(max-width:380px){.md-b{width:34px;height:34px}.md-main{width:42px;height:42px}.md-mix span{display:none}.md-mix{padding:0 8px}}
+@media(max-width:400px){.md-ctrl{gap:5px}.md-b{width:34px;height:34px}.md-main{width:42px;height:42px}.md-mix span{display:none}.md-mix{padding:0 8px}}
 @media(prefers-reduced-motion:reduce){.music-deck.fresh,.md-eq i,.md-mix.on{animation:none}}
