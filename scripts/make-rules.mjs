@@ -8,6 +8,14 @@ const num = (max = 10000000) => ({ '.validate': `newData.isNumber() && newData.v
 const ts = () => ({ '.validate': 'newData.isNumber() && newData.val() <= now + 300000' });
 const bool = () => ({ '.validate': 'newData.isBoolean()' });
 const NO = { '.validate': false };
+const CODE = str(8, '/^DL-[A-Z0-9]{5}$/');
+const SPECIES = str(6, '/^(plant|chick|cat|dog|owl|gecko|whale|doodle|goat)$/');
+const PERSON = { '.validate': "newData.hasChildren(['code', 'name', 'at'])", code: CODE, name: str(16), at: ts(), $other: NO };
+const PETCARD = {
+  '.validate': "newData.hasChildren(['species', 'stage', 'role', 'name'])",
+  species: SPECIES, stage: num(5), stars: num(999), role: str(10, '/^(tank|melee|ranger|assassin|support|magician|trickster)$/'), shiny: bool(), coat: num(7), name: str(16), $other: NO,
+};
+const MEMBER = "$cid.beginsWith(auth.uid + '_') || $cid.endsWith('_' + auth.uid)";
 const msgFields = {
   type: str(10, '/^(message|xp|level|reward|pet|boss|ask|hint|game)$/'), amount: { '.validate': 'newData.isNumber() && newData.val() >= -100000 && newData.val() <= 100000' },
   cat: str(6, '/^[a-z]{2,6}$/'), catLevel: num(100), level: str(2, '/^(A1|A2|B1|B2|C1|C2)$/'),
@@ -148,6 +156,78 @@ const rules = {
         '.validate': "newData.hasChildren(['uid', 'code', 'n', 'at']) && newData.child('code').val() == $code",
         uid: str(128), code: str(8, '/^DL-[A-Z0-9]{5}$/'), n: num(), name: str(16), species: str(6, '/^(plant|chick|cat|dog|owl|gecko|whale|doodle|goat)$/'),
         stage: num(5), shiny: bool(), coat: num(7), at: ts(), $other: NO,
+      },
+    },
+    // Sosyal: oyuncu dizini (kod → uid), arkadaşlık istekleri, arkadaş listeleri, engellemeler, sohbetler ve pet takası.
+    // Mesaj yazabilmek için alıcının arkadaş listesinde olmak ve engellenmemiş olmak gerekir. Sohbeti yalnızca iki taraf okur;
+    // yönetici moderasyon için okuyabilir (uygulamada açıkça yazar). Dosya, ses, görüntü yok: yalnızca kısa metin ve takas kartı.
+    soc: {
+      '.read': ADMIN,
+      dir: {
+        '.read': 'auth != null',
+        $code: {
+          '.write': "auth != null && $code.matches(/^DL-[A-Z0-9]{5}$/) && (!data.exists() || data.child('uid').val() == auth.uid) && (!newData.exists() || newData.child('uid').val() == auth.uid)",
+          '.validate': "newData.hasChildren(['uid', 'code', 'name', 'at']) && newData.child('code').val() == $code",
+          uid: str(128), code: CODE, name: str(16), species: SPECIES, stage: num(5), coat: num(7), shiny: bool(), at: ts(), $other: NO,
+        },
+      },
+      req: {
+        $to: {
+          '.read': 'auth != null && auth.uid == $to',
+          $from: {
+            '.read': 'auth != null && auth.uid == $from',
+            '.write': "auth != null && ((auth.uid == $from && $from != $to && (!newData.exists() || !root.child('soc/blk/' + $to + '/' + $from).exists())) || (auth.uid == $to && !newData.exists()))",
+            ...PERSON,
+          },
+        },
+      },
+      acc: {
+        $to: {
+          '.read': 'auth != null && auth.uid == $to',
+          $from: {
+            '.write': "auth != null && ((auth.uid == $from && (!newData.exists() || root.child('soc/fr/' + $from + '/' + $to).exists())) || (auth.uid == $to && !newData.exists()))",
+            ...PERSON,
+          },
+        },
+      },
+      fr: { $uid: { '.read': OWN, '.write': OWN, $fid: PERSON } },
+      blk: { $uid: { '.read': OWN, '.write': OWN, $bid: bool() } },
+      ping: {
+        $to: {
+          '.read': 'auth != null && auth.uid == $to',
+          $from: {
+            '.write': "auth != null && ((auth.uid == $from && root.child('soc/fr/' + $to + '/' + $from).exists() && !root.child('soc/blk/' + $to + '/' + $from).exists()) || auth.uid == $to)",
+            '.validate': 'newData.isNumber() && newData.val() <= now + 300000',
+          },
+        },
+      },
+      ch: {
+        $cid: {
+          '.read': `auth != null && (${MEMBER})`,
+          m: {
+            $id: {
+              '.write': `auth != null && !data.exists() && newData.child('f').val() == auth.uid && ($cid == auth.uid + '_' + newData.child('to').val() || $cid == newData.child('to').val() + '_' + auth.uid) && root.child('soc/fr/' + newData.child('to').val() + '/' + auth.uid).exists() && !root.child('soc/blk/' + newData.child('to').val() + '/' + auth.uid).exists()`,
+              '.validate': "newData.hasChildren(['f', 'to', 'k', 'at']) && (newData.child('k').val() != 'msg' || newData.hasChild('t')) && (newData.child('k').val() != 'trade' || newData.hasChild('pet'))",
+              f: str(128), to: str(128), k: str(5, '/^(msg|trade)$/'), t: { '.validate': 'newData.isString() && newData.val().length >= 1 && newData.val().length <= 500' }, at: ts(), pet: PETCARD, $other: NO,
+            },
+          },
+          x: {
+            $id: {
+              '.write': `auth != null && !data.exists() && (${MEMBER}) && newData.child('by').val() == auth.uid && root.child('soc/ch/' + $cid + '/m/' + $id + '/k').val() == 'trade' && ((newData.child('ok').val() == true && newData.hasChild('pet') && root.child('soc/ch/' + $cid + '/m/' + $id + '/f').val() != auth.uid) || newData.child('ok').val() == false)`,
+              '.validate': "newData.hasChildren(['by', 'ok', 'at'])",
+              by: str(128), ok: bool(), at: ts(), pet: PETCARD, $other: NO,
+            },
+          },
+          r: { $uid: { '.write': `${OWN} && (${MEMBER})`, '.validate': 'newData.isNumber() && newData.val() <= now + 300000' } },
+          $other: NO,
+        },
+      },
+      rep: {
+        $id: {
+          '.write': "auth != null && !data.exists() && newData.child('from').val() == auth.uid",
+          '.validate': "newData.hasChildren(['from', 'at'])",
+          from: str(128), about: str(8), cid: str(260), text: str(600), at: ts(), $other: NO,
+        },
       },
     },
     admin: { '.read': ADMIN, '.write': ADMIN, labels: { $uid: str(60) }, tags: { $uid: { $t: { '.validate': "$t.matches(/^t[0-7]$/) && newData.isString() && newData.val().length >= 1 && newData.val().length <= 24" } } } },

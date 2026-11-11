@@ -85,5 +85,48 @@ t('admin sends pet say', true, db.as(admin).write('/users/u1/inbox/p4', { type: 
 t('admin pet bad action', false, db.as(admin).write('/users/u1/inbox/p5', { type: 'pet', action: 'explode', at: NOW }));
 t('admin pet hp over 100', false, db.as(admin).write('/users/u1/inbox/p6', { type: 'pet', action: 'set', hp: 500, at: NOW }));
 t('admin pet stage over 5', false, db.as(admin).write('/users/u1/inbox/p7', { type: 'pet', action: 'stage', stage: 9, at: NOW }));
+// sosyal
+{
+  const P = (code, name) => ({ code, name, at: NOW });
+  const pc = { species: 'cat', stage: 2, stars: 1, role: 'tank', shiny: false, coat: 1, name: 'Mırnav' };
+  const base = { ...data, soc: { fr: { u2: { u1: P('DL-ABCDE', 'A') }, u1: { u2: P('DL-ZZZZZ', 'B') } }, blk: { u3: { u1: true } }, ch: { u1_u2: { m: { t1: { f: 'u2', to: 'u1', k: 'trade', pet: pc, at: NOW } } } } } };
+  const d = targaryen.database(rules, base, NOW).with({ debug: false });
+  const msg = (f, to, extra = {}) => ({ f, to, k: 'msg', t: 'selam', at: NOW, ...extra });
+  t('soc dir own', true, d.as(anon('u1')).write('/soc/dir/DL-ABCDE', { uid: 'u1', code: 'DL-ABCDE', name: 'Mırnav', species: 'cat', stage: 1, at: NOW }));
+  t('soc dir other uid', false, d.as(anon('u1')).write('/soc/dir/DL-ABCDE', { uid: 'u2', code: 'DL-ABCDE', name: 'x', at: NOW }));
+  t('soc dir read', true, d.as(anon('u3')).read('/soc/dir'));
+  t('soc request send', true, d.as(anon('u1')).write('/soc/req/u4/u1', P('DL-ABCDE', 'A')));
+  t('soc request as someone else', false, d.as(anon('u1')).write('/soc/req/u4/u2', P('DL-ZZZZZ', 'B')));
+  t('soc request to self', false, d.as(anon('u1')).write('/soc/req/u1/u1', P('DL-ABCDE', 'A')));
+  t('soc request when blocked', false, d.as(anon('u1')).write('/soc/req/u3/u1', P('DL-ABCDE', 'A')));
+  t('soc read own requests', true, d.as(anon('u4')).read('/soc/req/u4'));
+  t('soc read others requests', false, d.as(anon('u1')).read('/soc/req/u4'));
+  t('soc accept notice without friending', false, d.as(anon('u4')).write('/soc/acc/u1/u4', P('DL-QQQQQ', 'C')));
+  t('soc accept notice after friending', true, d.as(anon('u2')).write('/soc/acc/u1/u2', P('DL-ZZZZZ', 'B')));
+  t('soc own friend list', true, d.as(anon('u1')).write('/soc/fr/u1/u9', P('DL-NNNNN', 'N')));
+  t('soc others friend list', false, d.as(anon('u1')).write('/soc/fr/u2/u9', P('DL-NNNNN', 'N')));
+  t('soc message to friend', true, d.as(anon('u1')).write('/soc/ch/u1_u2/m/a1', msg('u1', 'u2')));
+  t('soc message not friend', false, d.as(anon('u1')).write('/soc/ch/u1_u4/m/a1', msg('u1', 'u4')));
+  t('soc message spoof sender', false, d.as(anon('u1')).write('/soc/ch/u1_u2/m/a2', msg('u2', 'u1')));
+  t('soc message wrong chat id', false, d.as(anon('u1')).write('/soc/ch/u1_u9/m/a3', msg('u1', 'u2')));
+  t('soc message too long', false, d.as(anon('u1')).write('/soc/ch/u1_u2/m/a4', msg('u1', 'u2', { t: 'x'.repeat(501) })));
+  t('soc message file field', false, d.as(anon('u1')).write('/soc/ch/u1_u2/m/a5', msg('u1', 'u2', { file: 'https://x' })));
+  t('soc edit existing message', false, d.as(anon('u2')).write('/soc/ch/u1_u2/m/t1', msg('u2', 'u1')));
+  t('soc trade offer', true, d.as(anon('u1')).write('/soc/ch/u1_u2/m/a6', { f: 'u1', to: 'u2', k: 'trade', pet: pc, at: NOW }));
+  t('soc trade bad pet', false, d.as(anon('u1')).write('/soc/ch/u1_u2/m/a7', { f: 'u1', to: 'u2', k: 'trade', pet: { ...pc, stage: 9 }, at: NOW }));
+  t('soc read own chat', true, d.as(anon('u1')).read('/soc/ch/u1_u2'));
+  t('soc read others chat', false, d.as(anon('u3')).read('/soc/ch/u1_u2'));
+  t('soc accept trade (receiver)', true, d.as(anon('u1')).write('/soc/ch/u1_u2/x/t1', { by: 'u1', ok: true, pet: pc, at: NOW }));
+  t('soc accept own trade', false, d.as(anon('u2')).write('/soc/ch/u1_u2/x/t1', { by: 'u2', ok: true, pet: pc, at: NOW }));
+  t('soc cancel own trade', true, d.as(anon('u2')).write('/soc/ch/u1_u2/x/t1', { by: 'u2', ok: false, at: NOW }));
+  t('soc outsider trade', false, d.as(anon('u3')).write('/soc/ch/u1_u2/x/t1', { by: 'u3', ok: false, at: NOW }));
+  t('soc ping friend', true, d.as(anon('u1')).write('/soc/ping/u2/u1', NOW));
+  t('soc ping blocked/stranger', false, d.as(anon('u1')).write('/soc/ping/u3/u1', NOW));
+  t('soc read receipt', true, d.as(anon('u1')).write('/soc/ch/u1_u2/r/u1', NOW));
+  t('soc read receipt for other', false, d.as(anon('u1')).write('/soc/ch/u1_u2/r/u2', NOW));
+  t('soc report', true, d.as(anon('u1')).write('/soc/rep/r1', { from: 'u1', about: 'DL-ZZZZZ', cid: 'u1_u2', text: 'kötü söz', at: NOW }));
+  t('soc read reports anon', false, d.as(anon('u1')).read('/soc/rep'));
+  t('soc admin reads chats', true, d.as(admin).read('/soc/ch'));
+}
 console.log(`\n${pass} geçti, ${fail} başarısız`);
 process.exit(fail ? 1 : 0);

@@ -1633,7 +1633,29 @@ export function initPet(core, quiz) {
     return out;
   }
 
+  // ---------- takas: petin taşınabilir kartı ve gelen petle değiştirme ----------
+  function tradeCard() {
+    const p = P(); if (!p || !p.alive) return null;
+    const o = { species: p.species, name: String(p.name || '').slice(0, 16), stage: p.stage | 0, stars: Math.min(999, p.stars | 0), role: ROLES[p.role] ? p.role : 'melee', shiny: !!p.shiny };
+    if (Number.isInteger(p.coat)) o.coat = p.coat;
+    return o;
+  }
+  function tradeIn(card, fromName = '') {
+    if (!card || !Object.prototype.hasOwnProperty.call(PET_SPECS, card.species)) return false;
+    const app = A(), now = Date.now(), old = P();
+    if (old) app.petMemorial = [...(app.petMemorial || []), { name: old.name, species: old.species, stage: old.stage, stars: old.stars, at: now, traded: String(fromName || '').slice(0, 24) }].slice(-12);
+    const p = { v: 1, species: card.species, name: String(card.name || PET_SPECS[card.species].name).slice(0, 16), stage: clamp(card.stage | 0, 0, 5), stars: clamp(card.stars | 0, 0, 999),
+      hp: 0, food: 0, energy: 0, stuffed: 0, alive: true, born: now, lastTick: now, lastSeen: now, flow: false, flowCount: 0, answers: 0, correct: 0, streak: 0, roam: true, notify: true,
+      role: ROLES[card.role] ? card.role : randomRole(), shiny: card.shiny === true, lore: [], tradedFrom: String(fromName || '').slice(0, 24) };
+    if (QUAD.includes(p.species)) p.coat = Number.isInteger(card.coat) && card.coat >= 0 && card.coat < 8 ? card.coat : randomCoat();
+    app.pet = p; const mx = maxes(p); p.hp = mx.hp; p.food = Math.round(mx.food * 0.8); p.energy = mx.energy;
+    deathPending = false; deathEl.classList.remove('show'); evoQueue.length = 0;
+    save(true); mode = 'home'; artKey = ''; renderPanel();
+    setTimeout(() => { react('happy', 1500, 'joy', 'love'); spawn('♥', 'heart', 3); sayNow(`Merhaba! Ben ${p.name}. Yeni evim burası mı?`, 4200); }, 600);
+    return true;
+  }
   return {
+    tradeCard, tradeIn,
     ensure, reload, setEnabled, openCodex, battle, bossPrompt, enabled: () => !off(), render: renderPanel, openChooser, openInfo, xpMod, snapshot, admin,
     onPause() { const p = P(); if (p) { tick(); p.lastSeen = Date.now(); save(); schedule(); } },
     onResume() { if (notifyAvailable()) cancelNotes(); tick(); greetIfAway(); renderPanel(); if (!notifyAvailable()) schedule(); },

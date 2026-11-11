@@ -181,5 +181,107 @@ export function initCloud(core) {
     const out = []; snap?.forEach(c => { const v = c.val(); if (v && v.code !== state.shortId) out.push(v); });
     return out;
   };
+  // ---------- Sosyal: arkadaşlık, engelleme, mesajlaşma, pet takası ----------
+  // Arkadaşlık iki yönlüdür: A istek gönderir (soc/req/B/A), B kabul edince kendi listesine A'yı ekler ve A'ya haber bırakır
+  // (soc/acc/A/B); A'nın uygulaması bunu görünce B'yi kendi listesine ekler. Mesaj yazmak için karşı tarafın listesinde olmak
+  // ve engellenmemiş olmak gerekir (kurallar denetler). Sohbet kimliği iki uid'in sıralı birleşimidir.
+  const soc = {};
+  const R = p => F.ref(state.db, 'soc/' + p);
+  const cidOf = other => [state.uid, other].sort().join('_');
+  const ok = () => !!(F && state.uid && state.db);
+  soc.me = () => ({ uid: state.uid, code: state.shortId });
+  soc.ready = ok;
+  soc.cid = cidOf;
+  soc.dirSet = card => {
+    if (!ok() || !okCode(state.shortId)) return Promise.resolve(false);
+    const v = { uid: state.uid, code: state.shortId, name: String(card?.name || 'Oyuncu').slice(0, 16), at: F.serverTimestamp() };
+    if (card?.species) { v.species = card.species; v.stage = card.stage | 0; v.shiny = !!card.shiny; if (Number.isInteger(card.coat)) v.coat = card.coat; }
+    return F.set(R('dir/' + state.shortId), v).then(() => true).catch(() => false);
+  };
+  soc.lookup = async code => {
+    code = String(code || '').trim().toUpperCase();
+    if (!ok() || !okCode(code)) return null;
+    const snap = await F.get(R('dir/' + code)).catch(() => null);
+    return snap && snap.exists() ? snap.val() : null;
+  };
+  const meCard = name => ({ code: state.shortId, name: String(name || 'Oyuncu').slice(0, 16), at: F.serverTimestamp() });
+  soc.request = (to, myName) => ok() && to !== state.uid ? F.set(R(`req/${to}/${state.uid}`), meCard(myName)).then(() => true).catch(() => false) : Promise.resolve(false);
+  soc.cancelRequest = to => ok() ? F.remove(R(`req/${to}/${state.uid}`)).catch(() => {}) : null;
+  soc.onRequests = cb => { if (!ok()) return () => {}; return F.onValue(R('req/' + state.uid), s => cb(s.val() || {}), () => cb({})); };
+  soc.accept = async (from, info, myName) => {
+    if (!ok()) return false;
+    try {
+      await F.set(R(`fr/${state.uid}/${from}`), { code: info.code, name: String(info.name || 'Oyuncu').slice(0, 16), at: F.serverTimestamp() });
+      await F.set(R(`acc/${from}/${state.uid}`), meCard(myName));
+      await F.remove(R(`req/${state.uid}/${from}`));
+      return true;
+    } catch (e) { console.warn('[soc]', e); return false; }
+  };
+  soc.decline = from => ok() ? F.remove(R(`req/${state.uid}/${from}`)).catch(() => {}) : null;
+  // kabul haberleri: karşı taraf kabul ettiyse kendi listeme eklerim
+  soc.onAccepts = cb => {
+    if (!ok()) return () => {};
+    return F.onValue(R('acc/' + state.uid), async s => {
+      const v = s.val() || {};
+      for (const [uid, info] of Object.entries(v)) {
+        await F.set(R(`fr/${state.uid}/${uid}`), { code: info.code, name: String(info.name || 'Oyuncu').slice(0, 16), at: F.serverTimestamp() }).catch(() => {});
+        await F.remove(R(`acc/${state.uid}/${uid}`)).catch(() => {});
+        cb?.(uid, info);
+      }
+    });
+  };
+  soc.onFriends = cb => { if (!ok()) return () => {}; return F.onValue(R('fr/' + state.uid), s => cb(s.val() || {}), () => cb({})); };
+  soc.rename = (uid, info) => ok() ? F.update(R(`fr/${state.uid}/${uid}`), { name: String(info.name || 'Oyuncu').slice(0, 16) }).catch(() => {}) : null;
+  soc.unfriend = uid => ok() ? F.remove(R(`fr/${state.uid}/${uid}`)).catch(() => {}) : null;
+  soc.block = async uid => {
+    if (!ok()) return;
+    await F.set(R(`blk/${state.uid}/${uid}`), true).catch(() => {});
+    await F.remove(R(`fr/${state.uid}/${uid}`)).catch(() => {});
+    await F.remove(R(`req/${state.uid}/${uid}`)).catch(() => {});
+  };
+  soc.unblock = uid => ok() ? F.remove(R(`blk/${state.uid}/${uid}`)).catch(() => {}) : null;
+  soc.onBlocks = cb => { if (!ok()) return () => {}; return F.onValue(R('blk/' + state.uid), s => cb(s.val() || {}), () => cb({})); };
+  // mesaj gönder (k: 'msg' | 'trade'); alıcıya küçük bir "yeni mesaj" işareti bırakılır
+  soc.send = async (to, m) => {
+    if (!ok()) return null;
+    const v = { f: state.uid, to, k: m.k || 'msg', at: F.serverTimestamp() };
+    if (m.t) v.t = String(m.t).slice(0, 500);
+    if (m.pet) v.pet = m.pet;
+    try {
+      const r = F.push(R(`ch/${cidOf(to)}/m`));
+      await F.set(r, v);
+      F.set(R(`ping/${to}/${state.uid}`), F.serverTimestamp()).catch(() => {});
+      return r.key;
+    } catch (e) { console.warn('[soc]', e); return null; }
+  };
+  // açık sohbet: son 60 mesaj + takas sonuçları + karşı tarafın okuma zamanı
+  soc.openChat = (other, { onMsg, onTrade, onRead }) => {
+    if (!ok()) return () => {};
+    const cid = cidOf(other);
+    const offs = [
+      F.onChildAdded(F.query(R(`ch/${cid}/m`), F.limitToLast(60)), s => onMsg({ id: s.key, ...s.val() })),
+      F.onValue(R(`ch/${cid}/x`), s => onTrade(s.val() || {})),
+      F.onValue(R(`ch/${cid}/r/${other}`), s => onRead(s.val() || 0)),
+    ];
+    return () => offs.forEach(o => o());
+  };
+  soc.markRead = other => ok() ? F.set(R(`ch/${cidOf(other)}/r/${state.uid}`), F.serverTimestamp()).catch(() => {}) : null;
+  soc.lastMsg = async other => {
+    if (!ok()) return null;
+    const s = await F.get(F.query(R(`ch/${cidOf(other)}/m`), F.limitToLast(1))).catch(() => null);
+    let out = null; s?.forEach(c => { out = { id: c.key, ...c.val() }; }); return out;
+  };
+  soc.readAt = async other => { if (!ok()) return 0; const s = await F.get(R(`ch/${cidOf(other)}/r/${state.uid}`)).catch(() => null); return (s && s.val()) || 0; };
+  soc.trade = async (other, id, accept, pet) => {
+    if (!ok()) return false;
+    const v = { by: state.uid, ok: !!accept, at: F.serverTimestamp() }; if (accept && pet) v.pet = pet;
+    try { await F.set(R(`ch/${cidOf(other)}/x/${id}`), v); F.set(R(`ping/${other}/${state.uid}`), F.serverTimestamp()).catch(() => {}); return true; } catch (e) { console.warn('[soc]', e); return false; }
+  };
+  soc.tradeResult = async (other, id) => { if (!ok()) return null; const s = await F.get(R(`ch/${cidOf(other)}/x/${id}`)).catch(() => null); return s && s.exists() ? s.val() : null; };
+  // tek dinleyici: kimden yeni mesaj geldi (uygulama genelinde rozet ve bildirim için)
+  soc.onPings = cb => { if (!ok()) return () => {}; return F.onValue(R('ping/' + state.uid), s => cb(s.val() || {})); };
+  soc.report = (aboutCode, other, text) => ok() ? F.set(F.push(R('rep')), { from: state.uid, about: String(aboutCode || '').slice(0, 8), cid: other ? cidOf(other) : '', text: String(text || '').slice(0, 600), at: F.serverTimestamp() }).then(() => true).catch(() => false) : Promise.resolve(false);
+  api.soc = soc;
+
   return api;
 }
