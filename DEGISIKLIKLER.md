@@ -1,3 +1,10 @@
+# dam-la 2.13.1 — Sınıf kodu düzeltmesi
+
+Uzaktan güncellemeyle gelir.
+- İngilizce Hazırlık'ta sınıf kodu kutusu artık hemen görünüyor; bağlantı yavaşken de kod girilebiliyor.
+- Bağlantı kurulamazsa sonsuza kadar beklemek yerine uyarı ve "Tekrar dene" düğmesi çıkıyor.
+
+---
 # dam-la 2.13.0 — Kategoriler ve ders çalışma modu
 
 Uzaktan güncellemeyle gelir.
