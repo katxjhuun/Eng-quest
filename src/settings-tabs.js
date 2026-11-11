@@ -5,7 +5,7 @@ const TABS = [
   { id: 'ses', icon: '🔊', label: 'Ses', match: ['Seslendirme', 'Müzik', 'Bildirimler'] },
   { id: 'pet', icon: '🐾', label: 'Pet', match: ['Petin'] },
   { id: 'mesaj', icon: '✉️', label: 'Mesajlar', match: ['Mesajlar'] },
-  { id: 'hesap', icon: '🗂️', label: 'Hesap', match: ['Kimliğin', 'İlerleme yedeği', 'güncellemeler', 'Veri'] },
+  { id: 'hesap', icon: '🗂️', label: 'Hesap', match: ['Kimliğin', 'İlerleme yedeği', 'güncellemeler', 'Duyuru şeridi', 'Veri'] },
 ];
 
 export function initSettingsTabs() {

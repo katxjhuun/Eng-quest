@@ -4,6 +4,7 @@
 // · Arkada çözülen soru sıralaması tutulur; şeritte yalnızca kendi petin ve sıran yazar (ayrı bir liste ekranı yok).
 import { petSVG, stageName, PET_SPECIES } from './pet-art.js';
 import { goldenNow, goldenNext } from './golden-time.js';
+import { npcFeed } from './npc.js';
 
 // oyuncular hesap koduyla değil petlerinin adıyla anılır (pet yoksa “Bir oyuncu”)
 const who = e => (e.name && String(e.name).trim()) || 'Bir oyuncu';
@@ -45,7 +46,10 @@ export function initTicker(core) {
     const p = core.app.pet;
     if (p && !core.app.profile?.petOff) out.push({ cls: 'me', html: `🐾 Senin <b>${esc(p.name)}</b>${rank ? ` · çözülen soruda <b>${rank}. sırada</b>` : ''}` });
     // son 3 günün başarıları; zor olanlar önce ve iki kez
-    const recent = feed.filter(e => KIND[e.kind] && now - (e.at || 0) < 3 * 864e5).sort((a, b) => (b.tier - a.tier) || (b.at - a.at)).slice(0, 18);
+    // gerçek duyurular önce; ardından son sanal duyurular (en yenileri)
+    const real = feed.filter(e => KIND[e.kind] && now - (e.at || 0) < 3 * 864e5).sort((a, b) => (b.tier - a.tier) || (b.at - a.at)).slice(0, 12);
+    const npc = npcFeed(now, 2).sort((a, b) => b.at - a.at).slice(0, 14);
+    const recent = [...real, ...npc];
     for (const e of recent) {
       const k = KIND[e.kind], tier = e.tier || k.tier;
       const it = { cls: `t${tier}${e.code === myCode() ? ' mine' : ''}`, html: `${k.icon} ${esc(k.text(e))}`, id: e.id, click: !!(e.species && PET_SPECIES[e.species]) };
@@ -72,13 +76,13 @@ export function initTicker(core) {
     bar.appendChild(f); setTimeout(() => f.remove(), 6000);
   }
   function openPop(id) {
-    const e = feed.find(x => x.id === id); if (!e || !e.species || !PET_SPECIES[e.species]) return;
+    const e = feed.find(x => x.id === id) || npcFeed(Date.now(), 2).find(x => x.id === id); if (!e || !e.species || !PET_SPECIES[e.species]) return;
     const k = KIND[e.kind] || {};
     pop.innerHTML = `<div class="tick-card${e.shiny ? ' shiny' : ''}"><button class="closebtn" id="tickClose" aria-label="Kapat">×</button>
       <div class="tick-art">${petSVG(e.species, Math.min(5, e.stage | 0), { coat: e.coat | 0, shiny: !!e.shiny, mood: 'happy' })}</div>
       <div class="eyebrow">${esc(k.icon || '')} ${esc((KIND[e.kind] && { shiny: 'NADİR FORM', maxevo: 'SON FORM', maxlevel: 'EN YÜKSEK SEVİYE', level: 'SEVİYE ATLADI', boss: 'BOSS ZAFERİ', stars: 'YILDIZ' }[e.kind]) || '')}</div><h3>${esc(who(e))}</h3>
       <p>${esc(PET_SPECIES[e.species].label)} · ${esc(stageName(e.species, Math.min(5, e.stage | 0)))}${e.shiny ? ' · <b class="evo-shiny">✨ Nadir form</b>' : ''}</p>
-      <p class="tick-when">${k.icon || ''} ${new Date(e.at || Date.now()).toLocaleString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</p></div>`;
+      <p class="tick-when">${k.icon || ''} ${new Date(e.at || Date.now()).toLocaleString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</p>${e.npc ? '<p class="tick-npc">dam-la dünyasından</p>' : ''}</div>`;
     pop.classList.add('show');
   }
   bar.addEventListener('click', ev => { const t = ev.target.closest('[data-id]'); if (t) openPop(t.dataset.id); });
