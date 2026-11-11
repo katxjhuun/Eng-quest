@@ -218,3 +218,37 @@ body.golden .xp-fly.pos{color:#c98a12;text-shadow:0 0 10px #ffd75e}
 body.gold-burst::after{content:"✨ ALTIN SAAT ✨";position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);z-index:120;font-size:30px;font-weight:950;letter-spacing:.1em;color:#ffd75e;-webkit-text-stroke:1.5px #7a4a00;text-shadow:0 0 30px #ffd75e;white-space:nowrap;pointer-events:none;animation:goldBurst 2.5s cubic-bezier(.2,1.4,.4,1) forwards}
 @keyframes goldBurst{0%{transform:translate(-50%,-50%) scale(.2) rotate(-10deg);opacity:0}20%{transform:translate(-50%,-50%) scale(1.15);opacity:1}80%{opacity:1}100%{transform:translate(-50%,-80%) scale(1);opacity:0}}
 @media(prefers-reduced-motion:reduce){.gold-glitter{display:none!important}.gold-bar{animation:none}}
+
+/* ===== Duyuru şeridi ===== */
+.tick-bar{position:sticky;top:0;z-index:32;margin:0 -18px;display:flex;align-items:stretch;height:calc(34px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top);background:#211b2c;color:#f4f0ff;box-shadow:0 2px 10px #0003;overflow:hidden}
+.tick-me{flex:0 0 auto;display:flex;align-items:center;gap:5px;padding:0 9px 0 10px;background:linear-gradient(90deg,#4f3bd4,#6b55e6);position:relative;z-index:2;box-shadow:6px 0 10px #211b2c}
+.tick-pet{width:26px;height:26px;display:grid;place-items:center}.tick-pet svg{width:28px;height:28px}
+.tick-rank{display:flex;flex-direction:column;line-height:1.05}.tick-rank b{font-size:13px}.tick-rank small{font-size:9px;opacity:.85;font-weight:800}
+.tick-view{flex:1;min-width:0;overflow:hidden;display:flex;align-items:center;-webkit-mask:linear-gradient(90deg,transparent,#000 14px,#000 calc(100% - 20px),transparent);mask:linear-gradient(90deg,transparent,#000 14px,#000 calc(100% - 20px),transparent)}
+.tick-track{display:flex;align-items:center;gap:0;white-space:nowrap;animation:tickRun var(--dur,40s) linear infinite;will-change:transform}
+.tick-bar:hover .tick-track{animation-play-state:paused}
+@keyframes tickRun{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.tick-it{font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px}
+.tick-it b{font-weight:900}
+.tick-it.soft{opacity:.75}
+.tick-it.me{color:#cfc4ff}
+.tick-it.t2{color:#ffd9a0}
+.tick-it.t3{font-size:13px;font-weight:900;color:#3a2400;background:linear-gradient(90deg,#c98a12,#ffd75e,#fff3c4,#ffd75e,#c98a12);background-size:200% 100%;animation:goldShine 3s linear infinite;box-shadow:0 0 10px #ffd75e88}
+.tick-it.gold{color:#ffd75e;font-weight:900}
+.tick-it.mine{outline:1.5px solid #8bc77e}
+.tick-it.click{cursor:pointer;text-decoration:underline dotted 1px;text-underline-offset:3px}
+.tick-sep{opacity:.35;margin:0 4px}
+.tick-flash{position:absolute;inset:env(safe-area-inset-top) 0 0 0;z-index:3;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(90deg,#7a4a00,#ffd75e,#fff6d0,#ffd75e,#7a4a00);background-size:200% 100%;color:#3a2400;font-size:13px;animation:tickFlash 6s ease forwards,goldShine 2s linear infinite;cursor:pointer}
+.tick-flash span{font-size:18px;animation:goldSpin 1.2s ease-in-out infinite}
+@keyframes tickFlash{0%{transform:translateY(-100%)}8%,88%{transform:none}100%{transform:translateY(-100%)}}
+.tick-pop{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;background:#21182c88;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);padding:20px}
+.tick-pop.show{display:flex}
+.tick-card{position:relative;width:min(320px,100%);background:#fffdf9;color:#201d23;border-radius:24px;padding:20px;text-align:center;box-shadow:0 24px 50px #0004;animation:gmPop .45s cubic-bezier(.3,1.5,.5,1)}
+.tick-card.shiny{background:radial-gradient(circle at 50% 30%,#fff6d0,#fffdf9 60%);box-shadow:0 0 0 3px #f2cf72,0 24px 50px #0004}
+.tick-card .closebtn{position:absolute;top:10px;right:10px}
+.tick-art svg{width:150px;height:150px}
+.tick-card h3{margin:2px 0 4px;font-size:21px}.tick-card p{font-size:13px;color:#5a5260;margin:0 0 4px}.tick-when{font-size:11.5px!important;color:#8a8076!important}
+@keyframes gmPop{from{transform:scale(.6) translateY(20px);opacity:0}}
+@media(prefers-reduced-motion:reduce){.tick-track{animation-duration:120s}}
+body.has-ticker .topbar{padding-top:0}
+@media(max-width:400px){.tick-bar,.gold-bar{margin-left:-12px;margin-right:-12px}}

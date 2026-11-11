@@ -116,6 +116,38 @@ export function initCloud(core) {
     const list = {}; (notes || []).slice(0, 6).forEach((n, i) => { list['n' + i] = { at: Math.round(n.at), title: String(n.title).slice(0, 80), body: String(n.body).slice(0, 200) }; });
     return F.set(r, { sub: clean, notes: list, loud: !!prefs.loud, golden: prefs.golden !== false, upd: prefs.upd !== false, updatedAt: F.serverTimestamp() }).then(() => true).catch(e => { console.warn('[push]', e); return false; });
   };
+  // ---- duyuru şeridi: herkese açık başarı akışı ve çözülen soru sıralaması ----
+  api.feedPost = e => {
+    if (!state.uid || !state.db || !okCode(state.shortId)) return Promise.resolve(false);
+    const r = F.push(F.ref(state.db, 'feed'));
+    const clean = { uid: state.uid, code: state.shortId, kind: String(e.kind), tier: Math.max(1, Math.min(3, e.tier | 0)), at: F.serverTimestamp() };
+    for (const k of ['name', 'species', 'level']) if (e[k] != null) clean[k] = String(e[k]).slice(0, k === 'level' ? 12 : 16);
+    for (const k of ['stage', 'coat', 'stars']) if (e[k] != null) clean[k] = Math.max(0, e[k] | 0);
+    if (e.shiny != null) clean.shiny = !!e.shiny;
+    return F.set(r, clean).then(() => true).catch(err => { console.warn('[feed]', err); return false; });
+  };
+  let feedOff = null;
+  api.feedListen = (cb, n = 30) => {
+    feedOff?.(); feedOff = null;
+    if (!state.db) return () => {};
+    feedOff = F.onValue(F.query(F.ref(state.db, 'feed'), F.orderByChild('at'), F.limitToLast(n)), snap => {
+      const out = []; snap.forEach(c => { const v = c.val(); if (v && typeof v === 'object') out.push({ ...v, id: c.key }); }); cb(out);
+    }, () => cb([]));
+    return () => { feedOff?.(); feedOff = null; };
+  };
+  let lastBoard = '';
+  api.boardSet = b => {
+    if (!state.uid || !state.db || !okCode(state.shortId)) return Promise.resolve(false);
+    const v = { uid: state.uid, code: state.shortId, n: Math.max(0, b.n | 0), name: String(b.name || '').slice(0, 16), species: b.species || null, stage: b.stage | 0, shiny: !!b.shiny, coat: b.coat | 0 };
+    const key = JSON.stringify(v); if (key === lastBoard) return Promise.resolve(true); lastBoard = key;
+    return F.set(F.ref(state.db, `board/${state.shortId}`), { ...v, at: F.serverTimestamp() }).then(() => true).catch(() => { lastBoard = ''; return false; });
+  };
+  // sıralama: benden çok soru çözenlerin sayısı + 1
+  api.boardRank = async n => {
+    if (!state.db) return null;
+    const snap = await F.get(F.query(F.ref(state.db, 'board'), F.orderByChild('n'), F.startAt((n | 0) + 1))).catch(() => null);
+    return snap ? snap.size + 1 : null;
+  };
   api.arenaGet = async code => {
     code = String(code || '').trim().toUpperCase();
     if (!okCode(code) || !state.db) return null;

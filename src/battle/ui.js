@@ -200,7 +200,7 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
     const team = [petDef(), ...allyDefs()];
     const res = await fight(team, foes, { title: M.name, eye: 'BOSS · EVRİM KAPISI', canFlee: false, intro: M.desc });
     const s = state();
-    if (res.winner === 'A') { s.bossWins++; s.wins++; } else s.losses++;
+    if (res.winner === 'A') { s.bossWins++; s.wins++; const pp = getPet(); try { core.feed?.post({ kind: 'boss', tier: 2, name: pp?.name, species: pp?.species, stage: pp?.stage, coat: pp?.coat | 0, shiny: !!pp?.shiny }); } catch {} } else s.losses++;
     core.saveLocal(true);
     return res.winner === 'A' ? 'win' : 'lose';
   }

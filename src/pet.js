@@ -1072,6 +1072,8 @@ export function initPet(core, quiz) {
   }
 
   // ---------- evrim gösterisi ----------
+  // duyuru şeridine başarı gönder
+  function feedPet(kind, tier, extra = {}) { const p = P(); if (!p) return; try { core.feed?.post({ kind, tier, name: p.name, species: p.species, stage: p.stage, coat: p.coat | 0, shiny: !!p.shiny, ...extra }); } catch {} }
   function runEvoQueue() {
     if (evolving || !evoQueue.length) return;
     if (deathPending) return;
@@ -1081,12 +1083,14 @@ export function initPet(core, quiz) {
     const oldEl = $('#evoOld'), newEl = $('#evoNew'), title = $('#evoTitle'), sub = $('#evoSub'), ok = $('#evoOk');
     evoEl.classList.remove('done', 'flashing', 'star', 'shiny'); ok.disabled = true;
     if (ev.type === 'star') {
+      if (ev.stars % 5 === 0) feedPet('stars', 2, { stars: ev.stars });
       evoEl.classList.add('star', 'done');
       oldEl.innerHTML = ''; newEl.innerHTML = petSVG(p.species, p.stage, { mood: 'happy', coat: p.coat, shiny: p.shiny });
       title.textContent = `⭐ ${p.name} bir yıldız kazandı!`;
       sub.textContent = `Son formuna ulaştı; her yeni seviye bir yıldız ekler. Toplam: ${ev.stars} ⭐`;
       evoEl.classList.add('show'); sparkBurst(); ok.disabled = false; return;
     }
+    if (ev.shiny) feedPet('shiny', 3); else if (ev.to === 5) feedPet('maxevo', 3);
     const fromName = stageName(p.species, ev.from), toName = stageName(p.species, ev.to);
     oldEl.innerHTML = petSVG(p.species, ev.from, { mood: 'surprised', coat: p.coat, shiny: p.shiny && !ev.shiny });
     newEl.innerHTML = petSVG(p.species, ev.to, { mood: 'happy', coat: p.coat, shiny: p.shiny });

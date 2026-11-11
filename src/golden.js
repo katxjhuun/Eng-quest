@@ -23,7 +23,9 @@ export function initGolden(core) {
   glitter.className = 'gold-glitter'; glitter.setAttribute('aria-hidden', 'true');
   glitter.innerHTML = Array.from({ length: 22 }, (_, i) => `<i style="--x:${(i * 37) % 100}%;--d:${(i * 0.73) % 6}s;--s:${0.6 + ((i * 7) % 5) / 5}"></i>`).join('');
   const anchor = document.querySelector('.shell') || document.body;
-  anchor.prepend(bar); document.body.appendChild(glitter);
+  // duyuru şeridinin hemen altına yerleşir
+  const tb = document.getElementById('tickBar'); if (tb) tb.after(bar); else anchor.prepend(bar);
+  document.body.appendChild(glitter);
 
   let was = null;
   function tick() {

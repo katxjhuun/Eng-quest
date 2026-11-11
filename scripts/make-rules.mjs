@@ -99,6 +99,27 @@ const rules = {
         loud: bool(), golden: bool(), upd: bool(), updatedAt: ts(), $other: NO,
       },
     },
+    // Duyuru şeridi: oyuncuların başarıları (nadir pet, seviye, son evrim). Herkes okur; yalnızca sahibi ekler, değiştiremez.
+    feed: {
+      '.read': 'auth != null', '.indexOn': ['at'], '.write': ADMIN,
+      $id: {
+        '.write': `auth != null && !data.exists() && newData.child('uid').val() == auth.uid`,
+        '.validate': "newData.hasChildren(['uid', 'code', 'kind', 'tier', 'at'])",
+        uid: str(128), code: str(8, '/^DL-[A-Z0-9]{5}$/'), kind: str(10, '/^(shiny|maxevo|level|maxlevel|boss|stars)$/'), tier: num(3), at: ts(),
+        name: str(16), species: str(6, '/^(plant|chick|cat|dog|owl|gecko|whale|doodle|goat)$/'), level: str(12), stage: num(5), coat: num(7), stars: num(9999), shiny: bool(),
+        $other: NO,
+      },
+    },
+    // Çözülen soru sıralaması (yalnızca şeritte kendi sıranı görürsün)
+    board: {
+      '.read': 'auth != null', '.indexOn': ['n'],
+      $code: {
+        '.write': "auth != null && $code.matches(/^DL-[A-Z0-9]{5}$/) && (!data.exists() || data.child('uid').val() == auth.uid) && (!newData.exists() || newData.child('uid').val() == auth.uid)",
+        '.validate': "newData.hasChildren(['uid', 'code', 'n', 'at']) && newData.child('code').val() == $code",
+        uid: str(128), code: str(8, '/^DL-[A-Z0-9]{5}$/'), n: num(), name: str(16), species: str(6, '/^(plant|chick|cat|dog|owl|gecko|whale|doodle|goat)$/'),
+        stage: num(5), shiny: bool(), coat: num(7), at: ts(), $other: NO,
+      },
+    },
     admin: { '.read': ADMIN, '.write': ADMIN, labels: { $uid: str(60) } },
     admins: { $uid: { '.read': 'auth != null && auth.uid == $uid', '.write': false } },
   },
