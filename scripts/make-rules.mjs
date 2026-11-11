@@ -230,6 +230,22 @@ const rules = {
         },
       },
     },
+    // İngilizce Hazırlık (Empower) soru bankası: yalnızca sınıf koduyla katılan öğrenciler okuyabilir.
+    // code: hiçbir istemci okuyamaz; katılma yazımı kurallarda bu değerle karşılaştırılır. bank/ver: yönetici yazar.
+    prep: {
+      code: { '.read': ADMIN, '.write': ADMIN, '.validate': 'newData.isString() && newData.val().length >= 6 && newData.val().length <= 32' },
+      ver: { '.read': 'auth != null', '.write': ADMIN, '.validate': 'newData.isNumber()' },
+      bank: { '.read': "auth != null && root.child('prep/members').child(auth.uid).exists()", '.write': ADMIN },
+      members: {
+        '.read': ADMIN, '.write': ADMIN,
+        $uid: {
+          '.read': OWN,
+          '.write': "auth != null && auth.uid == $uid && !data.exists() && newData.exists()",
+          '.validate': "newData.isString() && root.child('prep/code').exists() && newData.val() == root.child('prep/code').val()",
+        },
+      },
+      $other: NO,
+    },
     admin: { '.read': ADMIN, '.write': ADMIN, labels: { $uid: str(60) }, tags: { $uid: { $t: { '.validate': "$t.matches(/^t[0-7]$/) && newData.isString() && newData.val().length >= 1 && newData.val().length <= 24" } } } },
     admins: { $uid: { '.read': 'auth != null && auth.uid == $uid', '.write': false } },
   },

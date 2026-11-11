@@ -35,7 +35,10 @@ export function initInstall() {
     return `<h3>Android'e yükle</h3><ol><li><span class="inst-n">1</span>Tarayıcının <b>⋮</b> menüsüne dokun.</li><li><span class="inst-n">2</span><b>Uygulamayı yükle</b> ya da <b>Ana ekrana ekle</b>’yi seç.</li></ol><p>APK dosyasıyla kurmak istersen GitHub Releases sayfasındaki dosyayı da kullanabilirsin.</p>`;
   }
   // başka bir pencere (kurulum, pet seçimi, oyun, savaş) açıkken görünmez; kapanınca belirir
-  const busy = () => !!document.querySelector('.overlay.show,.pet-overlay.show,.gm-overlay.show,.bt-overlay.show,.inst-sheet.show');
+  // ders çalışma modunda ve ilk sorular çözülürken görünmez (soruyu kapatmasın): en az 8 cevaptan sonra
+  let answered = 0; try { answered = +localStorage.getItem('dl-inst-ans') || 0; } catch {}
+  window.addEventListener('dl:answer', () => { answered++; try { localStorage.setItem('dl-inst-ans', String(answered)); } catch {} sync(); });
+  const busy = () => answered < 8 || document.body.classList.contains('study') || !!document.querySelector('.overlay.show,.pet-overlay.show,.gm-overlay.show,.bt-overlay.show,.inst-sheet.show');
   let want = false;
   function show() {
     try { const t = +localStorage.getItem(KEY) || 0; if (Date.now() - t < 3 * 864e5) return; } catch {}

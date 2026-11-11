@@ -4,6 +4,7 @@ const targaryen = require('targaryen');
 const rules = require('../database.rules.json');
 const NOW = Date.now();
 const data = { admins: { adminUid: true }, users: { u1: { profile: { shortId: 'DL-ABCDE' }, inbox: { m1: { type: 'message', title: 't', text: 'x', at: NOW } } }, u2: { profile: { shortId: 'DL-ZZZZZ' } } }, history: { u1: { h1: { type: 'xp', amount: 5, seenAt: NOW } } } };
+data.prep = { code: 'SINIF-2026', ver: 1, bank: { wb: [{ u: 1 }] }, members: { m1: 'SINIF-2026' } };
 const db = targaryen.database(rules, data, NOW).with({ debug: false });
 const anon = uid => ({ uid, provider: 'anonymous', token: { firebase: { sign_in_provider: 'anonymous' } } });
 const admin = { uid: 'adminUid', provider: 'google', token: { email: 'a@b.c', email_verified: true, firebase: { sign_in_provider: 'google.com' } } };
@@ -128,5 +129,22 @@ t('admin pet stage over 5', false, db.as(admin).write('/users/u1/inbox/p7', { ty
   t('soc read reports anon', false, d.as(anon('u1')).read('/soc/rep'));
   t('soc admin reads chats', true, d.as(admin).read('/soc/ch'));
 }
+// İngilizce Hazırlık: sınıf koduyla katılma
+t('prep: non-member reads bank', false, db.as(anon('u1')).read('/prep/bank'));
+t('prep: member reads bank', true, db.as(anon('m1')).read('/prep/bank'));
+t('prep: anyone reads code', false, db.as(anon('u1')).read('/prep/code'));
+t('prep: unauth reads bank', false, db.as(null).read('/prep/bank'));
+t('prep: join with right code', true, db.as(anon('u1')).write('/prep/members/u1', 'SINIF-2026'));
+t('prep: join with wrong code', false, db.as(anon('u1')).write('/prep/members/u1', 'YANLIS-KOD'));
+t('prep: join for someone else', false, db.as(anon('u1')).write('/prep/members/u2', 'SINIF-2026'));
+t('prep: member reads own membership', true, db.as(anon('m1')).read('/prep/members/m1'));
+t('prep: reads member list', false, db.as(anon('m1')).read('/prep/members'));
+t('prep: student writes bank', false, db.as(anon('m1')).write('/prep/bank', { wb: [] }));
+t('prep: student sets code', false, db.as(anon('m1')).write('/prep/code', 'BENIMKOD1'));
+t('prep: reads version', true, db.as(anon('u1')).read('/prep/ver'));
+t('prep: admin writes bank', true, db.as(admin).write('/prep/bank', { wb: [{ u: 1 }] }));
+t('prep: admin sets code', true, db.as(admin).write('/prep/code', 'YENI-KOD-26'));
+t('prep: admin removes members', true, db.as(admin).write('/prep/members', null));
+t('prep: unknown key', false, db.as(admin).write('/prep/foo', 1));
 console.log(`\n${pass} geçti, ${fail} başarısız`);
 process.exit(fail ? 1 : 0);

@@ -35,7 +35,7 @@
         <div class="pill"><b id="sumTotal">0</b><span>kullanıcı</span></div>
         <div class="pill on"><b id="sumOnline">0</b><span>çevrimiçi</span></div>
         <div class="pill"><b id="sumToday">0</b><span>bugün aktif</span></div>
-        <button class="primary small" id="broadcastBtn">📣 Herkese gönder</button>
+        <button class="primary small" id="broadcastBtn">📣 Herkese gönder</button><button class="ghost" id="prepBtn" type="button">📘 Hazırlık</button>
       </div>
       <div class="tools">
         <input id="search" type="search" placeholder="Kimlik (DL-…) ya da isim ara" autocomplete="off">
@@ -217,6 +217,18 @@
       </div>
       <label class="check"><input type="checkbox" name="onlineOnly"> Yalnızca şu an çevrimiçi olanlara</label>
       <div class="row end"><button type="button" class="ghost" id="bcCancel">Vazgeç</button><button class="primary">Gönder</button></div>
+    </form>
+  </div>
+
+  <!-- İngilizce Hazırlık: sınıf kodu ve soru bankası -->
+  <div class="modal hidden" id="prepModal">
+    <form class="card" id="fPrep">
+      <h2>📘 İngilizce Hazırlık</h2>
+      <p class="note">Empower soruları uygulama dosyalarında yoktur; buraya yüklediğin dosya Firebase'de durur ve yalnızca sınıf kodunu giren öğrenciler okuyabilir. Kod hiçbir öğrenciye gösterilmez; kurallar sadece karşılaştırır.</p>
+      <div class="row"><label>Sınıf kodu<input name="code" minlength="6" maxlength="32" placeholder="ör. EMPOWER-B1-2026" autocomplete="off"></label><button type="button" class="primary" id="prepSaveCode">Kodu kaydet</button></div>
+      <p class="note" id="prepInfo">Yükleniyor…</p>
+      <label>Soru bankası (JSON)<input type="file" name="bank" accept="application/json,.json"></label>
+      <div class="row end"><button type="button" class="ghost" id="prepReset">Üyelikleri sıfırla</button><button type="button" class="ghost" id="prepClose">Kapat</button><button type="button" class="primary" id="prepUpload">Bankayı yükle</button></div>
     </form>
   </div>
 

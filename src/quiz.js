@@ -10,11 +10,23 @@ export const MODES = [
   { id: 'mix', icon: '🔀', label: 'Karışık', hint: 'Her soru farklı biçimde' },
 ];
 export const MODE_TAG = { type: 'YAZARAK', quiz: 'POP QUIZ', listen: 'DİNLEYEREK', mix: 'KARIŞIK' };
-export const CATS = [
-  { id: 'mix', icon: '🔀', label: 'Karışık' },
-  { id: 'en', icon: '🇬🇧', label: 'İngilizce' },
-  ...SUBJECT_ORDER.map(id => ({ id, icon: SUBJECTS[id].icon, label: SUBJECTS[id].label })),
+// Üç kategori (track): Akademik (bölüme göre hazırlık + ana dersler), Genel (eski sekmeler), İngilizce Hazırlık (Empower B1)
+export const TRACKS = [
+  { id: 'akademik', icon: '🎓', label: 'Akademik', def: 'akh' },
+  { id: 'genel', icon: '🧭', label: 'Genel', def: 'en' },
+  { id: 'hazirlik', icon: '📘', label: 'İngilizce Hazırlık', def: 'ep' },
 ];
+export const CATS = [
+  { id: 'mix', icon: '🔀', label: 'Karışık', track: 'genel' },
+  { id: 'en', icon: '🇬🇧', label: 'İngilizce', track: 'genel' },
+  ...SUBJECT_ORDER.map(id => ({ id, icon: SUBJECTS[id].icon, label: SUBJECTS[id].label, track: 'genel' })),
+  { id: 'akh', icon: '🧱', label: 'Hazırlık', track: 'akademik' },
+  { id: 'aka', icon: '🎓', label: 'Ana dersler', track: 'akademik' },
+  { id: 'akm', icon: '🔀', label: 'Karışık', track: 'akademik' },
+  { id: 'ep', icon: '📘', label: 'Empower B1', track: 'hazirlik' },
+];
+const EXTRA_CATS = ['akh', 'aka', 'akm', 'ep'];
+const trackOf = cat => (CATS.find(c => c.id === cat) || {}).track || 'genel';
 export const CAT_XP_STEP = 40, MIX_XP_STEP = 100;
 const XP = { quiz: 4, listen: 4, type: 5, typeHinted: 3, wrong: -2 };
 const MAX_TRIES = 3;
@@ -142,7 +154,7 @@ export function initQuiz(core) {
       const ok = c && typeof c === 'object' && (c.legacy === true || (typeof c.id === 'string' && Array.isArray(c.order) && c.order.every(n => Number.isInteger(n) && n >= 0 && n <= 9) && MODES.some(m => m.id === c.style) && Array.isArray(c.hints) && c.hints.every(Number.isInteger) && (c.typed == null || typeof c.typed === 'string')));
       if (!ok || !CATS.some(x => x.id === k)) delete q.cur[k];
     }
-    for (const [k, v] of Object.entries(q.catXp)) if (!SUBJECTS[k] || !Number.isFinite(v)) delete q.catXp[k];
+    for (const [k, v] of Object.entries(q.catXp)) if ((!SUBJECTS[k] && !EXTRA_CATS.includes(k)) || !Number.isFinite(v)) delete q.catXp[k];
     for (const k of ['correct', 'wrong', 'streak', 'rewardCount']) if (!Number.isFinite(q[k])) q[k] = 0;
     const legacyStyle = { logic: 'type', example: 'type', context: 'type', audio: 'listen' };
     if (!MODES.some(m => m.id === app.profile.mode)) app.profile.mode = legacyStyle[app.profile.style] || app.calibration?.mode || 'type';
@@ -222,13 +234,120 @@ export function initQuiz(core) {
     const dept = A().profile.dept || 'genel';
     return dept === 'genel' ? vocabItems('genel') : [...vocabItems(dept), ...vocabItems('genel')];
   }
+  // ---- Akademik ve İngilizce Hazırlık bankaları: yalnızca o kategori açılınca yüklenir ----
+  let ACAD = null, EP = null, acadP = null, epP = null;
+  const acadCache = {};
+  let epCache = null;
+  function loadAcad() { if (!acadP) acadP = import('./data/academic/index.js').then(m => { ACAD = m.ACADEMIC; render(); }).catch(e => { acadP = null; console.warn('[akademik]', e); }); return acadP; }
+  // Empower bankası uygulama dosyalarında yoktur: Firebase'de, yalnızca sınıf koduyla katılan öğrencilere açıktır.
+  // İndirilen kopya cihazda saklanır (çevrimdışı çalışır); sürüm değişince yenilenir.
+  const BANK_KEY = 'dl-prep-bank';
+  let epGate = '';          // '' | 'join' | 'offline' | 'empty'
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  function loadEp() {
+    if (epP) return epP;
+    epP = (async () => {
+      let cached = null;
+      try { cached = JSON.parse(localStorage.getItem(BANK_KEY) || 'null'); } catch {}
+      if (cached && cached.bank && !EP) { EP = cached.bank; epCache = null; render(); }
+      let P = null;
+      for (let i = 0; i < 50; i++) { P = core.prep?.(); if (P && P.ready()) break; await wait(200); }
+      if (!P || !P.ready()) { if (!EP) { epGate = 'offline'; render(); } return; }
+      const m = await P.member();
+      if (m === false) { EP = null; epCache = null; try { localStorage.removeItem(BANK_KEY); } catch {} epGate = 'join'; render(); return; }
+      if (m == null) { if (!EP) { epGate = 'offline'; render(); } return; }
+      const v = await P.ver();
+      if (EP && cached && cached.ver === v) return;
+      const b = await P.bank();
+      if (!b) { if (!EP) { epGate = 'empty'; render(); } return; }
+      EP = b; epCache = null; epGate = '';
+      try { localStorage.setItem(BANK_KEY, JSON.stringify({ ver: v, bank: b })); } catch {}
+      render();
+    })().finally(() => { setTimeout(() => { epP = null; }, 60000); });
+    return epP;
+  }
+  function renderGate() {
+    const T = {
+      join: ['🔒 Bu bölüm sınıfına özel', 'İngilizce Hazırlık soruları yalnızca sınıftaki öğrencilere açık. Öğretmeninin verdiği sınıf kodunu gir.'],
+      offline: ['📶 İnternet gerekli', 'Hazırlık soruları ilk kez indirilirken bağlantı gerekir. Bağlanınca kendiliğinden yüklenir.'],
+      empty: ['📭 Henüz soru yok', 'Öğretmenin soruları henüz yüklemedi. Biraz sonra tekrar dene.'],
+    }[epGate] || ['Sorular yükleniyor…', ''];
+    showLegacy(false);
+    $('#qzTag').textContent = '📘 İNGİLİZCE HAZIRLIK';
+    $('#qzCount').textContent = '';
+    $('#qzTitle').textContent = T[0]; $('#qzTitle').classList.remove('qz-hidden');
+    $('#qzSub').textContent = T[1]; $('#qzSub').classList.remove('qz-hidden');
+    $('#qzReveal').classList.add('hidden');
+    $('#qzTyped').classList.add('hidden');
+    $('#qzOptions').classList.remove('hidden');
+    $('#qzOptions').innerHTML = epGate === 'join' ? `<form class="prep-join" data-join><input id="prepCode" class="setting-input" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="32" placeholder="Sınıf kodu" aria-label="Sınıf kodu"><button class="primarybtn" type="submit">Katıl ↗</button><div class="prep-join-msg" id="prepJoinMsg" role="status"></div></form>` : '';
+    const ex = $('#qzExplain'); if (ex) ex.innerHTML = '';
+  }
+  const pendingFor = cat => ((cat === 'akh' || cat === 'aka' || cat === 'akm') && !ACAD) || (cat === 'ep' && !EP);
+  function loadFor(cat) { if (cat === 'ep') loadEp(); else if (cat === 'akh' || cat === 'aka' || cat === 'akm') loadAcad(); }
+  const acadDept = () => (ACAD && ACAD[A().profile.dept] ? A().profile.dept : 'genel');
+  function acadItems(kind, dept = acadDept()) {
+    if (!ACAD) return [];
+    const key = kind + dept;
+    if (acadCache[key]) return acadCache[key];
+    const d = ACAD[dept] || ACAD.genel, cat = kind === 'haz' ? 'akh' : 'aka';
+    const list = (d[kind] || []).map((it, i) => ({ id: `${cat}-${dept}-${i}`, cat, d: it[5] || 2, q: it[0], a: it[1], opts: it[2], exp: it[3], src: it[4],
+      sub: `${d.label} · ${kind === 'haz' ? 'hazırlık' : 'ana ders'} · ${it[6] || ''}`.replace(/ · $/, ''), lang: 'tr', optLang: 'tr', speak: { text: it[0], lang: 'tr' }, typeable: typeable(it[1]) }));
+    acadCache[key] = list;
+    return list;
+  }
+  // 1. seviye barı: Empower B1 (Pre-intermediate, 1. baskı) Workbook · 2. seviye barı: Empower B1 2. baskı Student's Book.
+  // Kitaplar birbirine karışmaz; ünite sırasıyla. Biçim: [bölüm, tür, soru, cevap, [3 yanlış], açıklama, (sesli metin)]
+  const KIND = { gr: 'Dilbilgisi', vo: 'Kelime', ee: 'Gündelik İngilizce', wp: 'Wordpower', pr: 'Telaffuz' };
+  const BOOK = { wb: 'Empower B1 · Workbook', sb: "Empower B1 2. baskı · Student's Book" };
+  const BOOK_SHORT = { wb: 'Empower B1', sb: 'Empower B1 2nd' };
+  function epItems() {
+    if (epCache) return epCache;
+    if (!EP) return [];
+    const out = [];
+    for (const b of ['wb', 'sb']) (EP[b] || []).forEach(un => un.items.forEach((it, i) => {
+      const [sec, kind, q, a, opts, exp, say] = it;
+      const en = /[a-z]/i.test(a) && !/[çğıöşüÇĞİÖŞÜ]/.test(a);
+      out.push({ id: `ep-${b}-${un.u}-${i}`, cat: 'ep', b, u: un.u, ord: out.length, q, a, opts, exp,
+        sub: `${BOOK[b]} · Ünite ${un.u} ${un.t} · ${sec} · ${KIND[kind] || ''}`,
+        src: `${b === 'wb' ? 'Empower B1 (Pre-intermediate) Workbook' : "Empower B1 2nd edition Student's Book"} · Ünite ${un.u} (${sec}) · ${KIND[kind] || ''}`,
+        lang: 'tr', optLang: en ? 'en' : 'tr', speak: say ? { text: say, lang: 'en' } : { text: q, lang: /[çğıöşü]/i.test(q) ? 'tr' : 'en' }, typeable: typeable(a) });
+    }));
+    return (epCache = out);
+  }
+  // ilerleme: soru en az bir kez doğru bilindiyse öğrenildi; ünitenin %80'i öğrenilince sıradaki ünite açılır
+  function epProgress() {
+    const items = epItems(), q = Q(), units = { sb: {}, wb: {} };
+    for (const it of items) { const u = units[it.b][it.u] || (units[it.b][it.u] = { n: 0, ok: 0, t: '' }); u.n++; if (q.items[it.id]?.c > 0) u.ok++; }
+    const done = (b, u) => units[b][u] && units[b][u].ok / units[b][u].n >= 0.8;
+    const list = b => Object.keys(units[b]).map(Number).sort((x, y) => x - y);
+    let book = list('wb').every(u => done('wb', u)) && list('sb').length ? 'sb' : 'wb';
+    const us = list(book), unit = us.find(u => !done(book, u)) ?? us[us.length - 1];
+    const tot = us.reduce((s, u) => s + units[book][u].n, 0), ok = us.reduce((s, u) => s + units[book][u].ok, 0);
+    return { book, unit, units: units[book], order: us, pct: tot ? ok / tot : 0, allDone: book === 'sb' && us.every(u => done('sb', u)) };
+  }
+  function pickEp() {
+    const items = epItems(), q = Q(), now = Date.now(), recent = new Set(q.recent.slice(-6));
+    const P = epProgress();
+    const due = items.filter(it => q.items[it.id] && q.items[it.id].due <= now && !recent.has(it.id) && (it.b !== P.book || it.u < P.unit || P.allDone));
+    if (due.length && (Math.random() < 0.25 || P.allDone)) return due.sort((x, y) => q.items[x.id].due - q.items[y.id].due)[0];
+    const here = items.filter(it => it.b === P.book && it.u === P.unit && !recent.has(it.id));
+    // kitaptaki sırayla: henüz görülmemiş ilk soru; hepsi görüldüyse henüz bilinemeyenler
+    return here.find(it => !q.items[it.id]) || here.filter(it => !(q.items[it.id]?.c > 0)).sort((x, y) => (q.items[x.id]?.due || 0) - (q.items[y.id]?.due || 0))[0] || due[0] || here[0] || items.find(it => !recent.has(it.id)) || items[0];
+  }
   function poolFor(cat) {
+    if (cat === 'ep') return epItems();
+    if (cat === 'akh') return acadItems('haz');
+    if (cat === 'aka') return acadItems('ana');
+    if (cat === 'akm') return [...acadItems('haz'), ...acadItems('ana')];
     if (cat === 'en') return [...englishItems(), ...vocabPool()];
     if (SUBJECTS[cat]) return subjectItems(cat);
     return [];
   }
   function findItem(id) {
     if (!id) return null;
+    if (id.startsWith('ep-')) return epItems().find(x => x.id === id) || null;
+    if (id.startsWith('akh-') || id.startsWith('aka-')) { const [k, dept] = id.split('-'); return acadItems(k === 'akh' ? 'haz' : 'ana', dept).find(x => x.id === id) || null; }
     if (id.startsWith('en-')) return englishItems().find(x => x.id === id);
     if (id.startsWith('dv-')) { const dept = id.split('-')[1]; return vocabItems(dept).find(x => x.id === id); }
     const cat = id.split('-')[0];
@@ -257,8 +376,9 @@ export function initQuiz(core) {
     return list.slice().sort((x, y) => (q.items[x.id]?.due || 0) - (q.items[y.id]?.due || 0))[Math.floor(Math.random() * Math.min(3, list.length))];
   }
   function pickNext(cat) {
+    if (cat === 'ep') return pickEp();
     if (cat === 'mix') {
-      const cats = CATS.filter(c => c.id !== 'mix').map(c => c.id);
+      const cats = CATS.filter(c => c.id !== 'mix' && c.track === 'genel').map(c => c.id);
       const c = cats[Math.floor(Math.random() * cats.length)];
       return pickNext(c);
     }
@@ -287,6 +407,8 @@ export function initQuiz(core) {
   function cur(cat = A().cat) {
     const q = Q();
     let c = q.cur[cat];
+    // banka henüz yüklenmediyse yarım soruyu silme; yüklenince sürer
+    if (pendingFor(cat)) { loadFor(cat); return c && !c.legacy ? c : { pending: true }; }
     const mode = A().profile.mode;
     if (cat === 'en' && mode === 'type' && c && !c.legacy && !c.done) c = q.cur[cat] = { legacy: true };
     if (cat === 'en' && mode !== 'type' && mode !== 'mix' && c?.legacy) c = q.cur[cat] = newCur(cat);
@@ -297,7 +419,7 @@ export function initQuiz(core) {
   }
 
   // ---- XP ----
-  function catXp(cat) { return cat === 'en' ? A().xp : (Q().catXp[cat] || 0); }
+  function catXp(cat) { if (cat === 'akm') return (Q().catXp.akh || 0) + (Q().catXp.aka || 0); return cat === 'en' ? A().xp : (Q().catXp[cat] || 0); }
   function totalXp() { const q = Q(); return A().xp + Object.values(q.catXp).reduce((s, v) => s + (v || 0), 0); }
   let frozen = null; // animasyon sürerken bar eski değeri gösterir
   function addXp(cat, delta) {
@@ -312,6 +434,17 @@ export function initQuiz(core) {
   function renderProgressOverride() {
     const app = A(), cat = app.cat;
     if (!cat || cat === 'en') return false;
+    if (cat === 'ep' && EP) {
+      const P = epProgress(), U = P.order;
+      $('#topLevel').textContent = `📘 ${P.book === 'wb' ? '1' : '2'}·Ü${P.unit}`;
+      $('#levelCaption').textContent = `Seviye ${P.book === 'wb' ? '1 · Empower B1' : '2 · Empower B1 2nd edition'}${P.allDone ? ' · tamamlandı' : ''}`;
+      const u = P.units[P.unit] || { n: 1, ok: 0 };
+      $('#xpCaption').textContent = P.allDone ? 'İki kitap da bitti: artık tekrar soruları geliyor.' : `Ünite ${P.unit}: ${u.ok}/${u.n} öğrenildi · %80'de sıradaki ünite açılır${P.book === 'wb' ? ' · sonra Seviye 2 (Empower B1 2nd)' : ''}`;
+      $('#xpNumber').textContent = `%${Math.round(P.pct * 100)}`;
+      $('#cefrTrack').innerHTML = U.map(n => { const x = P.units[n], f = x.ok / x.n; return `<span class="${f >= 0.8 ? 'active' : n === P.unit ? 'current' : ''}" style="--fill:${Math.round(Math.min(1, f / 0.8) * 100)}%"></span>`; }).join('');
+      $('#cefrLabels').innerHTML = U.map(n => `<span class="${n === P.unit ? 'on' : ''}">${n}</span>`).join('');
+      return true;
+    }
     const isMix = cat === 'mix', step = isMix ? MIX_XP_STEP : CAT_XP_STEP;
     const xp = frozen && frozen.cat === cat ? frozen.value : (isMix ? totalXp() : catXp(cat));
     const level = Math.floor(xp / step) + 1, within = xp % step, pct = Math.round((within / step) * 100);
@@ -332,6 +465,8 @@ export function initQuiz(core) {
     const cat = A().cat, c = CATS.find(x => x.id === cat);
     const h1 = $('#mainTitle'), p = $('#mainLead');
     if (!h1) return;
+    if (cat === 'ep') { const P = EP ? epProgress() : null; h1.textContent = 'İngilizce hazırlık.'; p.textContent = P ? `${BOOK_SHORT[P.book]} · Ünite ${P.unit}. Kitaptaki sırayla öğren; her cevaptan sonra ayrıntılı açıklama gelir.` : 'Empower B1 kitaplarını sırasıyla öğren.'; return; }
+    if (cat === 'akh' || cat === 'aka' || cat === 'akm') { const lb = (ACAD && (ACAD[acadDept()] || {}).label) || 'Bölümün'; h1.textContent = `${lb}.`; p.textContent = cat === 'akh' ? 'Hazırlık: bölümüne başlamadan önce sağlam olması gereken temel konular.' : cat === 'aka' ? 'Ana dersler: bölümün çekirdek konuları, ayrıntılı açıklamalarla.' : 'Hazırlık ve ana ders sorularından karışık.'; return; }
     if (cat === 'en') { h1.textContent = 'İngilizceyi çöz.'; p.textContent = 'Aynı anlamı farklı seviyelerde söyle, bölümüne özel ileri seviye terimleri öğren.'; }
     else if (cat === 'mix') { h1.textContent = 'Karışık pop quiz.'; p.textContent = 'Her soru farklı bir konudan gelir. Doğru da bilsen yanlış da, açıklamayı oku: asıl öğrenme orada.'; }
     else { h1.textContent = `${c.label} pop quiz.`; p.textContent = 'Seç ya da yaz; her cevaptan sonra güvenilir kaynaklara dayanan ayrıntılı açıklama gelir.'; }
@@ -339,7 +474,12 @@ export function initQuiz(core) {
   function renderTabs() {
     const box = $('#catTabs'); if (!box) return;
     const cat = A().cat;
-    box.innerHTML = CATS.map(c => `<button role="tab" class="cat-tab${c.id === cat ? ' on' : ''}" data-cat="${c.id}" aria-selected="${c.id === cat}"><span>${c.icon}</span>${esc(c.label)}</button>`).join('');
+    const tr = trackOf(cat);
+    const sw = $('#trackSw');
+    if (sw) sw.querySelectorAll('[data-track]').forEach(b => { const on = b.dataset.track === tr; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+    const list = CATS.filter(c => c.track === tr);
+    box.classList.toggle('hidden', list.length < 2);
+    box.innerHTML = list.map(c => `<button role="tab" class="cat-tab${c.id === cat ? ' on' : ''}" data-cat="${c.id}" aria-selected="${c.id === cat}"><span>${c.icon}</span>${esc(c.label)}</button>`).join('');
     const on = box.querySelector('.on'); // yalnızca sekme şeridini yatay kaydır; sayfa dikeyde hiç oynamasın
     if (on) { const l = on.offsetLeft - (box.clientWidth - on.offsetWidth) / 2; if (Math.abs(box.scrollLeft - l) > 4) box.scrollTo({ left: Math.max(0, l), behavior: 'smooth' }); }
   }
@@ -363,6 +503,8 @@ export function initQuiz(core) {
     const app = A(), cat = app.cat;
     headline(); renderTabs(); renderModeBtn();
     const c = cur(cat);
+    if (c.pending && cat === 'ep' && epGate) { renderGate(); core.renderProgress(); return; }
+    if (c.pending) { showLegacy(false); $('#qzTitle').textContent = 'Sorular yükleniyor…'; $('#qzSub').textContent = ''; $('#qzOptions').innerHTML = ''; $('#qzExplain') && ($('#qzExplain').innerHTML = ''); core.renderProgress(); return; }
     if (c.legacy) { showLegacy(true); core.renderLegacy(); core.renderProgress(); notifyLive(null); return; }
     showLegacy(false);
     const item = findItem(c.id), q = Q();
@@ -563,6 +705,27 @@ export function initQuiz(core) {
   $('#catTabs').addEventListener('click', e => {
     const b = e.target.closest('[data-cat]'); if (!b) return;
     core.stopAudio(); A().cat = b.dataset.cat; core.saveLocal(false); render();
+  });
+  // sınıf koduyla katılma
+  $('#qzOptions').addEventListener('submit', async e => {
+    const f = e.target.closest('[data-join]'); if (!f) return;
+    e.preventDefault();
+    const code = ($('#prepCode')?.value || '').trim(), msg = $('#prepJoinMsg');
+    if (code.length < 6) { msg.textContent = 'Kod en az 6 karakter.'; return; }
+    msg.textContent = 'Denetleniyor…';
+    const r = await core.prep?.()?.join(code);
+    if (r === 'ok') { msg.textContent = '✓ Katıldın! Sorular indiriliyor…'; epGate = ''; epP = null; loadEp(); }
+    else msg.textContent = r === 'offline' ? 'Bağlantı yok; biraz sonra tekrar dene.' : 'Kod yanlış. Öğretmeninden kontrol etmesini iste.';
+  });
+  // kategori anahtarı: her kategoride en son açık olan sekme hatırlanır
+  $('#trackSw')?.addEventListener('click', e => {
+    const b = e.target.closest('[data-track]'); if (!b) return;
+    const app = A(), from = trackOf(app.cat), to = b.dataset.track;
+    if (from === to) return;
+    app.profile.trackCat = { ...(app.profile.trackCat || {}), [from]: app.cat };
+    const remembered = app.profile.trackCat[to];
+    core.stopAudio(); app.cat = CATS.some(c => c.id === remembered && c.track === to) ? remembered : TRACKS.find(t => t.id === to).def;
+    core.saveLocal(false); render();
   });
   $('#modeBtn').addEventListener('click', () => {
     const app = A(), i = MODES.findIndex(m => m.id === app.profile.mode);

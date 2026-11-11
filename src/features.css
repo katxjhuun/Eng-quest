@@ -251,7 +251,6 @@ body.gold-burst::after{content:"✨ ALTIN SAAT ✨";position:fixed;left:50%;top:
 .tick-card h3{margin:2px 0 4px;font-size:21px}.tick-card p{font-size:13px;color:#5a5260;margin:0 0 4px}.tick-when{font-size:11.5px!important;color:#8a8076!important}
 @keyframes gmPop{from{transform:scale(.6) translateY(20px);opacity:0}}
 @media(prefers-reduced-motion:reduce){.tick-track{animation-duration:120s}}
-body.has-ticker .topbar{padding-top:0}
 @media(max-width:400px){.tick-bar,.gold-bar{margin-left:-12px;margin-right:-12px}}
 
 /* yöneticiden soru / özel boss penceresi */
@@ -492,3 +491,27 @@ body.skin-toy .pet-hab{background:linear-gradient(#bff0dc,#94dcc0)!important}
 body.skin-shadow .pet-hab:before{background:#E5A90F;border-top-color:#D99A00}
 body.skin-cosmic .pet-hab:before{background:linear-gradient(#3b1fa8,#2a1680);border-top-color:#7a4bff}
 body.skin-toy .pet-hab:before{background:#7FCFAE;border-top-color:#6BBF9C}
+
+/* ---------- kategori anahtarı (Akademik · Genel · İngilizce Hazırlık) ---------- */
+.track-sw{display:flex;gap:4px;padding:4px;margin:0 0 10px;background:rgba(109,87,216,.08);border:1px solid rgba(109,87,216,.16);border-radius:16px}
+.track-sw button{flex:1;border:0;background:transparent;border-radius:12px;padding:10px 6px;font-size:12.5px;font-weight:800;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;min-height:42px;white-space:nowrap}
+.track-sw button span{font-size:15px}
+.track-sw button.on{background:var(--paper,#fff);color:var(--ink);box-shadow:0 2px 8px rgba(40,30,80,.12)}
+@media (max-width:380px){.track-sw button{font-size:11.5px;gap:4px}}
+
+/* ---------- ders çalışma modu ---------- */
+.study-btn{width:100%;display:flex;align-items:center;gap:12px;margin:10px 0 6px;padding:11px 14px;border-radius:16px;border:1px solid rgba(109,87,216,.22);background:linear-gradient(120deg,rgba(109,87,216,.10),rgba(74,199,162,.10));color:var(--ink);text-align:left}
+.study-btn .study-ico{font-size:22px}
+.study-btn strong{display:block;font-size:14px}.study-btn small{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.study-btn .study-go{margin-left:auto;background:#5b46dc;color:#fff;font-weight:800;font-size:12px;padding:8px 13px;border-radius:999px}
+.study-bar{display:none}
+body.study .study-bar{display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:30;margin:0 -18px 12px;padding:calc(10px + env(safe-area-inset-top)) 18px 10px;background:var(--bg);border-bottom:1px solid var(--line)}
+.study-info{flex:1;min-width:0;font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.study-exit{flex:none;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:8px 14px;font-size:12.5px;font-weight:800}
+body.study .topbar,body.study .headline,body.study .study-btn,body.study .track-sw,body.study .quiz-bar,body.study .progress-panel,body.study .footer-note,
+body.study .pet-layer,body.study .pet-home,body.study .pet-actor,body.study #goldBar,body.study .gold-bar,body.study .gold-glitter,body.study #installBar,
+body.study .bday-banner,body.study .mix-note,body.study .stats-strip,body.study .below-note,body.study .qfx-chip,body.study .confetti{display:none!important}
+body.study #gameView{padding-top:0}
+body.study .challenge{box-shadow:none}
+.prep-join{display:flex;flex-wrap:wrap;gap:8px}.prep-join input{flex:1 1 180px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}.prep-join button{flex:0 0 auto}
+.prep-join-msg{flex-basis:100%;font-size:12.5px;font-weight:700;color:var(--muted);min-height:18px}
