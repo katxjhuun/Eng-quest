@@ -26,7 +26,7 @@ export const ROLES = {
   tank: { name: 'Tank', icon: '🛡️', desc: 'Darbeleri üstüne çeker, takımı korur. Yüksek can ve savunma, yavaş.', mult: { hp: 1.5, atk: 0.8, def: 1.4, spd: 0.7 },
     moves: [
       { id: 'bash', name: 'Omuz Darbesi', kind: 'attack', power: 0.9, desc: 'Sağlam, sıradan bir vuruş.' },
-      { id: 'taunt', name: 'Kalkan Duruşu', kind: 'guard', turns: 2, desc: '2 tur boyunca düşman saldırılarını üstüne çeker, aldığı hasar azalır.' },
+      { id: 'taunt', name: 'Kalkan Duruşu', kind: 'guard', turns: 2, cd: 2, desc: '2 tur boyunca düşman saldırılarını üstüne çeker, aldığı hasar azalır.' },
       { id: 'endure', name: 'Sarsılmaz', kind: 'heal', self: 0.22, cd: 3, desc: 'Canının %22’sini geri kazanır.' },
     ] },
   melee: { name: 'Yakın dövüşçü', icon: '⚔️', desc: 'Göğüs göğüse çarpışır; güçlü ve dengeli.', mult: { hp: 1.15, atk: 1.25, def: 1.0, spd: 1.0 },
@@ -49,7 +49,7 @@ export const ROLES = {
     ] },
   support: { name: 'Destek', icon: '✚', desc: 'Takımı iyileştirir ve güçlendirir.', mult: { hp: 1.05, atk: 0.8, def: 1.1, spd: 1.05 },
     moves: [
-      { id: 'mend', name: 'İyileştir', kind: 'heal', ally: 0.32, desc: 'Bir takım arkadaşının canının %32’sini yeniler.' },
+      { id: 'mend', name: 'İyileştir', kind: 'heal', ally: 0.32, cd: 1, desc: 'Bir takım arkadaşının canının %32’sini yeniler. Aynı birim art arda iyileştikçe etkisi azalır.' },
       { id: 'cheer', name: 'Moral', kind: 'buff', buff: 'atk', ally: true, desc: 'Bir takım arkadaşının saldırısını 2 tur artırır.' },
       { id: 'pulse', name: 'Arınma', kind: 'heal', team: 0.14, cd: 2, desc: 'Bütün takımı %14 iyileştirir, olumsuz etkileri siler.' },
     ] },
@@ -71,6 +71,37 @@ export const ROLES = {
     ] },
 };
 export const ROLE_IDS = Object.keys(ROLES);
+// ---- rol üstünlüğü (taş-kâğıt-makas, iki üçgen) ----
+// Tank suikastçıyı durdurur, suikastçı büyücüye sızar, büyücü tankın zırhını deler.
+// Nişancı yakın dövüşçüyü uzaktan tutar, yakın dövüşçü desteğe dalar, destek kalkanla okları karşılar.
+// Üstün olan +%25 vurur, karşısındakinden %20 az yer. Hilebaz bu döngünün dışındadır; onun döngüsü tavırlardır.
+export const ROLE_BEATS = { tank: 'assassin', assassin: 'magician', magician: 'tank', ranger: 'melee', melee: 'support', support: 'ranger' };
+export function roleMult(att, def) {
+  if (!att || !def) return 1;
+  if (ROLE_BEATS[att] === def) return 1.25;
+  if (ROLE_BEATS[def] === att) return 0.8;
+  return 1;
+}
+// ---- element etkileri: yalnızca üstün tipten gelen darbede tetiklenir ----
+export const ELEMENT_FX = {
+  ates: { name: 'Yanık', icon: '🔥', desc: '2 tur her hamlede can yakar.' },
+  su: { name: 'Islak', icon: '💧', desc: '2 tur yavaşlar, sırası geri düşer.' },
+  doga: { name: 'Sarmaşık', icon: '🌿', desc: '2 tur savunması düşer.' },
+  tas: { name: 'Sersem', icon: '💫', desc: 'Sıradaki hamlesini kaçırabilir.' },
+  ruzgar: { name: 'Savrulma', icon: '🌪️', desc: 'Bütün güçlendirmeleri savrulur.' },
+  ruh: { name: 'Korku', icon: '👻', desc: '2 tur saldırısı düşer.' },
+};
+// ---- süper yetenek: enerji (⚡) 100 olunca bir kez kullanılır ----
+export const ULT = {
+  tank: { id: 'u_fortress', name: 'Kale', kind: 'ult', ult: 'fortress', desc: 'Takıma 2 tur hasar kalkanı; kendisi bütün saldırıları üstüne çeker ve %15 iyileşir.' },
+  melee: { id: 'u_quake', name: 'Yer Sarsıntısı', kind: 'ult', ult: 'quake', power: 1.3, aoe: true, desc: 'Bütün düşmanlara ağır vurur ve savunmalarını kırar.' },
+  ranger: { id: 'u_star', name: 'Yıldız Yağmuru', kind: 'ult', ult: 'star', power: 1.05, aoe: true, sure: true, crit: 0.35, desc: 'Gökten bütün düşmanlara ıskalamayan oklar.' },
+  assassin: { id: 'u_dance', name: 'Gölge Dansı', kind: 'ult', ult: 'dance', power: 0.8, hits: 3, crit: 0.45, sure: true, desc: 'Üç kez, en zayıf düşmanlara kritik şanslı darbe.' },
+  support: { id: 'u_rebirth', name: 'Yeniden Doğuş', kind: 'ult', ult: 'rebirth', desc: 'Takımı %30 iyileştirir, olumsuzları siler, devrilen bir arkadaşı kaldırır.' },
+  magician: { id: 'u_storm', name: 'Element Fırtınası', kind: 'ult', ult: 'storm', power: 1.15, aoe: true, pierce: 0.3, typeBoost: true, forceEl: true, desc: 'Bütün düşmanlara element büyüsü; element etkisi herkese işler.' },
+  trickster: { id: 'u_speech', name: 'Büyük Konuşma', kind: 'ult', ult: 'speech', desc: 'Bütün rakiplerin iradesini sarsar, hepsinde güven kazanır.' },
+};
+export const EN_MAX = 100;
 // hilebazın karşısındaki rakibin o turdaki tavrı → hangi argüman işler
 export const STANCES = {
   skeptic: { name: 'Şüpheci', icon: '🤨', weak: 'logic', resist: 'feel', line: 'Kanıtla bakalım.', tells: ['Kanıtla bakalım.', 'Bunu nereden çıkardın?', 'Hiç inandırıcı değil.'] },

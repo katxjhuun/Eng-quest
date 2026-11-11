@@ -119,3 +119,132 @@
 .bx.bolt{top:0;width:6px;height:var(--h);transform:translate(-50%,0);background:linear-gradient(#fff0,#fff 30%,#ffe36b);box-shadow:0 0 18px #ffe36b,0 0 4px #fff;clip-path:polygon(40% 0,70% 0,50% 40%,80% 40%,30% 100%,45% 55%,20% 55%);animation:bxBolt .7s ease-out forwards;width:28px}
 @keyframes bxBolt{0%{opacity:0}10%,40%{opacity:1}100%{opacity:0}}
 .bx.adm{font-style:normal;font-size:30px;animation:bxBulb 1.1s ease forwards}
+
+/* ===== Üstünlük, enerji, sıra şeridi, süper yetenek (2.11) ===== */
+.bt-head .bt-round{margin-left:auto}
+.bt-help{font-size:17px}
+/* sıra şeridi */
+.bt-order{display:flex;align-items:center;gap:3px;margin:8px 2px 0;min-height:30px;overflow:hidden}
+.bt-order .bo{flex:none;width:28px;height:28px;border-radius:50%;background:#2a2637;border:2px solid #3b354d;display:grid;place-items:center;overflow:hidden;transition:transform .25s}
+.bt-order .bo svg{width:30px;height:30px;margin-top:6px}
+.bt-order .bo.a{border-color:#5d8fd0}.bt-order .bo.b{border-color:#c4524b}
+.bt-order .bo.now{transform:scale(1.18);box-shadow:0 0 0 3px #f2cf7255,0 0 12px #f2cf7288;border-color:#f2cf72}
+.bt-order i{font-style:normal;color:#6e6782;font-size:11px}
+.bt-order small{margin-left:auto;font-size:10px;color:#8c849e;white-space:nowrap}
+/* can barı: gecikmeli beyaz iz */
+.bt-bar.hp{position:relative}
+.bt-bar.hp b{position:absolute;inset:0 auto 0 0;display:block;background:#fff;opacity:.55;border-radius:9px;transition:width .6s ease .35s}
+.bt-bar.hp i{position:relative}
+.bt-card.low .bt-bar.hp i{animation:btLow 1s ease-in-out infinite}
+@keyframes btLow{50%{filter:brightness(1.6)}}
+/* enerji */
+.bt-bar.en{height:4px;background:#1b1824}
+.bt-bar.en i{background:linear-gradient(90deg,#d99a2b,#f2cf72);box-shadow:0 0 6px #f2cf7288}
+.bt-card.ult-ready{border-color:#f2cf72;box-shadow:0 0 0 2px #f2cf7244,0 0 18px #f2cf7255}
+.bt-card.ult-ready .bt-bar.en i{animation:btEn 1.2s linear infinite;background:linear-gradient(90deg,#f2cf72,#fff6d6,#f2cf72);background-size:200% 100%}
+@keyframes btEn{to{background-position:-200% 0}}
+.bt-card.ult-ready::before{content:"🌟";position:absolute;top:-10px;left:-6px;font-size:16px;animation:btStar 1.4s ease-in-out infinite;z-index:2}
+@keyframes btStar{50%{transform:scale(1.25) rotate(15deg)}}
+/* üstünlük rozetleri */
+.bt-adv{position:absolute;top:4px;left:4px;right:4px;display:flex;flex-wrap:wrap;gap:3px;justify-content:center;pointer-events:none;z-index:2}
+.bt-adv span,.bt-adv em{font-style:normal;font-size:10.5px;font-weight:900;padding:1px 5px;border-radius:999px;background:#1d1a26dd;border:1px solid #4a4360;animation:btAdv .3s ease-out both}
+.bt-adv .up{color:#8be0a4;border-color:#4fae74}
+.bt-adv .dn{color:#ff8a80;border-color:#b5524b}
+@keyframes btAdv{from{transform:scale(.6);opacity:0}}
+.bt-turn .up{color:#8be0a4}.bt-turn .dn{color:#ff8a80}
+.bt-turn-tip{float:right;font-size:10.5px;color:#8c849e}
+.lg-why{display:block;font-size:11px;color:#b9b2c6;margin-top:2px}
+/* süper yetenek butonu */
+.bt-ult{width:100%;margin-bottom:7px;background:linear-gradient(90deg,#4a3b1f var(--en),#2b2738 var(--en));border-color:#6b5a32;min-height:50px}
+.bt-ult.ready{background:linear-gradient(110deg,#6b4d10,#c79a2e 45%,#f2cf72 50%,#c79a2e 55%,#6b4d10);background-size:220% 100%;border-color:#f2cf72;color:#fff;animation:btUlt 2s linear infinite;box-shadow:0 0 18px #f2cf7255}
+.bt-ult.ready small{color:#fff5dc}
+.bt-ult em{position:absolute;right:10px;top:9px;font-style:normal;font-size:11px;font-weight:950;color:#f2cf72}
+.bt-ult.ready em{color:#3a2a06;background:#fff2c2;padding:2px 7px;border-radius:999px}
+@keyframes btUlt{to{background-position:-220% 0}}
+/* fırtına ve süper yetenek anında arena */
+#btArena::before{content:"";position:absolute;inset:-20px;pointer-events:none;opacity:0;transition:opacity .6s;background:radial-gradient(120% 90% at 50% 50%,transparent 55%,#5fa39a55 100%);z-index:0}
+.bt-overlay.storming #btArena::before{opacity:1;animation:btStorm 2.4s ease-in-out infinite}
+@keyframes btStorm{50%{filter:hue-rotate(25deg) brightness(1.3)}}
+#btArena.ulting .bt-card:not(.ulting){filter:brightness(.55) saturate(.7);transition:filter .3s}
+.bt-card.ulting{z-index:5;transform:scale(1.06);transition:transform .3s;border-color:#f2cf72;box-shadow:0 0 30px #f2cf7277}
+/* hasar sayıları */
+.bt-float{animation:btPop 1.1s cubic-bezier(.2,1.4,.4,1) forwards}
+@keyframes btPop{0%{opacity:0;transform:translate(-50%,10px) scale(.5)}18%{opacity:1;transform:translate(-50%,-6px) scale(1.25)}35%{transform:translate(-50%,-4px) scale(1)}100%{opacity:0;transform:translate(-50%,-34px) scale(.95)}}
+.bt-float.crit{font-size:22px;color:#ffd166;-webkit-text-stroke:1px #6b2a0c}
+.bt-float.el{font-size:12.5px;color:#fff;background:#1d1a26cc;padding:2px 7px;border-radius:999px;top:46%}
+/* vurulunca: tarafına göre geri savrulma */
+.foe .bt-card.hit{animation:btKnockUp .42s ease-out}
+.ally .bt-card.hit{animation:btKnockDn .42s ease-out}
+@keyframes btKnockUp{0%,100%{transform:none}15%{transform:translate(-4px,-7px) rotate(-2deg)}35%{transform:translate(4px,-3px) rotate(1.5deg)}60%{transform:translate(-2px,0)}}
+@keyframes btKnockDn{0%,100%{transform:none}15%{transform:translate(4px,7px) rotate(2deg)}35%{transform:translate(-4px,3px) rotate(-1.5deg)}60%{transform:translate(2px,0)}}
+.bt-card.down{transition:opacity .5s,filter .5s,transform .5s;transform:rotate(-4deg) translateY(4px)}
+
+/* üstünlük tablosu */
+.bt-legend{position:absolute;inset:0;z-index:20;background:#140f1dcc;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom));opacity:0;transition:opacity .2s}
+.bt-legend[hidden]{display:none}
+.bt-legend.on{opacity:1}
+.lg-card{width:100%;max-width:440px;max-height:100%;overflow:auto;background:#262233;border:1px solid #463f5c;border-radius:20px;padding:14px 14px 16px;transform:translateY(10px);transition:transform .25s}
+.bt-legend.on .lg-card{transform:none}
+.lg-head{display:flex;align-items:center;justify-content:space-between;font-size:17px}
+.lg-card h4{margin:12px 0 2px;font-size:13px;color:#f2cf72}
+.lg-card h4 small{font-weight:600;color:#8c849e;font-size:11px;margin-left:4px}
+.lg-sub{font-size:12px;color:#b9b2c6;margin:4px 0;line-height:1.45}
+.lg-row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.lg-tri{margin:0;text-align:center}
+.lg-tri svg{width:100%;max-width:170px;overflow:visible}
+.lg-tri figcaption{font-size:10.5px;color:#8c849e;margin-top:-2px}
+.lg-lbl{font-size:10px;font-weight:800;fill:#e8e3f0}
+.lg-arr{fill:none;stroke:#f2cf72;stroke-width:2.6;stroke-linecap:round;stroke-dasharray:6 5;animation:lgFlow 1s linear infinite}
+@keyframes lgFlow{to{stroke-dashoffset:-11}}
+.lg-node circle{animation:lgPulse 2.4s ease-in-out infinite}
+@keyframes lgPulse{50%{fill-opacity:.4}}
+.lg-els{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}
+.lg-els div{background:#1d1a26;border-left:3px solid var(--c);border-radius:10px;padding:6px 8px;font-size:11px;line-height:1.3}
+.lg-els i{font-style:normal;margin-right:4px}
+.lg-els small{display:block;color:#a39bb6;font-size:10.5px}
+.lg-card .primarybtn{width:100%;margin-top:12px}
+
+/* ----- yeni efektler ----- */
+.bx.flash{inset:0;left:0!important;top:0!important;width:100%;height:100%;transform:none;background:var(--c);opacity:0;animation:bxFlash .4s ease-out;z-index:8}
+@keyframes bxFlash{15%{opacity:var(--o)}100%{opacity:0}}
+.bx.spark{width:5px;height:5px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);animation:bxPt .55s ease-out forwards;animation-delay:0ms}
+.bx.elm{width:var(--w);height:var(--h);border-radius:50%}
+.bx.elm.el-ates{background:radial-gradient(ellipse at 50% 85%,#ffd27a 0 12%,#ff7a3d 30%,#c2361f55 50%,transparent 66%);animation:bxFlame .9s ease-out forwards;mix-blend-mode:screen}
+.bx.elm.el-su{border:3px solid #7cc6f0;background:radial-gradient(circle,#5bb8e633 40%,transparent 70%);animation:bxRing .8s ease-out forwards}
+.bx.elm.el-doga{border-radius:30%;background:radial-gradient(ellipse at 20% 85%,transparent 34%,#6fb36a 36% 41%,transparent 43%),radial-gradient(ellipse at 80% 85%,transparent 34%,#6fb36a 36% 41%,transparent 43%),radial-gradient(ellipse at 50% 100%,transparent 44%,#8bc77e 46% 50%,transparent 52%);animation:bxVine 1s ease-out forwards}
+@keyframes bxVine{0%{clip-path:inset(100% 0 0 0);opacity:1}45%{clip-path:inset(0 0 0 0);opacity:1}100%{opacity:0}}
+.bx.elm.el-tas{display:block;border-radius:0}
+.bx.elm.el-tas b{position:absolute;left:50%;top:6%;color:#ffe08a;font-size:15px;text-shadow:0 0 6px #ffcf4a;animation:bxOrbit 1s linear forwards;animation-delay:calc(var(--k,0) * -0.33s)}
+.bx.elm.el-tas b:nth-child(2){--k:1}.bx.elm.el-tas b:nth-child(3){--k:2}
+@keyframes bxOrbit{0%{transform:rotate(0) translateX(24px) rotate(0);opacity:1}100%{transform:rotate(360deg) translateX(24px) rotate(-360deg);opacity:0}}
+.bx.elm.el-ruzgar b{position:absolute;left:10%;right:10%;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,#dff3ef,transparent);animation:bxGust .8s ease-out forwards}
+.bx.elm.el-ruzgar b:nth-child(1){top:30%}.bx.elm.el-ruzgar b:nth-child(2){top:50%;animation-delay:.1s}.bx.elm.el-ruzgar b:nth-child(3){top:70%;animation-delay:.2s}
+@keyframes bxGust{0%{transform:translateX(-60%) scaleX(.3);opacity:0}40%{opacity:1}100%{transform:translateX(60%) scaleX(1);opacity:0}}
+.bx.elm.el-ruh{display:grid;place-items:center;background:radial-gradient(circle,#8a6fb855 0 30%,transparent 65%);animation:bxMark 1s ease-out forwards}
+.bx.elm.el-ruh b{font-size:26px;animation:bxGhost 1s ease-out forwards}
+@keyframes bxGhost{0%{transform:translateY(10px) scale(.6);opacity:0}40%{opacity:1}100%{transform:translateY(-26px) scale(1.1);opacity:0}}
+.bx.elm.el-storm{background:conic-gradient(from 0deg,transparent,#8fb9b288,transparent 30%,#8fb9b266,transparent 60%);animation:bxVort .8s linear forwards}
+.bx.elm.el-dance{background:linear-gradient(135deg,transparent 44%,#b48ce8 47% 50%,transparent 53%),linear-gradient(45deg,transparent 44%,#b48ce8 47% 50%,transparent 53%),linear-gradient(90deg,transparent 46%,#fff 48% 49%,transparent 51%);filter:drop-shadow(0 0 8px #6b3fa0);animation:bxMark .9s ease-out forwards}
+.bx.drop{width:5px;height:9px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:#7cc6f0;animation:bxRain .55s ease-in both;animation-delay:var(--d)}
+.bx.pt.leaf{font-size:15px}
+.bx.gust{width:24px;height:2px;background:var(--c);border-radius:2px;animation:bxPt .7s ease-out forwards}
+.bx.pillar{transform:translate(-50%,-80%);width:var(--w);height:var(--h);background:linear-gradient(transparent,#fff6d6cc 40%,#fff6d6 60%,transparent);border-radius:40%;mix-blend-mode:screen;animation:bxPillar 1.1s ease-out forwards}
+@keyframes bxPillar{0%{opacity:0;transform:translate(-50%,-80%) scaleX(.1)}30%{opacity:1;transform:translate(-50%,-80%) scaleX(1)}100%{opacity:0;transform:translate(-50%,-80%) scaleX(.6)}}
+.bx.banner{left:0!important;top:44%!important;width:100%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 16px;background:linear-gradient(90deg,transparent,#120e19ee 15%,#120e19ee 85%,transparent);border-top:2px solid var(--c);border-bottom:2px solid var(--c);z-index:9;animation:bxBanner 1.5s cubic-bezier(.2,.9,.3,1) forwards}
+.bx.banner .bn-art svg{width:64px;height:64px;filter:drop-shadow(0 0 10px var(--c))}
+.bx.banner .bn-t b{display:block;font-size:22px;font-weight:950;letter-spacing:-.02em;color:#fff;text-shadow:0 0 14px var(--c);font-style:normal}
+.bx.banner .bn-t small{display:block;font-size:11px;font-weight:900;letter-spacing:.2em;color:var(--c)}
+@keyframes bxBanner{0%{clip-path:inset(0 100% 0 0);opacity:1}18%{clip-path:inset(0 0 0 0)}80%{clip-path:inset(0 0 0 0);opacity:1}100%{clip-path:inset(0 0 0 100%);opacity:.6}}
+.bx.vs{left:50%!important;top:46%!important;z-index:9}
+.bx.vs b{display:block;font-size:46px;font-weight:950;font-style:italic;color:#f2cf72;text-shadow:0 0 18px #f2cf72aa,3px 3px 0 #6b2a0c;animation:bxVs 1.1s cubic-bezier(.2,1.5,.4,1) forwards}
+@keyframes bxVs{0%{transform:scale(3) rotate(-12deg);opacity:0}25%{transform:scale(1) rotate(-6deg);opacity:1}75%{opacity:1}100%{transform:scale(.8) rotate(-6deg);opacity:0}}
+.bx.quake{transform:translate(0,-50%);width:var(--w);height:26px;background:linear-gradient(90deg,transparent,var(--c) 10%,#fff 50%,var(--c) 90%,transparent);clip-path:polygon(0 50%,8% 20%,16% 70%,26% 25%,36% 80%,46% 30%,56% 75%,66% 20%,76% 70%,86% 30%,100% 50%,86% 60%,76% 90%,66% 45%,56% 95%,46% 55%,36% 100%,26% 50%,16% 95%,8% 55%);animation:bxQuake .9s ease-out forwards}
+@keyframes bxQuake{0%{clip-path:inset(0 50% 0 50%);opacity:1}40%{opacity:1}100%{opacity:0}}
+.bx.rock{width:9px;height:8px;background:#9a8b78;border-radius:3px;animation:bxPt .8s cubic-bezier(.2,.8,.5,1) forwards;animation-delay:var(--d)}
+.bx.star-fall{width:4px;height:26px;border-radius:3px;background:linear-gradient(transparent,var(--c),#fff);box-shadow:0 0 10px var(--c);animation:bxRain .5s ease-in both;animation-delay:var(--d)}
+.bx.dome{width:var(--w);height:var(--h);border-radius:50% 50% 14px 14px;border:3px solid #7fb5e8;background:radial-gradient(ellipse at 50% 100%,#7fb5e822,#7fb5e855 70%,transparent 72%);box-shadow:0 0 30px #7fb5e888,inset 0 0 30px #7fb5e855;animation:bxDome 1.3s ease-out forwards}
+@keyframes bxDome{0%{transform:translate(-50%,-50%) scaleY(0);opacity:0}30%{transform:translate(-50%,-50%) scaleY(1);opacity:1}75%{opacity:1}100%{opacity:0}}
+.bx.vortex{width:var(--w);height:var(--h)}
+.bx.vortex b{position:absolute;left:50%;top:50%;font-size:22px;font-style:normal;animation:bxVortex 1.2s ease-in forwards;animation-delay:calc(var(--i) * -0.15s)}
+@keyframes bxVortex{0%{transform:rotate(calc(var(--i) * 45deg)) translateX(120px) rotate(0) scale(.6);opacity:0}30%{opacity:1}100%{transform:rotate(calc(var(--i) * 45deg + 540deg)) translateX(0) rotate(0) scale(1.4);opacity:0}}
+@keyframes bxVort{to{transform:translate(-50%,-50%) rotate(360deg);opacity:0}}

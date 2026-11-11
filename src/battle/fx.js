@@ -1,6 +1,6 @@
 // dam-la — savaş efektleri: her yeteneğin kendine özgü 2B animasyonu (düz çizim, 3B görünüm yok).
 // Petler kaymaz: yalnızca yerinde gerilir/öne atılır; efektler kartların üstünde ya da aralarında uçan parçacıklardır.
-import { TYPES } from '../pets/codex.js';
+import { TYPES, ELEMENT_FX } from '../pets/codex.js';
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
@@ -73,6 +73,9 @@ export function createFx({ arena, layer, cardOf, reduced }) {
       spawn(cls, r.x + (Math.random() - 0.5) * r.w * 0.5, r.y + r.h * 0.15, { dur: 900, html: glyph, vars: { '--dx': dx + 'px', '--dy': dy + 'px', '--d': (i * 60) + 'ms', '--c': c || '#fff' } });
     }
   }
+  // bir satırın (takımın) kutusu
+  function rowBox(side) { const row = arena.querySelector(side === 'A' ? '#btAlly' : '#btFoe'); if (!row) return null; const box = arena.getBoundingClientRect(), r = row.getBoundingClientRect(); return { x: r.left - box.left, y: r.top - box.top, w: r.width, h: r.height }; }
+  function flash(c = '#fff', o = 0.35) { if (reduced) return; spawn('flash', 0, 0, { dur: 420, vars: { '--c': c, '--o': o } }); }
   function shake(k = 1) { if (reduced) return; arena.classList.remove('shake1', 'shake2'); void arena.offsetWidth; arena.classList.add('shake' + Math.min(2, k)); setTimeout(() => arena.classList.remove('shake1', 'shake2'), 420); }
 
   return {
@@ -124,7 +127,8 @@ export function createFx({ arena, layer, cardOf, reduced }) {
       if (ev.reflect) mark = 'shards';
       if (ev.counter) mark = 'slash';
       onCard(ev.to, 'hitm ' + mark, { dur: 700, vars: { '--c': tint }, html: mark === 'paws' ? '🐾' : mark === 'dizzy' ? '💫' : '' });
-      if (ev.crit || ev.execute) { onCard(ev.to, 'star', { dur: 700 }); shake(1); }
+      if (ev.crit || ev.execute) { onCard(ev.to, 'star', { dur: 700 }); shake(1); flash('#fff', 0.28); }
+      if (!reduced && ev.dmg) particles(ev.to, '', ev.crit ? 8 : 4, { cls: 'spark', color: ev.mult > 1 ? tint : '#fff', up: 20, spread: 50 });
       if (ev.mult > 1) onCard(ev.to, 'ring', { dur: 650, vars: { '--c': tint } });
       if (R.shake) shake(R.shake);
       if (mark === 'flames' || mark === 'burst') particles(ev.to, '', 6, { cls: 'ember', color: mark === 'flames' ? '#b46be0' : tint, up: 24 });
@@ -151,6 +155,78 @@ export function createFx({ arena, layer, cardOf, reduced }) {
       onCard(uid, 'adm', { dur: 1100, html: { heal: '💚', hurt: '⚡', shield: '🛡️', buff: '💪', weaken: '🔻', confuse: '💫', will: '💬', ko: '☠️', revive: '✨' }[op] || '⚡' });
       shake(op === 'ko' || op === 'hurt' ? 2 : 1);
     },
-    shake,
+    shake, flash,
+    // element etkisi: her elementin kendi çizgisi
+    element(uid, el) {
+      const r = rectOf(uid); if (!r) return;
+      const c = TYPES[el]?.color || '#fff';
+      onCard(uid, 'elm el-' + el, { dur: 1100, vars: { '--c': c }, html: el === 'tas' ? '<b>✦</b><b>✦</b><b>✦</b>' : el === 'ruh' ? '<b>👻</b>' : el === 'ruzgar' ? '<b></b><b></b><b></b>' : '' });
+      if (reduced) return;
+      if (el === 'ates') particles(uid, '', 9, { cls: 'ember', color: '#ff9a4d', up: 34, spread: 30 });
+      if (el === 'su') for (let i = 0; i < 7; i++) spawn('drop', r.x + (Math.random() - 0.5) * r.w * 0.7, r.y - r.h * 0.4, { dur: 800, vars: { '--d': i * 55 + 'ms', '--fall': r.h * 0.75 + 'px' } });
+      if (el === 'doga') particles(uid, '🍃', 4, { cls: 'pt leaf', up: 18, spread: 40 });
+      if (el === 'ruzgar') particles(uid, '', 6, { cls: 'gust', color: '#dff3ef', up: 8, spread: 60 });
+    },
+    storm(uid) { onCard(uid, 'elm el-storm', { dur: 800 }); },
+    revive(uid) {
+      const r = rectOf(uid); if (!r) return;
+      spawn('pillar', r.x, r.y, { dur: 1200, vars: { '--w': r.w + 'px', '--h': r.h * 2.2 + 'px' } });
+      particles(uid, '✦', 8, { cls: 'pt', color: '#fff2b8', up: 50 });
+      flash('#fff6d6', 0.3);
+    },
+    // ekranın ortasından geçen şerit
+    async banner(title, sub, c = '#f2cf72', art = '') {
+      const e = spawn('banner', 0, 0, { dur: reduced ? 900 : 1500, vars: { '--c': c }, html: `${art ? `<span class="bn-art">${art}</span>` : ''}<span class="bn-t"><b>${title}</b>${sub ? `<small>${sub}</small>` : ''}</span>` });
+      await wait(reduced ? 500 : 1150);
+      return e;
+    },
+    // savaş açılışı: iki takım "VS" ile yüzleşir
+    async intro(B) {
+      if (reduced) return;
+      spawn('vs', 0, 0, { dur: 1100, html: '<b>VS</b>' });
+      arena.querySelectorAll('.bt-card').forEach((c, i) => c.animate([{ opacity: 0, transform: `translateY(${c.closest('.foe') ? -24 : 24}px) scale(.9)` }, { opacity: 1, transform: 'none' }], { duration: 480, delay: i * 70, easing: 'cubic-bezier(.2,1.3,.4,1)', fill: 'backwards' }));
+      await wait(800);
+    },
+    // süper yetenek sinematiği
+    async ult(ev, B, art) {
+      const u = B.units.find(x => x.uid === ev.from); if (!u) return;
+      const c = color(u.type);
+      const card = cardOf(ev.from);
+      arena.classList.add('ulting');
+      card?.classList.add('ulting');
+      await this.banner(`🌟 ${ev.move}`, 'SÜPER YETENEK', c, art);
+      const side = u.side === 'A' ? 'B' : 'A';
+      const foeRow = rowBox(side), myRow = rowBox(u.side);
+      const foes = B.units.filter(x => x.alive && x.side !== u.side), mine = B.units.filter(x => x.alive && x.side === u.side);
+      if (!reduced) {
+        if (ev.ult === 'quake' && foeRow) {
+          spawn('quake', foeRow.x, foeRow.y + foeRow.h * 0.8, { dur: 900, vars: { '--w': foeRow.w + 'px', '--c': c } });
+          for (const f of foes) { const r = rectOf(f.uid); if (r) for (let i = 0; i < 5; i++) spawn('rock', r.x + (Math.random() - 0.5) * r.w, r.y + r.h * 0.4, { dur: 800, vars: { '--dx': (Math.random() - 0.5) * 60 + 'px', '--dy': -40 - Math.random() * 50 + 'px', '--d': i * 40 + 'ms' } }); }
+          shake(2); await wait(520);
+        } else if (ev.ult === 'star' && foeRow) {
+          for (let i = 0; i < 16; i++) spawn('star-fall', foeRow.x + Math.random() * foeRow.w, foeRow.y - 30, { dur: 900, vars: { '--d': i * 40 + 'ms', '--fall': foeRow.h * 0.75 + 30 + 'px', '--c': c } });
+          await wait(620);
+        } else if (ev.ult === 'dance') {
+          card?.classList.add('blink');
+          for (const f of foes) onCard(f.uid, 'elm el-dance', { dur: 900 });
+          await wait(380); card?.classList.remove('blink');
+        } else if (ev.ult === 'fortress' && myRow) {
+          spawn('dome', myRow.x + myRow.w / 2, myRow.y + myRow.h / 2, { dur: 1300, vars: { '--w': myRow.w * 1.05 + 'px', '--h': myRow.h * 1.15 + 'px' } });
+          await wait(520);
+        } else if (ev.ult === 'rebirth' && myRow) {
+          for (const m of mine) { const r = rectOf(m.uid); if (r) spawn('pillar', r.x, r.y, { dur: 1100, vars: { '--w': r.w + 'px', '--h': r.h * 2.2 + 'px' } }); }
+          flash('#fff6d6', 0.35); await wait(520);
+        } else if (ev.ult === 'storm' && foeRow) {
+          spawn('vortex', foeRow.x + foeRow.w / 2, foeRow.y + foeRow.h / 2, { dur: 1200, vars: { '--c': c, '--w': foeRow.w + 'px', '--h': foeRow.h + 'px' }, html: Array.from({ length: 8 }, (_, i) => `<b style="--i:${i}">${TYPES[u.type]?.icon || '✦'}</b>`).join('') });
+          await wait(700);
+        } else if (ev.ult === 'speech') {
+          onCard(ev.from, 'spot', { dur: 1300 });
+          for (const f of foes) for (let i = 0; i < 2; i++) { projectile(ev.from, f.uid, 'word', { dur: 480, tint: '#f4f0ff' }); const w = layer.lastElementChild; if (w && w.classList.contains('word')) w.textContent = ['♥', '!', '…'][i]; }
+          await wait(560);
+        }
+        flash(c, 0.25);
+      }
+      arena.classList.remove('ulting'); card?.classList.remove('ulting');
+    },
   };
 }

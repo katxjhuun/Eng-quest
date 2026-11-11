@@ -3,7 +3,7 @@
 import { createBattle, nextActor, act, aiChoose, movesOf, targetKind, validTargets, botTeam, stanceSeen, rapportOf, adminOp } from './engine.js';
 import { createFx } from './fx.js';
 import { MONSTERS, COMMON, BOSS_FOR_STAGE, monsterSVG } from './monsters.js';
-import { TYPES, ROLES, STANCES, ROLE_IDS, ARGS } from '../pets/codex.js';
+import { TYPES, ROLES, STANCES, ROLE_IDS, ARGS, BEATS, ROLE_BEATS, ELEMENT_FX, ULT, EN_MAX, typeMult, roleMult } from '../pets/codex.js';
 
 const TALK = {
   logic: ['Az önce kendinle çeliştin.', 'Kanıtın nerede? Bende var.', 'Bu mantıkla kendi gölgeni bile yenemezsin.', 'Sorayım: neden savaşıyoruz?'],
@@ -13,7 +13,7 @@ const TALK = {
   close: ['Gördün mü? Sen de biliyorsun ki haklıyım.', 'Son sözüm şu: bu kavganın kazananı yok.', 'Artık tek bir şey kaldı: kabul etmek.'],
 };
 const GIVE = { weak: ['…haklı olabilirsin.', 'Bunu düşünmemiştim.', 'Hmm… belki.', 'Bu bana dokundu.'], neutral: ['Ne demek istiyorsun?', 'Hı hı…', 'Pek emin değilim.'], resist: ['Bana bunu mu söylüyorsun?!', 'Hiç komik değil.', 'Asıl sen kendine bak!', 'Hah! Asla.'], closing: ['…tamam, haklısın.', 'Ne diyeceğimi bilmiyorum.'], backfire: ['Önce beni ikna et, sonra nutuk at.'] };
-const KIND_ICON = { attack: '⚔️', talk: '💬', heal: '✚', buff: '✨', guard: '🛡️', dive: '🌊', replay: '♟️', read: '👁️', confuse: '💫' };
+const KIND_ICON = { ult: '🌟', attack: '⚔️', talk: '💬', heal: '✚', buff: '✨', guard: '🛡️', dive: '🌊', replay: '♟️', read: '👁️', confuse: '💫' };
 const MAX_ROSTER = 12;
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -54,16 +54,63 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
   const artOf = d => (d.kind === 'mon' ? monsterSVG(d.mon) : petSVG(d.species, d.stage, { coat: d.coat, shiny: d.shiny, mood: 'idle' }));
   const typeChip = t => (TYPES[t] ? `<span class="bt-type" style="--tc:${TYPES[t].color}" title="${esc(TYPES[t].name)}">${TYPES[t].icon}</span>` : '');
 
+  // ---------- kim kimi yener: üçgen çizimleri ----------
+  // nodes: [{icon,name,color}] — her biri bir sonrakini yener (saat yönünde)
+  function tri(nodes, title) {
+    const P = [[80, 22], [138, 118], [22, 118]];
+    const arrow = (a, b, i) => {
+      const [x1, y1] = P[a], [x2, y2] = P[b], dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L;
+      const sx = x1 + ux * 26, sy = y1 + uy * 26, ex = x2 - ux * 30, ey = y2 - uy * 30, mx = (sx + ex) / 2 - uy * 10, my = (sy + ey) / 2 + ux * 10;
+      return `<path class="lg-arr" style="--i:${i}" d="M${sx.toFixed(1)} ${sy.toFixed(1)} Q${mx.toFixed(1)} ${my.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}" marker-end="url(#lgHead)"/>`;
+    };
+    return `<figure class="lg-tri"><svg viewBox="0 0 160 160" aria-hidden="true"><defs><marker id="lgHead" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#f2cf72"/></marker></defs>
+      ${arrow(0, 1, 0)}${arrow(1, 2, 1)}${arrow(2, 0, 2)}
+      ${nodes.map((n, i) => `<g class="lg-node" transform="translate(${P[i][0]} ${P[i][1]})"><circle r="21" fill="${n.color}" fill-opacity=".22" stroke="${n.color}" stroke-width="2.5"/><text y="7" text-anchor="middle" font-size="19">${n.icon}</text><text y="36" text-anchor="middle" class="lg-lbl">${esc(n.name)}</text></g>`).join('')}
+    </svg></figure>`;
+  }
+  const cyc = (map, start) => { const o = [start]; while (o.length < 3) o.push(map[o.at(-1)]); return o; };
+  const ROLE_COLOR = { tank: '#7fb5e8', assassin: '#b48ce8', magician: '#f2cf72', ranger: '#8be0a4', melee: '#f08a5d', support: '#f29bb6' };
+  function legendHTML() {
+    const t = id => ({ icon: TYPES[id].icon, name: TYPES[id].name, color: TYPES[id].color });
+    const r = id => ({ icon: ROLES[id].icon, name: ROLES[id].name.replace('Yakın dövüşçü', 'Yakın'), color: ROLE_COLOR[id] });
+    return `<div class="lg-card"><div class="lg-head"><b>Kim kimi yener?</b><button class="closebtn" id="btLegendX" aria-label="Kapat">×</button></div>
+      <p class="lg-sub">Ok yönündeki, karşısındakini yener.</p>
+      <h4>Elementler <small>üstün ×1,5 · zayıf ×0,67</small></h4>
+      <div class="lg-row">${tri(cyc(BEATS, 'ates').map(t), 'Ateş · Doğa · Su')}${tri(cyc(BEATS, 'tas').map(t), 'Taş · Rüzgâr · Ruh')}</div>
+      <h4>Roller <small>üstün ×1,25 · zayıf ×0,8</small></h4>
+      <div class="lg-row">${tri(cyc(ROLE_BEATS, 'tank').map(r), 'Tank · Suikastçı · Büyücü')}${tri(cyc(ROLE_BEATS, 'ranger').map(r), 'Nişancı · Yakın · Destek')}</div>
+      <h4>Element etkileri <small>üstün darbede kesin, nötrde bazen</small></h4>
+      <div class="lg-els">${Object.entries(ELEMENT_FX).map(([k, e]) => `<div style="--c:${TYPES[k].color}"><i>${TYPES[k].icon}→${e.icon}</i><b>${e.name}</b><small>${e.desc}</small></div>`).join('')}</div>
+      <h4>⚡ Süper yetenek</h4><p class="lg-sub">Hamle yaptıkça ve darbe aldıkça enerji dolar. Dolunca rolüne özgü süper yetenek açılır. 🎭 Hilebaz bu döngülerin dışında: onun taş-kâğıt-makası tavırlardır (Şüpheci→Mantık, Kibirli→Övgü, Kırılgan→Duygu, Öfkeli→Şaka).</p>
+      <p class="lg-sub">🌀 10. turdan sonra arena fırtınası başlar; her tur herkes biraz daha yıpranır. 🩹 Aynı birim üst üste iyileştikçe iyileşme azalır.</p>
+      <button class="primarybtn" id="btLegendOk">Anladım</button></div>`;
+  }
+  let legendWait = null;
+  function openLegend() { const L = root.querySelector('#btLegend'); L.innerHTML = legendHTML(); L.hidden = false; requestAnimationFrame(() => L.classList.add('on')); return new Promise(r => { legendWait = r; }); }
+  function closeLegend() { const L = root.querySelector('#btLegend'); L.classList.remove('on'); setTimeout(() => { L.hidden = true; }, 200); const r = legendWait; legendWait = null; r?.(); }
+  // saldıranın hedefe karşı üstünlüğü (kartın üstünde rozet)
+  function advHTML(a, t) {
+    if (!a || !t || a.side === t.side || a.role === 'trickster') return '';
+    const tm = typeMult(a.type, t.type), rm = roleMult(a.role, t.role), out = [];
+    if (tm !== 1) out.push(`<span class="${tm > 1 ? 'up' : 'dn'}" title="Element">${TYPES[a.type]?.icon || ''}${tm > 1 ? '›' : '‹'}${TYPES[t.type]?.icon || ''}</span>`);
+    if (rm !== 1) out.push(`<span class="${rm > 1 ? 'up' : 'dn'}" title="Rol">${ROLES[a.role].icon}${rm > 1 ? '›' : '‹'}${ROLES[t.role].icon}</span>`);
+    const tot = tm * rm;
+    if (out.length) out.push(`<em class="${tot > 1 ? 'up' : tot < 1 ? 'dn' : ''}">×${(Math.round(tot * 100) / 100).toString().replace('.', ',')}</em>`);
+    return out.join('');
+  }
+
   // ---------- DOM ----------
   const root = document.createElement('div');
   root.className = 'bt-overlay'; root.id = 'battleOverlay'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true');
   root.innerHTML = `<div class="bt-arena" id="btArena">
-    <div class="bt-head"><div><div class="eyebrow" id="btEye">SAVAŞ</div><b id="btTitle"></b></div><div class="bt-round" id="btRound"></div><button class="closebtn" id="btFlee" aria-label="Kaç">🏳️</button></div>
+    <div class="bt-head"><div><div class="eyebrow" id="btEye">SAVAŞ</div><b id="btTitle"></b></div><div class="bt-round" id="btRound"></div><button class="closebtn bt-help" id="btHelp" aria-label="Üstünlük tablosu" title="Kim kimi yener?">⚖️</button><button class="closebtn" id="btFlee" aria-label="Kaç">🏳️</button></div>
+    <div class="bt-order" id="btOrder" aria-label="Sıra"></div>
     <div class="bt-row foe" id="btFoe"></div>
     <div class="bt-log" id="btLog" aria-live="polite"></div>
     <div class="bt-row ally" id="btAlly"></div>
     <div class="bt-panel" id="btPanel"></div>
     <div class="bt-fx" id="btFx"></div>
+    <div class="bt-legend" id="btLegend" hidden></div>
   </div>`;
   document.body.appendChild(root);
   const FX = createFx({ arena: root.querySelector('#btArena'), layer: root.querySelector('#btFx'), cardOf: uid => root.querySelector(`[data-uid="${uid}"]`), reduced });
@@ -241,7 +288,7 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
   }
 
   // ---------- savaş döngüsü ----------
-  let B = null, resolveFight = null, picking = null;
+  let B = null, resolveFight = null, picking = null, cur = null;
   function close() { root.classList.remove('show'); document.body.classList.remove('bt-open'); }
 
   function cardHTML(u) {
@@ -249,7 +296,8 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
     return `<div class="bt-card ${u.boss ? 'boss' : ''}${u.convert ? ' convert' : ''}" data-uid="${u.uid}">
       <div class="bt-art">${art}</div>
       <div class="bt-name">${typeChip(u.type)}<b>${esc(u.name)}</b><span title="${esc(ROLES[u.role].name)}">${ROLES[u.role].icon}</span></div>
-      <div class="bt-bar hp"><i></i></div><div class="bt-bar will" title="İrade"><i></i></div>
+      <div class="bt-adv"></div>
+      <div class="bt-bar hp"><b></b><i></i></div><div class="bt-bar will" title="İrade"><i></i></div>${u.ult ? `<div class="bt-bar en" title="Enerji: dolunca ${esc(u.ult.name)}"><i></i></div>` : ''}
       <div class="bt-st"><span class="bt-stance"></span><span class="bt-rap"></span><span class="bt-fxs"></span></div><div class="bt-tell"></div></div>`;
   }
   function render() {
@@ -264,7 +312,12 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
     const anyTrick = B.units.some(x => x.alive && x.role === 'trickster');
     for (const u of B.units) {
       const el = root.querySelector(`[data-uid="${u.uid}"]`); if (!el) continue;
-      el.querySelector('.hp i').style.width = `${Math.max(0, u.hp / u.maxHp * 100)}%`;
+      const hpw = `${Math.max(0, u.hp / u.maxHp * 100)}%`;
+      el.querySelector('.hp i').style.width = hpw; el.querySelector('.hp b').style.width = hpw;
+      el.classList.toggle('low', u.alive && u.hp / u.maxHp < 0.3);
+      const enEl = el.querySelector('.en i'); if (enEl) enEl.style.width = `${Math.min(100, (u.en | 0) / EN_MAX * 100)}%`;
+      el.classList.toggle('ult-ready', !!(u.ult && u.alive && u.en >= EN_MAX));
+      el.querySelector('.bt-adv').innerHTML = cur && cur.side === 'A' && !cur.convert && u.alive ? advHTML(cur, u) : '';
       el.querySelector('.will i').style.width = `${Math.max(0, u.will / u.maxWill * 100)}%`;
       el.classList.toggle('down', !u.alive); el.classList.toggle('persuaded', u.out === 'persuaded');
       el.classList.toggle('dive', !!u.fx.dive);
@@ -275,10 +328,14 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
       else { sEl.textContent = '💬'; sEl.title = 'Tavrını sözünden anla ya da Oku ile gör.'; tEl.textContent = hasTrick ? `“${u.tell}”` : ''; }
       const rp = mine ? 0 : rapportOf(u, 'A'); el.querySelector('.bt-rap').innerHTML = hasTrick && !mine && u.alive ? [0, 1, 2, 3].map(i => `<i class="${i < rp ? 'on' : ''}"></i>`).join('') : '';
       el.classList.toggle('convert', !!u.convert); el.dataset.conv = u.convert || '';
-      const fx = []; if (u.fx.taunt) fx.push('🛡️'); if (u.fx.atkUp) fx.push('💪'); if (u.fx.focus) fx.push('🎯'); if (u.fx.dodge) fx.push('💨'); if (u.fx.ward) fx.push('♟️'); if (u.fx.mirror) fx.push('🪞'); if (u.fx.dot) fx.push('🔥'); if (u.fx.defDown) fx.push('🔻'); if (u.fx.atkDown) fx.push('⬇️'); if (u.fx.spdUp) fx.push('⚡');
+      const fx = []; if (u.fx.taunt) fx.push('🛡️'); if (u.fx.atkUp) fx.push('💪'); if (u.fx.focus) fx.push('🎯'); if (u.fx.dodge) fx.push('💨'); if (u.fx.ward) fx.push('♟️'); if (u.fx.mirror) fx.push('🪞'); if (u.fx.dot) fx.push('🔥'); if (u.fx.defDown) fx.push('🔻'); if (u.fx.atkDown) fx.push('⬇️'); if (u.fx.spdUp) fx.push('⚡'); if (u.fx.slow) fx.push('💧'); if (u.fx.stun) fx.push('💫'); if ((u.healed | 0) >= 2) fx.push('🩹');
       el.querySelector('.bt-fxs').textContent = fx.join('');
     }
     $('#btRound').textContent = `Tur ${B.round}`;
+    root.classList.toggle('storming', B.round >= 10);
+    // sıra şeridi: bu turda kalanlar
+    const ord = B.order.slice(Math.max(0, B.turn)).map(id => B.units.find(x => x.uid === id)).filter(x => x && x.alive);
+    $('#btOrder').innerHTML = ord.map((x, i) => `<span class="bo ${x.side === 'A' ? 'a' : 'b'}${i === 0 && cur === x ? ' now' : ''}" title="${esc(x.name)}">${x.kind === 'mon' ? monsterSVG(x.mon) : petSVG(x.species, x.stage, { coat: x.coat, shiny: x.shiny, mood: 'idle' })}</span>`).join('<i>›</i>') + `<small>Tur ${B.round + 1} →</small>`;
     publish();
   }
   const cardOf = uid => root.querySelector(`[data-uid="${uid}"]`);
@@ -297,7 +354,12 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
   }
   async function animate(events) {
     for (const ev of events) {
-      if (ev.type === 'use') {
+      if (ev.type === 'use' && ev.kind === 'ult') {
+        const u = B.units.find(x => x.uid === ev.from);
+        log(`🌟 <b>${esc(u.name)}</b> · SÜPER: <b>${esc(ev.move)}</b>`);
+        refresh();
+        await FX.ult(ev, B, cardOf(ev.from)?.querySelector('.bt-art')?.innerHTML || '');
+      } else if (ev.type === 'use') {
         const u = B.units.find(x => x.uid === ev.from);
         cardOf(ev.from)?.classList.add('acting');
         log(`<b>${esc(u.name)}</b> · ${KIND_ICON[ev.kind] || ''} ${esc(ev.move)}`);
@@ -314,13 +376,21 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
         FX.hit(ev, B);
         if (ev.miss) { floatText(ev.to, 'Iska!', 'miss'); await wait(T(420)); continue; }
         el?.classList.remove('hit'); void el?.offsetWidth; el?.classList.add('hit');
-        floatText(ev.to, `−${ev.dmg}${ev.crit ? '!' : ''}`, ev.mult > 1 ? 'super' : ev.mult < 1 ? 'weak' : '');
+        const tot = (ev.mult || 1) * (ev.rmult || 1);
+        floatText(ev.to, `−${ev.dmg}${ev.crit ? '!' : ''}`, (ev.crit ? 'crit ' : '') + (tot > 1 ? 'super' : tot < 1 ? 'weak' : ''));
+        const a = B.units.find(x => x.uid === ev.from), t = B.units.find(x => x.uid === ev.to);
+        const why = [];
+        if (a && t && ev.mult && ev.mult !== 1) why.push(`${TYPES[a.type]?.icon}${ev.mult > 1 ? '›' : '‹'}${TYPES[t.type]?.icon} ${ev.mult > 1 ? 'element üstünlüğü' : 'element zayıflığı'}`);
+        if (a && t && ev.rmult && ev.rmult !== 1) why.push(`${ROLES[a.role].icon}${ev.rmult > 1 ? '›' : '‹'}${ROLES[t.role].icon} ${ev.rmult > 1 ? 'rol üstünlüğü' : 'rol zayıflığı'}`);
         if (ev.reflect) log(`🪞 Ayna, darbenin yarısını geri yansıttı.`);
         else if (ev.counter) log(`↩️ ${esc(nameOf(ev.from))} karşılık verdi!`);
-        else if (ev.mult > 1) log(`${esc(nameOf(ev.to))}: <b>Çok etkili!</b>${ev.crit ? ' Kritik!' : ''}`);
-        else if (ev.mult < 1) log(`${esc(nameOf(ev.to))}: pek etkili değil…`);
+        else if (ev.admin) {}
+        else if (tot > 1) log(`${esc(nameOf(ev.to))}: <b>Çok etkili!</b>${ev.crit ? ' Kritik!' : ''} <span class="lg-why">${why.join(' · ')}</span>`);
+        else if (tot < 1) log(`${esc(nameOf(ev.to))}: pek etkili değil… <span class="lg-why">${why.join(' · ')}</span>`);
         else if (ev.crit) log('Kritik vuruş!');
         refresh(); await wait(T(460));
+      } else if (ev.type === 'talk' && ev.speech) {
+        bubble(ev.to, pick(GIVE.weak), 'soft'); FX.talkResult(ev); floatText(ev.to, `−${ev.amt} irade`, 'super'); refresh(); await wait(T(380));
       } else if (ev.type === 'talk') {
         bubble(ev.from, pick(TALK[ev.closing ? 'close' : ev.arg]), 'talk');
         await wait(T(700));
@@ -339,9 +409,21 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
         log(`👁️ <b>${esc(nameOf(ev.to))}</b> şu an ${esc(st.name.toLocaleLowerCase('tr'))}: ${ARGS[st.weak]} işler, ${ARGS[st.resist]} ters teper. Sonraki tur ${nx.icon} ${esc(nx.name.toLocaleLowerCase('tr'))} olacak.`);
         refresh(); await wait(T(1100));
       } else if (ev.type === 'retort') { FX.retort(ev.from, ev.to); floatText(ev.to, `−${ev.amt} irade`, 'weak'); bubble(ev.to, ev.text ? 'Laf yedim…' : 'Laf yedim…'); refresh(); await wait(T(500)); }
-      else if (ev.type === 'heal') { FX.heal(ev.to); floatText(ev.to, `+${ev.amt}`, 'heal'); refresh(); await wait(T(420)); }
+      else if (ev.type === 'heal') { FX.heal(ev.to); floatText(ev.to, `+${ev.amt}${ev.tired ? ' 🩹' : ''}`, 'heal'); if (ev.tired) log(`🩹 ${esc(nameOf(ev.to))} üst üste iyileşti; etkisi azalıyor.`); refresh(); await wait(T(420)); }
+      else if (ev.type === 'element') {
+        const e = ELEMENT_FX[ev.el];
+        FX.element(ev.to, ev.el); floatText(ev.to, `${e.icon} ${e.name}`, 'el');
+        log(`${TYPES[ev.el].icon} <b>${esc(nameOf(ev.to))}</b>: ${esc(e.name)}! <span class="lg-why">${esc(e.desc)}</span>`);
+        refresh(); await wait(T(560));
+      } else if (ev.type === 'stunned') { FX.element(ev.to, 'tas'); floatText(ev.to, '💫 sersem', 'bad'); log(`💫 ${esc(nameOf(ev.to))} sersemledi, hamlesini kaçırdı!`); refresh(); await wait(T(800)); }
+      else if (ev.type === 'unstun') { floatText(ev.to, 'silkindi', 'buff'); await wait(T(300)); }
+      else if (ev.type === 'revive') { FX.revive(ev.to); refresh(); floatText(ev.to, `+${ev.amt}`, 'heal'); log(`✨ ${esc(nameOf(ev.to))} yeniden ayağa kalktı!`); await wait(T(900)); }
       else if (ev.type === 'buff') { FX.buff(ev.to, ev.bad); floatText(ev.to, ev.text, ev.bad ? 'bad' : 'buff'); refresh(); await wait(T(420)); }
       else if (ev.type === 'confused') { floatText(ev.to, '💫', 'buff'); log(`💫 ${esc(nameOf(ev.to))}: ${esc(ev.text)}`); await wait(T(600)); }
+      else if (ev.type === 'dot' && ev.storm) {
+        if (ev.first) { await FX.banner('🌀 Arena fırtınası', 'Savaş uzadı: her tur herkes biraz daha yıpranacak', '#8fb9b2'); }
+        FX.storm(ev.to); floatText(ev.to, `−${ev.dmg} 🌀`, 'weak'); refresh(); await wait(T(300));
+      }
       else if (ev.type === 'recoil' || ev.type === 'dot') { if (ev.type === 'dot' && !ev.fatigue) FX.dot(ev.to); floatText(ev.to, `−${ev.dmg}`, ev.fatigue ? 'weak' : ''); refresh(); await wait(T(320)); }
       else if (ev.type === 'ko') { FX.ko(ev.to); log(`💥 ${esc(nameOf(ev.to))} yere serildi.`); refresh(); await wait(T(700)); }
       else if (ev.type === 'persuaded' || ev.type === 'leave') {
@@ -371,7 +453,9 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
     const ms = movesOf(u);
     const trick = u.role === 'trickster';
     const tip = trick ? `<div class="bt-tip">💡 Rakiplerin sözlerine bak: tavırlarını ele verir (ama blöf olabilir). İsabetli argüman güveni (●) artırır; en az 2 güvenle ikna edilen rakip senin safına geçer.</div>` : '';
-    $('#btPanel').innerHTML = `<div class="bt-turn">Sıra: <b>${esc(u.name)}</b> ${ROLES[u.role].icon}</div>${tip}<div class="bt-moves${trick ? ' trick' : ''}">${ms.map(m => `<button class="bt-move k-${m.kind}${m.closing ? ' closing' : ''}" data-mv="${m.id}" ${m.ready === false ? 'disabled' : ''}><b>${m.closing ? '⚖️' : KIND_ICON[m.kind] || ''} ${esc(m.name)}</b><small>${esc(m.desc || '')}</small>${m.ready === false ? `<em>${m.cdLeft} tur</em>` : ''}</button>`).join('')}</div>`;
+    const normal = ms.filter(m => m.kind !== 'ult'), ult = ms.find(m => m.kind === 'ult');
+    const ultBtn = ult ? `<button class="bt-move bt-ult${ult.ready ? ' ready' : ''}" data-mv="${ult.id}" ${ult.ready ? '' : 'disabled'} style="--en:${Math.min(100, (u.en | 0))}%"><b>🌟 ${esc(ult.name)}</b><small>${esc(ult.desc)}</small><em>${ult.ready ? 'HAZIR!' : `⚡ ${u.en | 0}/${EN_MAX}`}</em></button>` : '';
+    $('#btPanel').innerHTML = `<div class="bt-turn">Sıra: <b>${esc(u.name)}</b> ${typeChip(u.type)} ${ROLES[u.role].icon} <span class="bt-turn-tip">Kartlardaki <b class="up">›</b> üstünlük, <b class="dn">‹</b> zayıflık</span></div>${tip}${ultBtn}<div class="bt-moves${trick ? ' trick' : ''}">${normal.map(m => `<button class="bt-move k-${m.kind}${m.closing ? ' closing' : ''}" data-mv="${m.id}" ${m.ready === false ? 'disabled' : ''}><b>${m.closing ? '⚖️' : KIND_ICON[m.kind] || ''} ${esc(m.name)}</b><small>${esc(m.desc || '')}</small>${m.ready === false ? `<em>${m.cdLeft} tur</em>` : ''}</button>`).join('')}</div>`;
   }
   function chooseFor(u) {
     return new Promise(resolve => {
@@ -381,6 +465,8 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
     });
   }
   root.addEventListener('click', e => {
+    if (e.target.closest('#btHelp')) { openLegend(); return; }
+    if (e.target.closest('#btLegendX,#btLegendOk') || e.target.id === 'btLegend') { closeLegend(); return; }
     if (e.target.closest('#btFlee')) {
       if (!B || !B.opts.canFlee) { core.toast('Boss savaşından kaçılmaz.'); return; }
       if (picking) { const r = picking.resolve; picking = null; r({ flee: true }); }
@@ -419,10 +505,15 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
     root.classList.toggle('is-boss', /BOSS/.test(opts.eye || ''));
     render(); root.classList.add('show'); document.body.classList.add('bt-open');
     log(opts.intro ? esc(opts.intro) : 'Savaş başlıyor. Her tur hamleni seç.');
-    await wait(T(900));
+    await FX.intro?.(B);
+    // ilk savaşta üstünlük tablosunu bir kez göster
+    const st0 = state();
+    if (!st0.legendSeen) { st0.legendSeen = 1; core.saveLocal(false); await openLegend(); }
+    await wait(T(500));
     let fled = false;
     while (!B.over) {
       const u = nextActor(B); if (!u) break;
+      cur = u;
       refresh();
       let choice;
       if (u.side === 'A' && !u.convert) { choice = await chooseFor(u); if (choice.flee) { fled = true; break; } }
@@ -435,6 +526,7 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
       publish();
       await applyCmds();
     }
+    cur = null;
     cmdOff?.(); cmdOff = null; clearTimeout(pubTimer); core.admin?.battlePublish(null);
     const winner = fled ? 'B' : B.winner;
     const foes = B.units.filter(u => origB.has(u.uid));

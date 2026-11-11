@@ -10,7 +10,11 @@
 //  · Boss’lar güven en az 2 olmadan tam etkilenmez ve her hamlede biraz irade toplar.
 //  · İsabetli argüman rakibi tereddüde düşürür (saldırısı 1 tur zayıflar).
 //  · Güven 2+ iken iradesi biten rakip savaştan çekilmek yerine 2 hamle boyunca hilebazın safına geçer, sonra ayrılır.
-import { ROLES, SIGNATURE, STANCES, ARGS, SPECIES_TYPE, typeMult, battleStats, BASE } from '../pets/codex.js';
+// Üç taş-kâğıt-makas katmanı: tip (×1,5 / ×0,67), rol (×1,25 / ×0,8) ve hilebazın tavırları.
+// Üstün tipten gelen darbe element etkisi bırakır (yanık, ıslak, sarmaşık, sersem, savrulma, korku).
+// Her birim hamle yaptıkça ve darbe aldıkça enerji (⚡) toplar; 100 olunca rolüne özgü süper yeteneği açılır.
+// Döngüleri kırmak için: aynı birim art arda iyileştikçe iyileşme azalır, 10. turdan sonra arena fırtınası giderek sertleşir.
+import { ROLES, SIGNATURE, STANCES, ARGS, SPECIES_TYPE, typeMult, roleMult, ELEMENT_FX, ULT, EN_MAX, battleStats, BASE } from '../pets/codex.js';
 import { MONSTERS } from './monsters.js';
 
 const STANCE_IDS = Object.keys(STANCES);
@@ -34,7 +38,7 @@ export function makeUnit(def, side) {
     uid: `u${++uidSeq}`, side, kind: def.kind, species: def.species, mon: def.mon, boss: !!(m && m.boss), name: def.name || (m ? m.name : def.species),
     type: isMon ? m.type : (def.type || SPECIES_TYPE[def.species]), role, stage: def.stage || 0, shiny: !!def.shiny, coat: def.coat, owner: def.owner || '',
     maxHp: st.hp, hp: st.hp, maxWill: Math.round(st.hp * (role === 'tank' ? 0.9 : 0.7) + 20), will: 0, atk: st.atk, def: st.def, spd: st.spd,
-    moves, cds: {}, fx: {}, alive: true, out: null, stance: null, nextStance: null, tell: '', bluff: false, temper: pickOne(STANCE_IDS), rap: {}, hist: {}, seen: {}, convert: 0,
+    moves, ult: ULT[role] || null, en: 0, healed: 0, last2: [], cds: {}, fx: {}, alive: true, out: null, stance: null, nextStance: null, tell: '', bluff: false, temper: pickOne(STANCE_IDS), rap: {}, hist: {}, seen: {}, convert: 0,
   };
 }
 
@@ -63,9 +67,9 @@ function newRound(b) {
     const shown = u.bluff ? pickOne(STANCE_IDS.filter(x => x !== u.stance)) : u.stance;
     u.tell = pickOne(STANCES[shown].tells);
     // süreli etkiler
-    for (const k of ['taunt', 'defDown', 'atkUp', 'atkDown', 'spdUp', 'ward', 'dot']) if (u.fx[k] > 0) u.fx[k]--;
+    for (const k of ['taunt', 'defDown', 'atkUp', 'atkDown', 'spdUp', 'ward', 'dot', 'slow']) if (u.fx[k] > 0) u.fx[k]--;
   }
-  b.order = alive(b).map(u => ({ u, s: u.spd * (u.fx.spdUp ? 1.3 : 1) * rnd(0.9, 1.1) })).sort((x, y) => y.s - x.s).map(x => x.u.uid);
+  b.order = alive(b).map(u => ({ u, s: u.spd * (u.fx.spdUp ? 1.3 : 1) * (u.fx.slow ? 0.65 : 1) * rnd(0.9, 1.1) })).sort((x, y) => y.s - x.s).map(x => x.u.uid);
   b.turn = -1;
 }
 
@@ -90,13 +94,16 @@ export function targetKind(move) {
   if (move.kind === 'dive') return 'none';
   if (move.kind === 'read' || move.kind === 'confuse') return 'foe';
   if (move.kind === 'heal') return move.ally ? 'ally' : 'none';
+  if (move.kind === 'ult') return 'none';
   if (move.kind === 'buff') return move.ally ? 'ally' : 'none';
   return 'none';
 }
 // bir birimin o an kullanabileceği hamleler (dalıştaysa tek seçenek yüzeye çıkmaktır)
 export function movesOf(u) {
   if (u.fx.dive) return [{ id: 'surface', name: 'Yüzeye Çık', kind: 'attack', power: 1.9, sure: true, desc: 'Derinden çıkıp ağır vurur.' }];
-  return u.moves.map(m => ({ ...m, ready: !(u.cds[m.id] > 0), cdLeft: u.cds[m.id] || 0 }));
+  const list = u.moves.map(m => ({ ...m, ready: !(u.cds[m.id] > 0), cdLeft: u.cds[m.id] || 0 }));
+  if (u.ult) list.push({ ...u.ult, ready: u.en >= EN_MAX, enLeft: Math.max(0, EN_MAX - u.en) });
+  return list;
 }
 export function validTargets(b, u, move) {
   const k = targetKind(move);
@@ -114,7 +121,8 @@ function dmgCalc(b, a, t, move, ev) {
   if (move.pierce) def *= 1 - move.pierce;
   let tm = typeMult(a.type, t.type);
   if (move.typeBoost && tm !== 1) tm = tm > 1 ? tm * 1.35 : tm;
-  let d = a.atk * (move.power || 1) * (60 / (60 + def)) * tm * rnd(0.88, 1.12) * 2.2;
+  const rm = roleMult(a.role, t.role);
+  let d = a.atk * (move.power || 1) * (60 / (60 + def)) * tm * rm * rnd(0.88, 1.12) * 2.2;
   if (a.fx.atkUp) d *= 1.3;
   if (a.fx.atkDown) d *= 0.75;
   if (a.fx.focus) { d *= 2; a.fx.focus = 0; ev.focus = true; }
@@ -122,17 +130,40 @@ function dmgCalc(b, a, t, move, ev) {
   if (move.crit && Math.random() < move.crit) { d *= 1.8; ev.crit = true; }
   if (t.fx.taunt) d *= 0.6;
   if (allies(b, t).some(x => x.fx.ward > 0)) d *= 0.5;
-  ev.mult = tm;
+  ev.mult = tm; ev.rmult = rm;
   return Math.max(1, Math.round(d));
 }
 
+// canavarlar (boss değilse) enerjiyi biraz daha yavaş toplar; oyuncunun süper yeteneği önce gelsin
+const gain = (u, n) => { if (u && u.ult) u.en = Math.min(EN_MAX, (u.en | 0) + n * (u.kind === 'mon' && !u.boss ? 0.8 : 1)); };
+// üstün tipin bıraktığı element etkisi
+function element(type, t, events) {
+  if (!ELEMENT_FX[type]) return;
+  const f = t.fx;
+  if (type === 'ates') { f.dot = Math.max(f.dot | 0, 3); f.dotAmt = Math.max(f.dotAmt | 0, Math.max(1, Math.round(t.maxHp * 0.05))); }
+  else if (type === 'su') f.slow = Math.max(f.slow | 0, 3);
+  else if (type === 'doga') f.defDown = Math.max(f.defDown | 0, 3);
+  else if (type === 'tas') f.stun = 1;
+  else if (type === 'ruzgar') { f.atkUp = 0; f.focus = 0; f.ward = 0; f.spdUp = 0; f.dodge = 0; f.mirror = 0; f.counterReady = 0; }
+  else if (type === 'ruh') f.atkDown = Math.max(f.atkDown | 0, 3);
+  events.push({ type: 'element', to: t.uid, el: type });
+}
+function heal(u, t, k, events, floor = 0.35) {
+  const eff = Math.max(floor, 1 - 0.22 * (t.healed | 0));
+  const h = Math.max(1, Math.round(t.maxHp * k * eff)); t.hp = Math.min(t.maxHp, t.hp + h); t.healed = (t.healed | 0) + 1;
+  events.push({ type: 'heal', to: t.uid, amt: h, tired: eff < 1 });
+}
 function hit(b, a, t, move, events) {
   const ev = { type: 'hit', from: a.uid, to: t.uid, move: move.name, id: move.id, role: a.role, utype: a.type };
   if (t.fx.dodge && !move.sure) { t.fx.dodge = 0; ev.miss = true; events.push(ev); return; }
   if (t.fx.counterReady && !t.fx.dive) ev.countered = true;
   const d = dmgCalc(b, a, t, move, ev);
   t.hp = Math.max(0, t.hp - d); ev.dmg = d;
+  ev.hpAfter = t.hp;
   events.push(ev);
+  gain(t, 10); if (ev.mult > 1 || ev.rmult > 1) gain(a, 8);
+  // üstün tip her zaman, diğerleri %20 olasılıkla element etkisi bırakır (zayıf tip hiç bırakmaz)
+  if (t.hp > 0 && !ev.reflect && (ev.mult > 1 || move.forceEl || (ev.mult === 1 && Math.random() < 0.2))) element(a.type, t, events);
   if (t.fx.mirror) { const r = Math.round(d * 0.5); t.fx.mirror = 0; a.hp = Math.max(0, a.hp - r); events.push({ type: 'hit', from: t.uid, to: a.uid, dmg: r, reflect: true, move: 'Ayna' }); }
   if (ev.countered) { t.fx.counterReady = 0; const r = Math.round(t.atk * 0.8 * 1.6); a.hp = Math.max(0, a.hp - r); events.push({ type: 'hit', from: t.uid, to: a.uid, dmg: r, counter: true, move: 'Karşılık' }); }
   if (move.debuff === 'def') t.fx.defDown = 2;
@@ -175,7 +206,7 @@ function talk(b, a, t, move, events) {
     if (last && last.arg === move.arg) { amt *= 0.55; ev.repeat = true; }
     if (rel === 'weak' && last?.rel === 'weak' && last.arg !== move.arg) { amt *= prev?.rel === 'weak' && prev.arg !== last.arg ? 1.8 : 1.4; ev.chain = true; }
     if (t.boss && rap < 2) { amt *= 0.6; ev.resolve = true; }
-    if (rel === 'weak') { t.rap[key] = Math.min(4, rap + 1); t.fx.atkDown = Math.max(t.fx.atkDown | 0, 2); ev.doubt = true; }
+    if (rel === 'weak') { gain(a, 8); t.rap[key] = Math.min(4, rap + 1); t.fx.atkDown = Math.max(t.fx.atkDown | 0, 2); ev.doubt = true; }
     if (rel === 'resist') {
       t.rap[key] = 0;
       const regain = Math.round(t.maxWill * 0.06); t.will = Math.min(t.maxWill, t.will + regain); ev.regain = regain;
@@ -215,10 +246,25 @@ export function act(b, u, moveId, targetUid) {
   const events = [];
   if (b.over || !u.alive) return events;
   // uzayan savaşta yorgunluk: 20. turdan sonra herkes her hamlede biraz yıpranır
-  if (b.round > 20) { const f = Math.max(1, Math.round(u.maxHp * 0.08)); u.hp = Math.max(0, u.hp - f); u.will = Math.max(0, u.will - Math.round(u.maxWill * 0.05)); events.push({ type: 'dot', to: u.uid, dmg: f, fatigue: true }); settle(b, events); if (!u.alive || b.over) return events; }
+  // 10. turdan sonra arena fırtınası: her tur biraz daha sert (sonsuz döngüye girmeyi engeller)
+  if (b.round >= 10 && u.stormAt !== b.round) {
+    u.stormAt = b.round;
+    const k = 0.03 + 0.015 * (b.round - 10);
+    const f = Math.max(1, Math.round(u.maxHp * k)); u.hp = Math.max(0, u.hp - f); u.will = Math.max(0, u.will - Math.round(u.maxWill * k * 0.7));
+    events.push({ type: 'dot', to: u.uid, dmg: f, fatigue: true, storm: true, first: !b.stormShown }); b.stormShown = true;
+    settle(b, events); if (!u.alive || b.over) return events;
+  }
   // tur başı: yanma
   if (u.fx.dot > 0 && u.fx.dotAmt) { u.hp = Math.max(0, u.hp - u.fx.dotAmt); events.push({ type: 'dot', to: u.uid, dmg: u.fx.dotAmt }); settle(b, events); if (!u.alive || b.over) return events; }
-  let move = movesOf(u).find(m => m.id === moveId) || movesOf(u)[0];
+  let move = movesOf(u).find(m => m.id === moveId && m.ready !== false) || movesOf(u).find(m => m.ready !== false && m.kind !== 'ult') || movesOf(u)[0];
+  gain(u, 18);
+  // taşın sersemliği: yarı yarıya hamle kaçar
+  if (u.fx.stun) {
+    u.fx.stun = 0;
+    if (Math.random() < 0.5) { events.push({ type: 'stunned', to: u.uid }); afterAct(b, u, events); settle(b, events); return events; }
+    events.push({ type: 'unstun', to: u.uid });
+  }
+  if (move.kind === 'ult') { ultimate(b, u, move, events); u.last2 = [move.id, ...u.last2].slice(0, 2); afterAct(b, u, events); settle(b, events); return events; }
   if (u.boss && u.will < u.maxWill) { const g = Math.round(u.maxWill * 0.04); u.will = Math.min(u.maxWill, u.will + g); }
   // kafası karışık: yarı yarıya boşa gider ya da kendi takımından birine vurur
   if (u.fx.confused) {
@@ -256,7 +302,7 @@ export function act(b, u, moveId, targetUid) {
   else if (move.kind === 'heal') {
     const list = move.team ? allies(b, u) : move.ally ? (target ? [target] : []) : [u];
     const k = move.team || move.ally || move.self || 0.2;
-    for (const t of list) { const h = Math.round(t.maxHp * k); t.hp = Math.min(t.maxHp, t.hp + h); if (move.team) { t.fx.atkDown = 0; t.fx.defDown = 0; t.fx.dot = 0; } events.push({ type: 'heal', to: t.uid, amt: h }); }
+    for (const t of list) { if (move.team) { t.fx.atkDown = 0; t.fx.defDown = 0; t.fx.dot = 0; t.fx.slow = 0; t.fx.stun = 0; } heal(u, t, k, events); }
   } else if (move.kind === 'guard') { u.fx.taunt = (move.turns || 2) + 1; events.push({ type: 'buff', to: u.uid, text: 'saldırıları üstüne çekiyor' }); }
   else if (move.kind === 'buff') {
     const list = move.team ? allies(b, u) : move.ally ? (target ? [target] : []) : [u];
@@ -273,25 +319,61 @@ export function act(b, u, moveId, targetUid) {
   } else if (move.kind === 'dive') { u.fx.dive = 1; events.push({ type: 'buff', to: u.uid, text: 'derine daldı' }); }
 
   if (move.cd) u.cds[move.id] = move.cd + 1;
+  u.last2 = [move.id, ...u.last2].slice(0, 2);
   if (move.kind !== 'replay' && move.id !== 'surface' && move.kind !== 'dive') b.last[u.side] = { ...move };
   afterAct(b, u, events);
   settle(b, events);
   return events;
+}
+// süper yetenekler
+function ultimate(b, u, move, events) {
+  u.en = 0;
+  events.push({ type: 'use', from: u.uid, move: move.name, id: move.id, kind: 'ult', ult: move.ult, role: u.role, utype: u.type, aoe: true });
+  const fs = () => foes(b, u).filter(x => !x.fx.dive && x.hp > 0);
+  if (move.ult === 'fortress') {
+    for (const t of allies(b, u)) { t.fx.ward = Math.max(t.fx.ward | 0, 3); events.push({ type: 'buff', to: t.uid, text: 'kale kalkanı' }); }
+    u.fx.taunt = 3; heal(u, u, 0.15, events, 1);
+  } else if (move.ult === 'quake' || move.ult === 'star' || move.ult === 'storm') {
+    for (const t of fs()) { hit(b, u, t, move, events); if (move.ult === 'quake' && t.hp > 0) t.fx.defDown = Math.max(t.fx.defDown | 0, 3); }
+  } else if (move.ult === 'dance') {
+    for (let i = 0; i < (move.hits || 3); i++) { const t = fs().sort((x, y) => x.hp - y.hp)[0]; if (!t) break; hit(b, u, t, move, events); }
+  } else if (move.ult === 'rebirth') {
+    const down = b.units.find(x => !x.alive && x.out === 'ko' && x.side === u.side);
+    if (down) { down.alive = true; down.out = null; down.hp = Math.round(down.maxHp * 0.3); down.fx = {}; if (!b.order.includes(down.uid)) b.order.push(down.uid); events.push({ type: 'revive', to: down.uid, amt: down.hp }); }
+    for (const t of allies(b, u)) { t.fx.atkDown = 0; t.fx.defDown = 0; t.fx.dot = 0; t.fx.slow = 0; t.fx.stun = 0; t.fx.confused = 0; if (t !== down) heal(u, t, 0.3, events, 0.5); }
+  } else if (move.ult === 'speech') {
+    const key = rk(u);
+    for (const t of foes(b, u)) {
+      const amt = Math.max(1, Math.round(t.maxWill * (t.boss ? 0.12 : 0.2)));
+      t.will = Math.max(0, t.will - amt); t.rap[key] = Math.min(4, (t.rap[key] | 0) + 1); t.fx.atkDown = Math.max(t.fx.atkDown | 0, 2);
+      events.push({ type: 'talk', from: u.uid, to: t.uid, stance: t.stance, arg: 'feel', move: move.name, id: move.id, rel: 'weak', amt, rap: t.rap[key], speech: true });
+    }
+  }
 }
 // safa geçen birimin süresi
 function afterAct(b, u, events) {
   if (u.convert > 0 && u.alive) { u.convert--; if (!u.convert) { u.alive = false; u.out = 'persuaded'; events.push({ type: 'leave', to: u.uid }); } }
 }
 
-// rakip yapay zekâsı
+// rakip yapay zekâsı: süper yeteneği doğru anda kullanır, tip ve rol üstünlüğüne göre hedef seçer,
+// aynı hamleyi üçüncü kez üst üste yapmaz, yorgun (çok iyileşmiş) birimi iyileştirmekle oyalanmaz.
 export function aiChoose(b, u) {
-  const ms = movesOf(u).filter(m => m.ready !== false);
+  let ms = movesOf(u).filter(m => m.ready !== false);
+  // çeşitlilik: aynı hamle üst üste ikiden fazla olmasın
+  if (u.last2[0] && u.last2[0] === u.last2[1]) { const alt = ms.filter(m => m.id !== u.last2[0]); if (alt.length) ms = alt; }
   const f = validTargets(b, u, { kind: 'attack' });
   const al = allies(b, u);
-  const weakAlly = al.filter(x => x.hp / x.maxHp < 0.45).sort((x, y) => x.hp / x.maxHp - y.hp / y.maxHp)[0];
+  const ult = ms.find(m => m.kind === 'ult');
+  if (ult) {
+    const hurt = al.filter(x => x.hp / x.maxHp < 0.55).length, down = b.units.some(x => !x.alive && x.out === 'ko' && x.side === u.side);
+    const ok = { fortress: al.reduce((s, x) => s + x.hp / x.maxHp, 0) / al.length < 0.75, rebirth: hurt || down }[ult.ult];
+    if (ok !== false && (ok || f.length)) return { move: ult.id, target: null };
+  }
+  ms = ms.filter(m => m.kind !== 'ult');
+  const weakAlly = al.filter(x => x.hp / x.maxHp < 0.45 && (x.healed | 0) < 3).sort((x, y) => x.hp / x.maxHp - y.hp / y.maxHp)[0];
   const heal = ms.find(m => m.kind === 'heal');
   if (heal && weakAlly && (heal.ally || heal.team || weakAlly === u)) return { move: heal.id, target: weakAlly.uid };
-  if (!f.length) { const m = ms.find(x => targetKind(x) !== 'foe') || ms[0]; return { move: m.id, target: targetKind(m) === 'ally' ? (weakAlly || al[0]).uid : null }; }
+  if (!f.length) { const m = ms.find(x => targetKind(x) !== 'foe' && x.kind !== 'heal') || ms[0]; return { move: m.id, target: targetKind(m) === 'ally' ? (weakAlly || al[0]).uid : null }; }
   const talkMs = ms.filter(m => m.kind === 'talk' && !m.closing);
   if (talkMs.length) {
     const key = `${u.side}:${u.uid}`;
@@ -304,15 +386,22 @@ export function aiChoose(b, u) {
     if (!seen && readM && Math.random() < 0.3) return { move: readM.id, target: t.uid };
     const conf = ms.find(m => m.kind === 'confuse');
     if (conf && Math.random() < 0.15) return { move: conf.id, target: (f.find(x => x.role !== 'support') || t).uid };
-    // gördüyse doğru argüman; görmediyse söze güvenir (blöfe kanabilir) ya da tahmin eder
     const guess = seen ? t.stance : (Math.random() < 0.6 ? (Object.keys(STANCES).find(k => STANCES[k].tells.includes(t.tell)) || t.stance) : null);
     const smart = guess ? talkMs.find(m => m.arg === STANCES[guess].weak) : null;
     return { move: (smart || pickOne(talkMs)).id, target: t.uid };
   }
+  // hedef puanı: tip × rol üstünlüğü, azalan can, bitirilebilirlik
+  const score = t => typeMult(u.type, t.type) * roleMult(u.role, t.role) * (1.7 - t.hp / t.maxHp) * (t.fx.taunt ? 1.2 : 1) * rnd(0.85, 1.15);
+  const tgt = [...f].sort((x, y) => score(y) - score(x))[0];
   const atk = ms.filter(m => m.kind === 'attack' || m.kind === 'dive');
-  const util = ms.filter(m => m.kind !== 'attack' && m.kind !== 'talk' && m.kind !== 'heal');
-  const m = (util.length && Math.random() < 0.25 ? pickOne(util) : pickOne(atk.length ? atk : ms));
-  const tgt = f.sort((x, y) => (typeMult(u.type, y.type) - typeMult(u.type, x.type)) || (x.hp - y.hp))[0];
+  // anlamsız yardımcı hamleleri ele: zaten açık olan etkiyi yeniden kurma
+  const util = ms.filter(m => m.kind !== 'attack' && m.kind !== 'talk' && m.kind !== 'heal' && !(m.kind === 'guard' && u.fx.taunt) && !(m.buff === 'focus' && u.fx.focus) && !(m.buff === 'dodge' && u.fx.dodge) && !(m.buff === 'mirror' && u.fx.mirror) && !(m.buff === 'ward' && u.fx.ward));
+  let m;
+  const exec = atk.find(x => x.execute && tgt && tgt.hp / tgt.maxHp < x.execute);
+  if (exec) m = exec;
+  else if (u.fx.focus && atk.length) m = atk.sort((x, y) => (y.power || 1) - (x.power || 1))[0];
+  else if (util.length && Math.random() < 0.3) m = pickOne(util);
+  else m = pickOne(atk.length ? atk : ms);
   const tk = targetKind(m);
   const target = tk === 'ally' ? (weakAlly || pickOne(al)) : tgt;
   return { move: m.id, target: target ? target.uid : null };
