@@ -1,3 +1,11 @@
+# dam-la 2.10.1 — Duyuru şeridi güncellemesi
+
+Uzaktan güncellemeyle gelir.
+- Duyuru şeridinde hesap kodları yerine petlerin adları yazar.
+- Şeritte dam-la dünyasının sanal oyuncularının başarıları da yer alır.
+- Yönetici paneli: hesaplara renkli etiketler ve etikete göre süzme.
+
+---
 # dam-la 2.10.0 — Altın Saat, duyuru şeridi, yönetici yetkileri
 
 Uzaktan güncellemeyle gelir.
