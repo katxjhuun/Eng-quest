@@ -272,7 +272,7 @@ export function initQuiz(core) {
       join: ['🔒 Bu bölüm sınıfına özel', 'İngilizce Hazırlık soruları yalnızca sınıftaki öğrencilere açık. Öğretmeninin verdiği sınıf kodunu gir.'],
       offline: ['📶 İnternet gerekli', 'Hazırlık soruları ilk kez indirilirken bağlantı gerekir. Bağlanınca kendiliğinden yüklenir.'],
       empty: ['📭 Henüz soru yok', 'Öğretmenin soruları henüz yüklemedi. Biraz sonra tekrar dene.'],
-    }[epGate] || ['Sorular yükleniyor…', ''];
+    }[epGate] || ['📘 Bağlanıyor…', 'Sınıf kodun varsa aşağıya yazabilirsin. Daha önce katıldıysan sorular birazdan açılır.'];
     showLegacy(false);
     $('#qzTag').textContent = '📘 İNGİLİZCE HAZIRLIK';
     $('#qzCount').textContent = '';
@@ -281,7 +281,11 @@ export function initQuiz(core) {
     $('#qzReveal').classList.add('hidden');
     $('#qzTyped').classList.add('hidden');
     $('#qzOptions').classList.remove('hidden');
-    $('#qzOptions').innerHTML = epGate === 'join' ? `<form class="prep-join" data-join><input id="prepCode" class="setting-input" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="32" placeholder="Sınıf kodu" aria-label="Sınıf kodu"><button class="primarybtn" type="submit">Katıl ↗</button><div class="prep-join-msg" id="prepJoinMsg" role="status"></div></form>` : '';
+    // kod kutusu yalnızca "henüz soru yok" dışında her durumda görünür (bağlantı yavaşsa da kod girilebilsin)
+    const keep = $('#prepCode')?.value || '';
+    $('#qzOptions').innerHTML = epGate === 'empty' ? `<button class="mini-btn" type="button" data-ep-retry>↻ Tekrar dene</button>`
+      : `<form class="prep-join" data-join><input id="prepCode" class="setting-input" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="32" placeholder="Sınıf kodu" aria-label="Sınıf kodu" value="${esc(keep)}"><button class="primarybtn" type="submit">Katıl ↗</button><div class="prep-join-msg" id="prepJoinMsg" role="status"></div></form>`
+        + (epGate === 'offline' ? `<button class="mini-btn" type="button" data-ep-retry>↻ Tekrar dene</button>` : '');
     const ex = $('#qzExplain'); if (ex) ex.innerHTML = '';
   }
   const pendingFor = cat => ((cat === 'akh' || cat === 'aka' || cat === 'akm') && !ACAD) || (cat === 'ep' && !EP);
@@ -527,7 +531,7 @@ export function initQuiz(core) {
     const app = A(), cat = app.cat;
     headline(); renderTabs(); renderModeBtn();
     const c = cur(cat);
-    if (c.pending && cat === 'ep' && epGate) { renderGate(); core.renderProgress(); return; }
+    if (c.pending && cat === 'ep') { renderGate(); core.renderProgress(); return; }
     if (c.pending) { showLegacy(false); $('#qzTitle').textContent = 'Sorular yükleniyor…'; $('#qzSub').textContent = ''; $('#qzOptions').innerHTML = ''; $('#qzExplain') && ($('#qzExplain').innerHTML = ''); core.renderProgress(); return; }
     if (c.legacy) { showLegacy(true); core.renderLegacy(); core.renderProgress(); notifyLive(null); return; }
     showLegacy(false);
@@ -738,10 +742,12 @@ export function initQuiz(core) {
     const code = ($('#prepCode')?.value || '').trim(), msg = $('#prepJoinMsg');
     if (code.length < 6) { msg.textContent = 'Kod en az 6 karakter.'; return; }
     msg.textContent = 'Denetleniyor…';
-    const r = await core.prep?.()?.join(code);
+    let P = null; for (let i = 0; i < 75; i++) { P = core.prep?.(); if (P && P.ready()) break; await wait(200); }
+    const r = P ? await P.join(code) : 'offline';
     if (r === 'ok') { msg.textContent = '✓ Katıldın! Sorular indiriliyor…'; epGate = ''; epP = null; loadEp(); }
     else msg.textContent = r === 'offline' ? 'Bağlantı yok; biraz sonra tekrar dene.' : 'Kod yanlış. Öğretmeninden kontrol etmesini iste.';
   });
+  $('#qzOptions').addEventListener('click', e => { if (e.target.closest('[data-ep-retry]')) { epGate = ''; epP = null; render(); loadEp(); } });
   // kategori anahtarı: her kategoride en son açık olan sekme hatırlanır
   $('#trackSw')?.addEventListener('click', e => {
     const b = e.target.closest('[data-track]'); if (!b) return;
