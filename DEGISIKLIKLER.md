@@ -1,3 +1,12 @@
+# dam-la 2.10.2 — iPhone düzenlemeleri
+
+Uzaktan güncellemeyle gelir.
+- iPhone ana ekranı için 180px ikon ve iPhone 12/13/14 açılış ekranı.
+- Yazı alanlarına dokununca iOS'un sayfayı yakınlaştırması engellendi.
+- Açılan pencereler çentik ve home çubuğunun altında kalmıyor.
+- Çift dokunuşla yakınlaşma ve dokunma parlaması kapatıldı.
+
+---
 # dam-la 2.10.1 — Duyuru şeridi güncellemesi
 
 Uzaktan güncellemeyle gelir.
