@@ -36,4 +36,4 @@ export const YOUTUBE_API_KEY = 'AIzaSyB3Ru6YTiGQV-JnjM5ejoxhA8hBaX_PR30';
 
 // Web (ana ekrana eklenmiş) sürümde pet bildirimleri için Web Push açık anahtarı. Gizli değildir;
 // eşi olan özel anahtar yalnızca GitHub "VAPID_PRIVATE_KEY" gizli değişkenindedir (scripts/push-send.mjs kullanır).
-export const VAPID_PUBLIC_KEY = 'BGyMf6hYThY_XtHeAUoNHgALKkpkTE0uX5CyYXGE7rKmPAGWzp-zf4_fZEKIiUgTvjf2LTnWceqSvLMzpFkLRjs';
+export const VAPID_PUBLIC_KEY = 'BLOnbt0kJaE6uONsW2Ft3Y67ceDWinI7g2acPiMQKplWLHNIN9wsFgQYABoBoTnaDFHACzYmyRDcPBtz473HQBI';
