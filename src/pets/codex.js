@@ -131,7 +131,8 @@ export const HINT_VOICE = {
 
 // petin ruh yazısını seviye atlamalarında okunacak kısa parçalara böler
 export function loreParts(soul) {
-  return String(soul || '').split(/(?<=[.!?])\s+/).map(x => x.trim()).filter(Boolean);
+  // geriye bakan regex (?<=) iOS 16.4 öncesinde çalışmaz; cümle sonunu işaretleyip bölüyoruz
+  return String(soul || '').replace(/([.!?])\s+/g, '$1\u0000').split('\u0000').map(x => x.trim()).filter(Boolean);
 }
 
 // bir petin anlık savaş değerleri

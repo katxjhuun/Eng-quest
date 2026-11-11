@@ -1,3 +1,4 @@
+import './compat.js';
 import { Platform } from './platform.js';
 import { initPet } from './pet.js';
 import { initSettingsTabs } from './settings-tabs.js';
