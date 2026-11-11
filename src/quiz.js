@@ -249,7 +249,8 @@ export function initQuiz(core) {
     epP = (async () => {
       let cached = null;
       try { cached = JSON.parse(localStorage.getItem(BANK_KEY) || 'null'); } catch {}
-      if (cached && cached.bank && !EP) { EP = cached.bank; epCache = null; render(); }
+      // render sırasında çağrılır: yeniden çizimi bir sonraki tura bırak (iç içe render dıştakini ezmesin)
+      if (cached && cached.bank && !EP) { EP = cached.bank; epCache = null; setTimeout(() => render(), 0); }
       let P = null;
       for (let i = 0; i < 50; i++) { P = core.prep?.(); if (P && P.ready()) break; await wait(200); }
       if (!P || !P.ready()) { if (!EP) { epGate = 'offline'; render(); } return; }
@@ -301,6 +302,17 @@ export function initQuiz(core) {
   const KIND = { gr: 'Dilbilgisi', vo: 'Kelime', ee: 'Gündelik İngilizce', wp: 'Wordpower', pr: 'Telaffuz' };
   const BOOK = { wb: 'Empower B1 · Workbook', sb: "Empower B1 2. baskı · Student's Book" };
   const BOOK_SHORT = { wb: 'Empower B1', sb: 'Empower B1 2nd' };
+  // Soruyu dinlerken cevap söylenmez: boşluk “…” olarak okunur; tırnaklı İngilizce kısım varsa yalnız o okunur.
+  const TRC = /[çğıöşüÇĞİÖŞÜ]/;
+  function questionSpeech(q) {
+    const blank = t => t.replace(/_{2,}/g, ' … ');
+    const quoted = q.match(/“([^”]+)”/);
+    if (quoted && !TRC.test(quoted[1])) return { text: blank(quoted[1]), lang: 'en' };
+    const sort = q.match(/^Kelimeleri sırala:\s*(.+)$/);
+    if (sort) return { text: sort[1].replace(/\s*\/\s*/g, ', ').replace(/\s*\?$/, ''), lang: 'en' };
+    const core0 = q.replace(/\s*\([^)]*[çğıöşüÇĞİÖŞÜ][^)]*\)\s*/g, ' ').trim();
+    return TRC.test(core0) ? { text: q.replace(/_{2,}/g, ' boşluk '), lang: 'tr' } : { text: blank(core0), lang: 'en' };
+  }
   function epItems() {
     if (epCache) return epCache;
     if (!EP) return [];
@@ -311,7 +323,7 @@ export function initQuiz(core) {
       out.push({ id: `ep-${b}-${un.u}-${i}`, cat: 'ep', b, u: un.u, ord: out.length, q, a, opts, exp,
         sub: `${BOOK[b]} · Ünite ${un.u} ${un.t} · ${sec} · ${KIND[kind] || ''}`,
         src: `${b === 'wb' ? 'Empower B1 (Pre-intermediate) Workbook' : "Empower B1 2nd edition Student's Book"} · Ünite ${un.u} (${sec}) · ${KIND[kind] || ''}`,
-        lang: 'tr', optLang: en ? 'en' : 'tr', speak: say ? { text: say, lang: 'en' } : { text: q, lang: /[çğıöşü]/i.test(q) ? 'tr' : 'en' }, typeable: typeable(a) });
+        lang: 'tr', optLang: en ? 'en' : 'tr', speak: questionSpeech(q), ans: say ? { text: say, lang: 'en' } : { text: a, lang: en ? 'en' : 'tr' }, full: say || null, typeable: typeable(a) });
     }));
     return (epCache = out);
   }
@@ -497,6 +509,18 @@ export function initQuiz(core) {
     $('#mixLegacyNote')?.classList.toggle('hidden', !(show && A().profile.mode === 'mix'));
   }
 
+  // Açıklamayı okunur kıl: kural kutusu + madde madde cümleler, kısa etiketler kalın.
+  function splitSentences(t) { return t.split(/(?<=[.!?…])\s+(?=[A-ZÇĞİÖŞÜ“"(])|\s+·\s+/).map(x => x.trim()).filter(Boolean); }
+  function lineHtml(t) { const m = t.match(/^([^:]{2,30}):\s+(.+)$/s); return m ? `<b>${esc(m[1])}:</b> ${esc(m[2])}` : esc(t); }
+  function formatExp(exp) {
+    return String(exp || '').split(/\n\n+/).map((para, i) => {
+      const rule = para.match(/^📘\s*([^:]{1,80}):\s*([\s\S]+)$/);
+      if (rule) return `<div class="qx-rule"><div class="qx-rule-h">📘 ${esc(rule[1])}</div><ul>${splitSentences(rule[2]).map(l => `<li>${lineHtml(l)}</li>`).join('')}</ul></div>`;
+      const parts = para.length > 200 ? splitSentences(para) : [para];
+      return parts.map(t => `<p class="qx-body${i === 0 && parts.length === 1 ? ' qx-lead' : ''}">${i === 0 && parts.length === 1 ? '💡 ' : ''}${lineHtml(t)}</p>`).join('');
+    }).join('');
+  }
+  function speakable(t) { return String(t || '').replace(/[📘💡✅❌🔊]/gu, '').replace(/\/[^/\s][^/]{0,14}\//g, '').replace(/[“”]/g, '"').replace(/\s*·\s*/g, '. ').replace(/\s+/g, ' ').trim(); }
   function optionText(item, idx) { return idx === 0 ? item.a : item.opts[idx - 1]; }
   let shownId = null;
   function render({ speak = false } = {}) {
@@ -549,8 +573,9 @@ export function initQuiz(core) {
       ex.innerHTML = `<div class="qx-head">${ok ? '✅ Doğru!' : '❌ Yanlış'} <span class="qx-xp ${d > 0 ? 'pos' : d < 0 ? 'neg' : 'zero'}">${d === 0 ? 'XP değişmedi' : `${d > 0 ? '+' : '−'}${Math.abs(d)} XP`}</span></div>`
         + (ok ? '' : `<p class="qx-answer">Doğru cevap: <strong lang="${item.optLang}">${esc(item.a)}</strong>${c.choice != null && c.choice !== 0 && c.style !== 'type' ? ` · Senin seçimin: <s>${esc(optionText(item, c.choice))}</s>` : ''}${c.style === 'type' && c.typedFinal ? ` · Senin cevabın: <s>${esc(c.typedFinal)}</s>` : ''}</p>`)
         + note
-        + `<p class="qx-body">${esc(item.exp)}</p>` + ladder
-        + (item.example ? `<button class="mini-btn qx-say" data-say-example="1">▶ Örnek cümleyi dinle</button>` : '')
+        + (item.full && item.full !== item.a ? `<p class="qx-full"><span>Tam cümle</span><b lang="en">${esc(item.full)}</b></p>` : '')
+        + formatExp(item.exp) + ladder
+        + `<div class="qx-listen"><button class="mini-btn" data-say-ans="1">🔊 Cevabı dinle</button>${item.example ? `<button class="mini-btn" data-say-example="1">🔊 Örnek cümle</button>` : ''}<button class="mini-btn" data-say-exp="1">🔊 Açıklamayı dinle</button></div>`
         + `<p class="qx-src">📚 Kaynak: ${esc(item.src || '—')}</p>`;
       ex.classList.remove('hidden');
     } else ex.classList.add('hidden');
@@ -754,7 +779,12 @@ export function initQuiz(core) {
   $('#qzListen').addEventListener('click', () => { const c = cur(); if (c.legacy) return; sayItem(findItem(c.id)); });
   $('#qzReveal').addEventListener('click', () => { const c = cur(); c.revealed = true; render(); });
   $('#qzNext').addEventListener('click', () => next());
-  $('#qzExplain').addEventListener('click', e => { if (e.target.closest('[data-say-example]')) { const c = cur(), item = findItem(c.id); if (item?.example) core.speak(item.example, 'en'); } });
+  $('#qzExplain').addEventListener('click', e => {
+    const c = cur(), item = c && !c.pending && !c.legacy ? findItem(c.id) : null; if (!item) return;
+    if (e.target.closest('[data-say-example]')) { if (item.example) core.speak(item.example, 'en'); return; }
+    if (e.target.closest('[data-say-ans]')) { const a = item.ans || { text: item.a, lang: item.optLang === 'en' ? 'en' : 'tr' }; core.speak(a.text, a.lang); return; }
+    if (e.target.closest('[data-say-exp]')) core.speak(speakable(String(item.exp).split(/\n\n+/)[0]), 'tr');
+  });
   const input = $('#qzInput');
   $('#qzSlots').addEventListener('click', () => { try { input.focus({ preventScroll: true }); } catch {} });
   input.addEventListener('compositionstart', () => { composing = true; });
