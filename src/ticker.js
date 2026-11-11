@@ -5,13 +5,16 @@
 import { petSVG, stageName, PET_SPECIES } from './pet-art.js';
 import { goldenNow, goldenNext } from './golden-time.js';
 
+// oyuncular hesap koduyla değil petlerinin adıyla anılır (pet yoksa “Bir oyuncu”)
+const who = e => (e.name && String(e.name).trim()) || 'Bir oyuncu';
+const kind = e => (e.species && PET_SPECIES[e.species] ? PET_SPECIES[e.species].label.toLocaleLowerCase('tr') : '');
 const KIND = {
-  shiny: { icon: '🌟', tier: 3, text: e => `${e.code} · ${e.name} NADİR forma dönüştü!` },
-  maxevo: { icon: '🧬', tier: 3, text: e => `${e.code} · ${e.name} son formuna ulaştı: ${stageName(e.species, 5)}` },
-  maxlevel: { icon: '👑', tier: 3, text: e => `${e.code} en yüksek seviyeye ulaştı: ${e.level || 'C2'}!` },
-  level: { icon: '🎓', tier: 1, text: e => `${e.code} seviye atladı → ${e.level}` },
-  boss: { icon: '⚔️', tier: 2, text: e => `${e.code} · ${e.name} bir boss'u yendi` },
-  stars: { icon: '⭐', tier: 2, text: e => `${e.code} · ${e.name} ${e.stars}. yıldızını aldı` },
+  shiny: { icon: '🌟', tier: 3, text: e => `${who(e)} NADİR forma dönüştü!` },
+  maxevo: { icon: '🧬', tier: 3, text: e => `${who(e)} son formuna ulaştı: ${stageName(e.species, 5)}` },
+  maxlevel: { icon: '👑', tier: 3, text: e => `${who(e)} ve sahibi en yüksek seviyeye ulaştı: ${e.level || 'C2'}!` },
+  level: { icon: '🎓', tier: 1, text: e => `${who(e)} ve sahibi seviye atladı → ${e.level}` },
+  boss: { icon: '⚔️', tier: 2, text: e => `${who(e)}${kind(e) ? ` (${kind(e)})` : ''} bir boss'u yendi` },
+  stars: { icon: '⭐', tier: 2, text: e => `${who(e)} ${e.stars}. yıldızını aldı` },
 };
 
 export function initTicker(core) {
@@ -45,7 +48,7 @@ export function initTicker(core) {
     const recent = feed.filter(e => KIND[e.kind] && now - (e.at || 0) < 3 * 864e5).sort((a, b) => (b.tier - a.tier) || (b.at - a.at)).slice(0, 18);
     for (const e of recent) {
       const k = KIND[e.kind], tier = e.tier || k.tier;
-      const it = { cls: `t${tier}${e.code === myCode() ? ' mine' : ''}`, html: `${k.icon} ${esc(k.text(e))}`, id: e.id, click: ['shiny', 'maxevo', 'boss', 'stars'].includes(e.kind) && e.species };
+      const it = { cls: `t${tier}${e.code === myCode() ? ' mine' : ''}`, html: `${k.icon} ${esc(k.text(e))}`, id: e.id, click: !!(e.species && PET_SPECIES[e.species]) };
       out.push(it); if (tier >= 3) out.push({ ...it });
     }
     if (out.length < 3) out.push({ cls: 'soft', html: '📣 Nadir pet yakalayan, son forma ulaşan ve seviye atlayanlar burada duyurulur' });
@@ -73,7 +76,7 @@ export function initTicker(core) {
     const k = KIND[e.kind] || {};
     pop.innerHTML = `<div class="tick-card${e.shiny ? ' shiny' : ''}"><button class="closebtn" id="tickClose" aria-label="Kapat">×</button>
       <div class="tick-art">${petSVG(e.species, Math.min(5, e.stage | 0), { coat: e.coat | 0, shiny: !!e.shiny, mood: 'happy' })}</div>
-      <div class="eyebrow">${esc(e.code)}</div><h3>${esc(e.name || '')}</h3>
+      <div class="eyebrow">${esc(k.icon || '')} ${esc((KIND[e.kind] && { shiny: 'NADİR FORM', maxevo: 'SON FORM', maxlevel: 'EN YÜKSEK SEVİYE', level: 'SEVİYE ATLADI', boss: 'BOSS ZAFERİ', stars: 'YILDIZ' }[e.kind]) || '')}</div><h3>${esc(who(e))}</h3>
       <p>${esc(PET_SPECIES[e.species].label)} · ${esc(stageName(e.species, Math.min(5, e.stage | 0)))}${e.shiny ? ' · <b class="evo-shiny">✨ Nadir form</b>' : ''}</p>
       <p class="tick-when">${k.icon || ''} ${new Date(e.at || Date.now()).toLocaleString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</p></div>`;
     pop.classList.add('show');

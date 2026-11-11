@@ -150,7 +150,7 @@ const rules = {
         stage: num(5), shiny: bool(), coat: num(7), at: ts(), $other: NO,
       },
     },
-    admin: { '.read': ADMIN, '.write': ADMIN, labels: { $uid: str(60) } },
+    admin: { '.read': ADMIN, '.write': ADMIN, labels: { $uid: str(60) }, tags: { $uid: { $t: { '.validate': "$t.matches(/^t[0-7]$/) && newData.isString() && newData.val().length >= 1 && newData.val().length <= 24" } } } },
     admins: { $uid: { '.read': 'auth != null && auth.uid == $uid', '.write': false } },
   },
 };

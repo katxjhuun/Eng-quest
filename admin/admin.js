@@ -53,7 +53,7 @@ const pct = (v, m) => Math.round(Math.max(0, Math.min(1, v / m)) * 100);
 const icon = t => Object.prototype.hasOwnProperty.call(TYPE_ICON, t) ? TYPE_ICON[t] : '•';
 
 let db, auth, me = null, serverOffset = 0;
-let users = {}, labels = {}, filter = 'all', selected = null, histUnsub = null, history = [];
+let users = {}, labels = {}, tags = {}, tagFilter = '', filter = 'all', selected = null, histUnsub = null, history = [];
 const now = () => Date.now() + serverOffset;
 
 function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2600); }
@@ -135,6 +135,7 @@ function startDashboard() {
     $('#loginNote').innerHTML = `<b>${esc(me.email)}</b> hesabının yönetici yetkisi yok.<br>Yetki vermek için Firebase konsolunda <b>Realtime Database › Data</b> altında <code>admins</code> › <code>${esc(me.uid)}</code> = <code>true</code> kaydı ekle, sonra sayfayı yenile.`;
   }));
   unsubs.push(onValue(ref(db, 'admin/labels'), snap => { labels = snap.val() || {}; renderList(); if (selected) renderSheet(); }, () => {}));
+  unsubs.push(onValue(ref(db, 'admin/tags'), snap => { tags = snap.val() || {}; renderList(); if (selected) renderTags(); }, () => {}));
 }
 // "x dk önce" yazıları güncel kalsın
 setInterval(() => { if (me && Object.keys(users).length) { renderList(); if (selected) renderMeta(); } }, 30000);
@@ -166,14 +167,17 @@ function renderList() {
   $('#sumToday').textContent = entries.filter(e => isToday(e.u)).length;
   const list = entries
     .filter(e => filter === 'all' || (filter === 'online' ? e.on : isToday(e.u)))
-    .filter(e => !q || `${shortId(e.u, e.uid)} ${labels[e.uid] || ''} ${e.uid}`.toLocaleLowerCase('tr').includes(q))
+    .filter(e => !tagFilter || tagsOf(e.uid).includes(tagFilter))
+    .filter(e => !q || `${shortId(e.u, e.uid)} ${labels[e.uid] || ''} ${tagsOf(e.uid).join(' ')} ${e.u.pet?.name || ''} ${e.uid}`.toLocaleLowerCase('tr').includes(q))
     .sort((a, b) => (b.on - a.on) || (b.seen - a.seen));
   $('#emptyList').classList.toggle('hidden', list.length > 0);
+  renderTagBar();
   $('#userList').innerHTML = list.map(({ uid, u, on, seen }) => {
     const s = u.stats || {}, p = u.profile || {};
     return `<button class="u" data-uid="${esc(uid)}">
       <div class="u-top"><span class="dot ${on ? 'on' : ''}"></span><span class="u-id">${esc(shortId(u, uid))}</span><span class="u-name">${esc(labels[uid] || '')}</span>
       <span class="u-lvl">${esc(s.level || 'A1')} · ${num(s.total ?? s.xp)} XP</span></div>
+      ${tagsOf(uid).length ? `<div class="u-tags">${tagsOf(uid).map(tagChip).join('')}</div>` : ''}
       <div class="u-meta">${on ? 'Çevrimiçi' : 'Çevrimdışı · ' + ago(seen)} · ${esc(p.platform || '?')} · v${esc(p.appVersion || '?')}${s.correct != null ? ` · ✓${num(s.correct)} ✗${num(s.wrong)} 🔥${num(s.streak)}` : ''}</div>
       ${petLine(u)}${liveLine(u)}
     </button>`;
@@ -185,6 +189,7 @@ $('#userList').addEventListener('click', e => { const b = e.target.closest('[dat
 function openSheet(uid) {
   selected = uid; history = [];
   $('#dLabel').value = labels[uid] || '';
+  renderTags();
   $('#sheet').classList.add('show'); $('#sheet').setAttribute('aria-hidden', 'false');
   histUnsub?.();
   histUnsub = onValue(query(ref(db, `history/${uid}`), limitToLast(40)), snap => {
@@ -330,7 +335,7 @@ $('#dDelete').addEventListener('click', async () => {
   const id = shortId(users[selected], selected);
   if (!confirm(`${id} kaydı panelden silinsin mi? (Uygulama tekrar açılırsa yeniden görünür; cihazdaki ilerleme silinmez.)`)) return;
   const uid = selected; closeSheet();
-  await update(ref(db), { [`users/${uid}`]: null, [`history/${uid}`]: null, [`admin/labels/${uid}`]: null }).then(() => toast('Kayıt silindi')).catch(err => toast('Olmadı: ' + err.code));
+  await update(ref(db), { [`users/${uid}`]: null, [`history/${uid}`]: null, [`admin/labels/${uid}`]: null, [`admin/tags/${uid}`]: null }).then(() => toast('Kayıt silindi')).catch(err => toast('Olmadı: ' + err.code));
 });
 
 // ---------------- işlemler ----------------
@@ -561,3 +566,44 @@ let theme = 'light';
 try { theme = localStorage.getItem('dl-admin-theme') || (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); } catch {}
 applyTheme(theme);
 $('#themeBtn')?.addEventListener('click', () => { theme = theme === 'dark' ? 'light' : 'dark'; applyTheme(theme); try { localStorage.setItem('dl-admin-theme', theme); } catch {} });
+
+
+// ---------------- hesap etiketleri: hesapları hatırlamak için renkli etiketler ----------------
+const TAG_MAX = 8;
+function tagsOf(uid) { const t = tags[uid]; if (!t || typeof t !== 'object') return []; return Object.entries(t).filter(([k, v]) => /^t[0-7]$/.test(k) && typeof v === 'string' && v.trim()).sort(([a], [b]) => a.localeCompare(b)).map(([, v]) => v.trim().slice(0, 24)); }
+function allTags() { const c = new Map(); for (const uid of Object.keys(tags)) if (users[uid]) for (const t of tagsOf(uid)) c.set(t, (c.get(t) || 0) + 1); return [...c.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'tr')); }
+function tagHue(t) { let h = 0; for (const ch of t.toLocaleLowerCase('tr')) h = (h * 31 + ch.codePointAt(0)) % 360; return h; }
+const tagChip = (t, extra = '') => `<span class="tag" style="--h:${tagHue(t)}">${esc(t)}${extra}</span>`;
+function renderTagBar() {
+  const bar = $('#tagBar'); if (!bar) return;
+  const list = allTags();
+  if (tagFilter && !list.some(([t]) => t === tagFilter)) tagFilter = '';
+  bar.classList.toggle('hidden', !list.length);
+  bar.innerHTML = list.length ? `<span class="tb-l">Etiket:</span>${list.map(([t, n]) => `<button type="button" class="tag ${t === tagFilter ? 'on' : ''}" style="--h:${tagHue(t)}" data-tf="${esc(t)}">${esc(t)} <small>${n}</small></button>`).join('')}${tagFilter ? '<button type="button" class="ghost small" data-tf="">× temizle</button>' : ''}` : '';
+}
+$('#tagBar')?.addEventListener('click', e => { const b = e.target.closest('[data-tf]'); if (!b) return; tagFilter = b.dataset.tf === tagFilter ? '' : b.dataset.tf; renderList(); });
+async function saveTags(uid, list) {
+  const v = {}; list.slice(0, TAG_MAX).forEach((t, i) => { v['t' + i] = t; });
+  await set(ref(db, `admin/tags/${uid}`), list.length ? v : null).catch(err => toast('Olmadı: ' + (err.code || err.message)));
+}
+function renderTags() {
+  const box = $('#dTags'); if (!box || !selected) return;
+  const mine = tagsOf(selected);
+  const sugg = allTags().map(([t]) => t).filter(t => !mine.includes(t)).slice(0, 10);
+  box.innerHTML = `<div class="te-row">${mine.map(t => tagChip(t, `<button type="button" class="tx" data-rm="${esc(t)}" aria-label="Etiketi kaldır">×</button>`)).join('')}
+    ${mine.length < TAG_MAX ? `<input id="tagIn" maxlength="24" placeholder="+ etiket (örn. arkadaş, sınıf, test)" list="tagList" autocomplete="off"><datalist id="tagList">${allTags().map(([t]) => `<option value="${esc(t)}">`).join('')}</datalist>` : ''}</div>
+    ${sugg.length ? `<div class="te-sugg">${sugg.map(t => `<button type="button" class="tag ghosted" style="--h:${tagHue(t)}" data-add="${esc(t)}">+ ${esc(t)}</button>`).join('')}</div>` : ''}`;
+}
+$('#dTags')?.addEventListener('click', e => {
+  const rm = e.target.closest('[data-rm]'), add = e.target.closest('[data-add]');
+  if (rm) saveTags(selected, tagsOf(selected).filter(t => t !== rm.dataset.rm));
+  if (add) { const l = tagsOf(selected); if (l.length < TAG_MAX && !l.includes(add.dataset.add)) saveTags(selected, [...l, add.dataset.add]); }
+});
+$('#dTags')?.addEventListener('keydown', e => {
+  if (e.target.id !== 'tagIn' || (e.key !== 'Enter' && e.key !== ',')) return;
+  e.preventDefault();
+  const t = e.target.value.replace(/,/g, ' ').trim().replace(/\s+/g, ' ').slice(0, 24); if (!t) return;
+  const l = tagsOf(selected); if (l.some(x => x.toLocaleLowerCase('tr') === t.toLocaleLowerCase('tr'))) { e.target.value = ''; return; }
+  if (l.length >= TAG_MAX) return toast(`En fazla ${TAG_MAX} etiket`);
+  saveTags(selected, [...l, t]).then(() => { setTimeout(() => $('#tagIn')?.focus(), 50); });
+});

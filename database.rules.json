@@ -730,6 +730,13 @@
         "$uid": {
           ".validate": "newData.isString() && newData.val().length <= 60"
         }
+      },
+      "tags": {
+        "$uid": {
+          "$t": {
+            ".validate": "$t.matches(/^t[0-7]$/) && newData.isString() && newData.val().length >= 1 && newData.val().length <= 24"
+          }
+        }
       }
     },
     "admins": {
