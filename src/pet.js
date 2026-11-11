@@ -2,7 +2,7 @@
 // Durum app.pet içinde saklanır (yedeğe ve kalıcı kayda otomatik girer).
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { noteExtras, notifySound } from './notify.js';
+import { noteExtras, notifySound, wantGolden, wantUpdate } from './notify.js';
 import { isGolden, GOLDEN_XP } from './golden.js';
 import { webPushSupported, webPushNeedsInstall, enableWebPush, currentWebPush } from './webpush.js';
 import { petSVG, homeSVG, stageName, PET_SPECIES, randomCoat, shinyFilter } from './pet-art.js';
@@ -1436,7 +1436,7 @@ export function initPet(core, quiz) {
       const used = new Set();
       const timed = list.map(n => { let at = quietShift(n.at); while (used.has(Math.round(at / 60000))) at += 30 * 60000; used.add(Math.round(at / 60000)); return { ...n, at }; })
         .filter(n => n.at > now + 60000);
-      if (!native) { const sub = await currentWebPush(); if (p.pushTestAt > now) timed.unshift({ at: p.pushTestAt, title: `${p.name} 🔔`, body: 'Bildirimler çalışıyor! Acıkınca sana buradan haber vereceğim.' }); if (sub) core.push?.set(sub, timed, notifySound()); return; }
+      if (!native) { const sub = await currentWebPush(); if (p.pushTestAt > now) timed.unshift({ at: p.pushTestAt, title: `${p.name} 🔔`, body: 'Bildirimler çalışıyor! Acıkınca sana buradan haber vereceğim.' }); if (sub) core.push?.set(sub, timed, { loud: notifySound(), golden: wantGolden(), upd: wantUpdate() }); return; }
       const notes = timed
         .map(n => ({ id: n.id, title: n.title, body: n.body, schedule: { at: new Date(n.at), allowWhileIdle: true }, smallIcon: 'ic_stat_pet', iconColor: '#E86FA0' }));
       const ex = await noteExtras();

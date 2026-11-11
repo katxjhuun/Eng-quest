@@ -25,6 +25,7 @@ jobs:
           sparse-checkout: |
             scripts/push-send.mjs
             src/config.js
+            src/golden-time.js
           sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v4
         with:
@@ -39,6 +40,6 @@ jobs:
           NODE_PATH: /tmp/pushdeps/node_modules
         run: |
           cp scripts/push-send.mjs /tmp/pushdeps/send.mjs
-          mkdir -p /tmp/pushdeps/src && cp src/config.js /tmp/pushdeps/src/config.js
+          mkdir -p /tmp/pushdeps/src && cp src/config.js src/golden-time.js /tmp/pushdeps/src/
           sed -i "s#'../src/config.js'#'./src/config.js'#" /tmp/pushdeps/send.mjs
           cd /tmp/pushdeps && node send.mjs

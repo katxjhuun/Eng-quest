@@ -96,7 +96,7 @@ const rules = {
           $other: NO,
         },
         notes: { $n: { '.validate': "$n.matches(/^n[0-9]$/) && newData.hasChildren(['at', 'title', 'body'])", at: { '.validate': 'newData.isNumber()' }, title: str(80), body: str(200), $other: NO } },
-        loud: bool(), updatedAt: ts(), $other: NO,
+        loud: bool(), golden: bool(), upd: bool(), updatedAt: ts(), $other: NO,
       },
     },
     admin: { '.read': ADMIN, '.write': ADMIN, labels: { $uid: str(60) } },

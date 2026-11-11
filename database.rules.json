@@ -463,6 +463,12 @@
         "loud": {
           ".validate": "newData.isBoolean()"
         },
+        "golden": {
+          ".validate": "newData.isBoolean()"
+        },
+        "upd": {
+          ".validate": "newData.isBoolean()"
+        },
         "updatedAt": {
           ".validate": "newData.isNumber() && newData.val() <= now + 300000"
         },

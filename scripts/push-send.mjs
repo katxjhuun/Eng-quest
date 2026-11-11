@@ -3,7 +3,8 @@
 // Gerekli gizli değişkenler: FIREBASE_SERVICE_ACCOUNT (Firebase hizmet hesabı JSON), VAPID_PRIVATE_KEY.
 import admin from 'firebase-admin';
 import webpush from 'web-push';
-import { FIREBASE_CONFIG, VAPID_PUBLIC_KEY } from '../src/config.js';
+import { FIREBASE_CONFIG, VAPID_PUBLIC_KEY, UPDATE_MANIFEST_URL } from '../src/config.js';
+import { goldenNow } from '../src/golden-time.js';
 
 import { createECDH } from 'node:crypto';
 const SA = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -52,4 +53,28 @@ snap.forEach(u => {
 });
 await Promise.all(jobs);
 console.log(`gönderildi: ${sent}, süresi geçmiş: ${dropped}, geçersiz abonelik: ${gone}`);
+
+// ---- herkese duyurular: Altın Saat başladı / yeni sürüm ----
+const meta = (await db.ref('pushMeta').get()).val() || {};
+async function broadcast(title, body, tag, want) {
+  let n = 0; const all = [];
+  snap.forEach(u => { const v = u.val() || {}; if (!v.sub?.endpoint || !want(v)) return;
+    all.push(webpush.sendNotification(v.sub, JSON.stringify({ title, body, tag, loud: v.loud === true }), { TTL: 2 * 3600, urgency: v.loud === true ? 'normal' : 'low' })
+      .then(() => { n++; }).catch(async e => { if (e.statusCode === 404 || e.statusCode === 410) await u.ref.remove(); })); });
+  await Promise.all(all); return n;
+}
+const gw = goldenNow(now);
+if (gw && now - gw.start < 40 * 60000 && meta.golden !== gw.start) {
+  const n = await broadcast('✨ Altın Saat başladı', 'İki saat boyunca XP ×2. Bu sürede seviye atlarsan nadir pet şansın da iki katı!', 'dl-golden', v => v.golden !== false);
+  await db.ref('pushMeta/golden').set(gw.start); console.log('Altın Saat duyurusu:', n);
+}
+try {
+  const man = await fetch(UPDATE_MANIFEST_URL, { redirect: 'follow' }).then(r => (r.ok ? r.json() : null));
+  const ver = man?.version ? String(man.version) : '';
+  if (ver && meta.version !== ver) {
+    // ilk çalıştırmada yalnızca kaydet (eski sürüm için duyuru yapma)
+    if (meta.version) { const n = await broadcast(`dam-la ${ver} yayında 🎉`, 'Uygulamayı açınca yeni sürüm kendiliğinden yüklenir.', 'dl-update', v => v.upd !== false); console.log('Sürüm duyurusu:', ver, n); }
+    await db.ref('pushMeta/version').set(ver);
+  }
+} catch (e) { console.warn('sürüm denetlenemedi', e.message); }
 await admin.app().delete();
