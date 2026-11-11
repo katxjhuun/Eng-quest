@@ -21,7 +21,9 @@ export function initAccessories(core, pet) {
   const equipped = () => SLOTS.map(s => st().eq[s]).filter(id => id && ACCESSORIES[id] && owned(id));
   const apply = () => pet.setAcc?.(equipped());
   // görünüş seti (Klasik / Gölge / Kozmik / Oyuncak): uygulamanın bütün pet çizimlerine uygulanır
-  const skinNow = () => (SKINS[core.app.profile?.petSkin] ? core.app.profile.petSkin : 'classic');
+  // yeni görünüş setleri yeniden yapılıyor: hazır olana kadar yalnızca Klasik seçilebilir
+  const SKINS_READY = false;
+  const skinNow = () => (SKINS_READY && SKINS[core.app.profile?.petSkin] ? core.app.profile.petSkin : 'classic');
   function useSkin(id, save) {
     if (!SKINS[id]) id = 'classic';
     setSkin(id);
@@ -93,7 +95,7 @@ export function initAccessories(core, pet) {
   // ---------- dolap ----------
   const ov = document.createElement('div');
   ov.className = 'pet-overlay acc-ov'; ov.id = 'accOverlay'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true');
-  ov.innerHTML = `<div class="pet-modal acc-modal"><div class="modal-head"><div><div class="eyebrow">DOLAP</div><h2>Görünüm ve aksesuarlar</h2></div><button class="closebtn" data-x aria-label="Kapat">×</button></div><div id="accBody"></div></div>`;
+  ov.innerHTML = `<div class="pet-modal acc-modal"><div class="modal-head"><div><div class="eyebrow">DOLAP</div><h2>Aksesuarlar</h2></div><button class="closebtn" data-x aria-label="Kapat">×</button></div><div id="accBody"></div></div>`;
   document.body.appendChild(ov);
   let tab = 'head';
   function open() { if (!core.app.pet) { core.toast('Önce bir petin olmalı.'); return; } render(); ov.classList.add('show'); }
@@ -107,7 +109,7 @@ export function initAccessories(core, pet) {
     const p = core.app.pet, eq = st().eq, fresh = st().fresh || {};
     const ids = Object.keys(ACCESSORIES), have = ids.filter(owned).length;
     const list = ids.filter(id => ACCESSORIES[id].slot === tab).sort((x, y) => (owned(y) - owned(x)) || (Object.keys(RARITY).indexOf(ACCESSORIES[x].rarity) - Object.keys(RARITY).indexOf(ACCESSORIES[y].rarity)));
-    ov.querySelector('#accBody').innerHTML = `<div class="acc-skins">${Object.entries(SKINS).map(([id, S]) => `<button class="acc-skin sk-${id}${skinNow() === id ? ' on' : ''}" data-skin="${id}"><span>${petSVG(p.species, p.stage, { coat: p.coat, shiny: p.shiny, mood: 'happy', skin: id })}</span><b>${esc(S.name)}</b></button>`).join('')}</div>
+    ov.querySelector('#accBody').innerHTML = `${!SKINS_READY ? '' : `<div class="acc-skins">${Object.entries(SKINS).map(([id, S]) => `<button class="acc-skin sk-${id}${skinNow() === id ? ' on' : ''}" data-skin="${id}"><span>${petSVG(p.species, p.stage, { coat: p.coat, shiny: p.shiny, mood: 'happy', skin: id })}</span><b>${esc(S.name)}</b></button>`).join('')}</div>`}
       <div class="acc-stage sk-${skinNow()}">${petSVG(p.species, p.stage, { coat: p.coat, shiny: p.shiny, mood: 'happy', acc: equipped() })}</div>
       <div class="acc-count">${have} / ${ids.length} aksesuar</div>
       <div class="acc-tabs">${SLOTS.map(s => `<button data-tab="${s}" class="${tab === s ? 'on' : ''}">${SLOT_NAME[s]}${eq[s] ? ' •' : ''}</button>`).join('')}</div>
