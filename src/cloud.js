@@ -116,6 +116,20 @@ export function initCloud(core) {
     const list = {}; (notes || []).slice(0, 6).forEach((n, i) => { list['n' + i] = { at: Math.round(n.at), title: String(n.title).slice(0, 80), body: String(n.body).slice(0, 200) }; });
     return F.set(r, { sub: clean, notes: list, loud: !!prefs.loud, golden: prefs.golden !== false, upd: prefs.upd !== false, updatedAt: F.serverTimestamp() }).then(() => true).catch(e => { console.warn('[push]', e); return false; });
   };
+  // ---- yönetici etkileşimleri: soru yanıtları, canlı savaş özeti ve komutları ----
+  api.reply = (msgId, obj) => {
+    if (!state.uid || !state.db || !/^[A-Za-z0-9_-]{1,40}$/.test(String(msgId))) return Promise.resolve(false);
+    return F.set(F.ref(state.db, `users/${state.uid}/replies/${msgId}`), { ...obj, at: F.serverTimestamp() }).then(() => true).catch(e => { console.warn('[reply]', e); return false; });
+  };
+  api.battlePublish = s => {
+    if (!state.uid || !state.db) return;
+    F.set(F.ref(state.db, `users/${state.uid}/battle`), s ? { ...s, at: F.serverTimestamp() } : null).catch(() => {});
+  };
+  api.onBattleCmd = cb => {
+    if (!state.uid || !state.db) return () => {};
+    const r = F.ref(state.db, `users/${state.uid}/battleCmd`);
+    return F.onChildAdded(r, snap => { const v = snap.val() || {}; F.remove(snap.ref).catch(() => {}); if (Date.now() - (v.at || 0) < 10 * 60000) cb({ id: snap.key, ...v }); });
+  };
   // ---- duyuru şeridi: herkese açık başarı akışı ve çözülen soru sıralaması ----
   api.feedPost = e => {
     if (!state.uid || !state.db || !okCode(state.shortId)) return Promise.resolve(false);

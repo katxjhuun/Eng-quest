@@ -143,6 +143,14 @@ export function createFx({ arena, layer, cardOf, reduced }) {
     ko(uid) { onCard(uid, 'dust', { dur: 900 }); shake(1); },
     dove(uid) { onCard(uid, 'dove', { dur: 1400, html: '🕊️' }); },
     convert(uid) { particles(uid, '♥', 7, { cls: 'pt heart', color: '#f29bb6', up: 40 }); onCard(uid, 'glow convert', { dur: 1200 }); },
+    // yönetici müdahalesi: yukarıdan inen şimşek ve işlem simgesi
+    admin(uid, op) {
+      const r = rectOf(uid); if (!r) return;
+      spawn('bolt', r.x, 0, { dur: 700, vars: { '--h': r.y + 'px' } });
+      onCard(uid, 'glow ' + (['hurt', 'weaken', 'confuse', 'will', 'ko'].includes(op) ? 'bad' : 'buff'), { dur: 900 });
+      onCard(uid, 'adm', { dur: 1100, html: { heal: '💚', hurt: '⚡', shield: '🛡️', buff: '💪', weaken: '🔻', confuse: '💫', will: '💬', ko: '☠️', revive: '✨' }[op] || '⚡' });
+      shake(op === 'ko' || op === 'hurt' ? 2 : 1);
+    },
     shake,
   };
 }

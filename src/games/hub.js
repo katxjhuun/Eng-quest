@@ -99,6 +99,13 @@ export function initGames(core) {
     if (e.target.closest('#gmLang')) { const s = st(); s.lang[current] = langOf(current) === 'en' ? 'tr' : 'en'; core.saveLocal(false); play(current); return; }
     const c = e.target.closest('[data-game]'); if (c) play(c.dataset.game);
   });
+  // yönetici bölüm değiştirdi: açık oyun yeni bölümle yeniden başlar, merkez açıksa yenilenir
+  window.addEventListener('dl:games-admin', e => {
+    if (!root.classList.contains('show')) return;
+    const d = e.detail || {};
+    if (current && current === d.game && (!d.lang || langOf(current) === d.lang)) play(current);
+    else if (!current) hub();
+  });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && root.classList.contains('show')) { if (current) hub(); else close(); } });
   return { open, close };
 }

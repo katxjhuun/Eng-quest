@@ -1141,7 +1141,7 @@ export function initPet(core, quiz) {
     return battleMod;
   }
   setTimeout(() => import('./battle/ui.js').catch(() => {}), 9000); // çevrimdışı da açılabilsin diye önceden önbelleğe al
-  const battle = { openArena: () => getBattle().then(b => b.openArena()), boss: st => getBattle().then(b => b.boss(st)) };
+  const battle = { openArena: () => getBattle().then(b => b.openArena()), boss: st => getBattle().then(b => b.boss(st)), special: (...a) => getBattle().then(b => b.special(...a)), monsters: () => import('./battle/monsters.js') };
   // arena kartı: arkadaşlar petini ödünç alabilsin, oyuncular meydan okuyabilsin
   function publishCard() {
     if (!core.arena?.ready?.()) return;
@@ -1496,6 +1496,7 @@ export function initPet(core, quiz) {
       species: p.species, stage: p.stage, stars: r(p.stars), name: String(p.name || '').slice(0, 16), alive: !!p.alive,
       hp: r(p.hp), hpMax: mx.hp, food: r(p.food), foodMax: mx.food, energy: r(p.energy), energyMax: mx.energy,
       stuffed: Math.min(100, r(p.stuffed)), flow: !!p.flow, roam: !!p.roam, mood: currentMood(), streak: r(p.streak), correct: r(p.correct), answers: r(p.answers),
+      shiny: !!p.shiny, role: ROLES[p.role] ? p.role : 'melee',
       revives: r(p.revives), memorial: Math.min(100, (A().petMemorial || []).length), catchUp: Math.min(20, Object.keys(A().petCatchUp || {}).length),
     };
     if (!p.alive && /^[a-z]{2,6}$/.test(p.death?.cat || '')) o.deathCat = p.death.cat;
@@ -1583,6 +1584,19 @@ export function initPet(core, quiz) {
         p.hp = Math.min(p.hp, m2.hp); p.food = Math.min(p.food, m2.food); p.energy = Math.min(p.energy, m2.energy); artKey = '';
         out = { icon: '🔄', title: `${p.name} dönüştü!`, text: `Yöneticin petini ${PET_SPECIES[s2].label.toLocaleLowerCase('tr')} yaptı (${stageName(s2, p.stage)}).` };
         if (p.alive) setTimeout(() => react('surprised', 1300, 'shock', 'excl'), 300); break;
+      }
+      case 'shiny': {
+        const on = msg.on !== false; if (!!p.shiny === on) return null;
+        p.shiny = on; artKey = '';
+        out = on ? { icon: '✨', title: `${p.name} nadir forma dönüştü!`, text: `Yöneticin petini nadir yaptı: ${SHINY.name[p.species]}. ${SHINY.perks.join(' · ')}.` } : { icon: '🐾', title: `${p.name} normal formuna döndü`, text: 'Yöneticin nadir formu kaldırdı.' };
+        if (on) { feedPet('shiny', 3); if (p.alive) setTimeout(() => { react('happy', 1600, 'dance', 'star'); sparkBurst?.(); }, 300); }
+        publishCard?.(); break;
+      }
+      case 'role': {
+        const ro = String(msg.role || ''); if (!ROLES[ro] || ro === p.role) return null;
+        p.role = ro;
+        out = { icon: ROLES[ro].icon, title: `${p.name} artık ${ROLES[ro].name}`, text: `Yöneticin petinin savaş rolünü değiştirdi: ${ROLES[ro].desc}` };
+        publishCard?.(); break;
       }
       case 'flow':
         p.flow = !!msg.on; p.flowCount = 0;

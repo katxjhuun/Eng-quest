@@ -187,6 +187,12 @@
           "answers": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
           },
+          "shiny": {
+            ".validate": "newData.isBoolean()"
+          },
+          "role": {
+            ".validate": "newData.isString() && newData.val().length <= 10 && newData.val().matches(/^(tank|melee|ranger|assassin|support|magician|trickster)$/)"
+          },
           "revives": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000"
           },
@@ -210,7 +216,7 @@
           "$msg": {
             ".write": "auth != null && auth.uid == $uid && !newData.exists()",
             "type": {
-              ".validate": "newData.isString() && newData.val().length <= 10 && newData.val().matches(/^(message|xp|level|reward|pet)$/)"
+              ".validate": "newData.isString() && newData.val().length <= 10 && newData.val().matches(/^(message|xp|level|reward|pet|boss|ask|hint|game)$/)"
             },
             "amount": {
               ".validate": "newData.isNumber() && newData.val() >= -100000 && newData.val() <= 100000"
@@ -246,7 +252,33 @@
               ".validate": "newData.isBoolean()"
             },
             "action": {
-              ".validate": "newData.isString() && newData.val().length <= 12 && newData.val().matches(/^(heal|feed|energy|restore|revive|set|stage|name|species|flow|roam|say|react|reset)$/)"
+              ".validate": "newData.isString() && newData.val().length <= 12 && newData.val().matches(/^(heal|feed|energy|restore|revive|set|stage|name|species|flow|roam|say|react|reset|shiny|role)$/)"
+            },
+            "role": {
+              ".validate": "newData.isString() && newData.val().length <= 10 && newData.val().matches(/^(tank|melee|ranger|assassin|support|magician|trickster)$/)"
+            },
+            "mon": {
+              ".validate": "newData.isString() && newData.val().length <= 14 && newData.val().matches(/^[A-Za-z]{2,14}$/)"
+            },
+            "kind": {
+              ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^(yesno|text|check)$/)"
+            },
+            "options": {
+              "$o": {
+                ".validate": "$o.matches(/^o[0-9]$/) && newData.isString() && newData.val().length <= 80"
+              }
+            },
+            "lock": {
+              ".validate": "newData.isBoolean()"
+            },
+            "game": {
+              ".validate": "newData.isString() && newData.val().length <= 10 && newData.val().matches(/^[a-z]{3,10}$/)"
+            },
+            "lang": {
+              ".validate": "newData.isString() && newData.val().length <= 2 && newData.val().matches(/^(tr|en)$/)"
+            },
+            "win": {
+              ".validate": "newData.isBoolean()"
             },
             "species": {
               ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^(plant|chick|cat|dog|owl|gecko|whale|doodle|goat)$/)"
@@ -280,6 +312,104 @@
             }
           }
         },
+        "replies": {
+          "$msg": {
+            ".write": "auth != null && auth.uid == $uid",
+            "kind": {
+              ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^(yesno|text|check|boss)$/)"
+            },
+            "q": {
+              ".validate": "newData.isString() && newData.val().length <= 200"
+            },
+            "answer": {
+              ".validate": "newData.isString() && newData.val().length <= 300"
+            },
+            "result": {
+              ".validate": "newData.isString() && newData.val().length <= 4 && newData.val().matches(/^(win|lose)$/)"
+            },
+            "checks": {
+              "$c": {
+                ".validate": "$c.matches(/^o[0-9]$/) && newData.isBoolean()"
+              }
+            },
+            "at": {
+              ".validate": "newData.isNumber() && newData.val() <= now + 300000"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "battle": {
+          ".write": "auth != null && auth.uid == $uid",
+          "active": {
+            ".validate": "newData.isBoolean()"
+          },
+          "title": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "round": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+          },
+          "at": {
+            ".validate": "newData.isNumber() && newData.val() <= now + 300000"
+          },
+          "units": {
+            "$i": {
+              ".validate": "$i.matches(/^u[0-9]{1,4}$/)",
+              "uid": {
+                ".validate": "newData.isString() && newData.val().length <= 12"
+              },
+              "name": {
+                ".validate": "newData.isString() && newData.val().length <= 24"
+              },
+              "side": {
+                ".validate": "newData.isString() && newData.val().length <= 1 && newData.val().matches(/^(A|B)$/)"
+              },
+              "hp": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+              },
+              "maxHp": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+              },
+              "will": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+              },
+              "maxWill": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+              },
+              "role": {
+                ".validate": "newData.isString() && newData.val().length <= 10"
+              },
+              "alive": {
+                ".validate": "newData.isBoolean()"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "battleCmd": {
+          "$c": {
+            ".write": "(auth != null && auth.token.firebase.sign_in_provider == 'google.com' && root.child('admins').child(auth.uid).val() == true) || (auth != null && auth.uid == $uid && !newData.exists())",
+            "op": {
+              ".validate": "newData.isString() && newData.val().length <= 8 && newData.val().matches(/^(heal|hurt|shield|buff|weaken|confuse|will|ko|revive)$/)"
+            },
+            "target": {
+              ".validate": "newData.isString() && newData.val().length <= 12"
+            },
+            "at": {
+              ".validate": "newData.isNumber() && newData.val() <= now + 300000"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
         "$other": {
           ".validate": false
         }
@@ -292,7 +422,7 @@
         "$msg": {
           ".write": "auth != null && auth.uid == $uid && !data.exists()",
           "type": {
-            ".validate": "newData.isString() && newData.val().length <= 10 && newData.val().matches(/^(message|xp|level|reward|pet)$/)"
+            ".validate": "newData.isString() && newData.val().length <= 10 && newData.val().matches(/^(message|xp|level|reward|pet|boss|ask|hint|game)$/)"
           },
           "amount": {
             ".validate": "newData.isNumber() && newData.val() >= -100000 && newData.val() <= 100000"
@@ -328,7 +458,33 @@
             ".validate": "newData.isBoolean()"
           },
           "action": {
-            ".validate": "newData.isString() && newData.val().length <= 12 && newData.val().matches(/^(heal|feed|energy|restore|revive|set|stage|name|species|flow|roam|say|react|reset)$/)"
+            ".validate": "newData.isString() && newData.val().length <= 12 && newData.val().matches(/^(heal|feed|energy|restore|revive|set|stage|name|species|flow|roam|say|react|reset|shiny|role)$/)"
+          },
+          "role": {
+            ".validate": "newData.isString() && newData.val().length <= 10 && newData.val().matches(/^(tank|melee|ranger|assassin|support|magician|trickster)$/)"
+          },
+          "mon": {
+            ".validate": "newData.isString() && newData.val().length <= 14 && newData.val().matches(/^[A-Za-z]{2,14}$/)"
+          },
+          "kind": {
+            ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^(yesno|text|check)$/)"
+          },
+          "options": {
+            "$o": {
+              ".validate": "$o.matches(/^o[0-9]$/) && newData.isString() && newData.val().length <= 80"
+            }
+          },
+          "lock": {
+            ".validate": "newData.isBoolean()"
+          },
+          "game": {
+            ".validate": "newData.isString() && newData.val().length <= 10 && newData.val().matches(/^[a-z]{3,10}$/)"
+          },
+          "lang": {
+            ".validate": "newData.isString() && newData.val().length <= 2 && newData.val().matches(/^(tr|en)$/)"
+          },
+          "win": {
+            ".validate": "newData.isBoolean()"
           },
           "species": {
             ".validate": "newData.isString() && newData.val().length <= 6 && newData.val().matches(/^(plant|chick|cat|dog|owl|gecko|whale|doodle|goat)$/)"

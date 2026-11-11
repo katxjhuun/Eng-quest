@@ -448,6 +448,7 @@ export function initQuiz(core) {
     const left = MAX_TRIES - (c.tries || 0);
     $('#qzTries').textContent = c.done ? '' : `${left} deneme hakkın var · ipucu ${c.hints.length}/${maxHints(item)}`;
     $('#qzHint').disabled = c.done || c.hints.length >= maxHints(item);
+    hintLabel();
     $('#qzSubmit').disabled = c.done;
     const fb = $('#qzTypedFb'); fb.textContent = c.fb || ''; fb.className = 'quiz-typed-fb ' + (c.fbType || '');
   }
@@ -468,6 +469,7 @@ export function initQuiz(core) {
   let composing = false;
   function giveHint() {
     const c = cur(), item = findItem(c.id); if (!item || c.done || c.hints.length >= maxHints(item)) return;
+    if (A().hintLock) { core.toast('🔒 İpuçların yönetici tarafından kapatıldı.'); return; }
     const free = slotPositions(item).filter(i => !c.hints.includes(i));
     // yazılmış harfleri koru: ipucunu yazılmamış kısımdan ver
     const typedLen = [...(c.typed || '')].length;
@@ -476,7 +478,10 @@ export function initQuiz(core) {
     c.hints.push(pick); c.hints.sort((a, b) => a - b);
     c.typed = [...(c.typed || '')].slice(0, freeSlotCount(item, c)).join('');
     $('#qzInput').value = c.typed;
-    c.fb = 'İpucu: bir harf açıldı. İpucuyla bulunan cevap daha az XP kazandırır.'; c.fbType = 'hint';
+    const credit = (A().hintCredits | 0) > 0;
+    if (credit) { A().hintCredits--; c.freeHints = (c.freeHints || 0) + 1; }
+    c.fb = credit ? `🎁 Bedava ipucu: bir harf açıldı, XP’n düşmez. Kalan bedava ipucu: ${A().hintCredits}.` : 'İpucu: bir harf açıldı. İpucuyla bulunan cevap daha az XP kazandırır.'; c.fbType = 'hint';
+    hintLabel();
     renderTyped(item, c); core.saveLocal(false);
   }
   function submitTyped() {
@@ -594,6 +599,15 @@ export function initQuiz(core) {
   input.addEventListener('input', onTypedInput);
   input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitTyped(); } });
   $('#qzHint').addEventListener('click', giveHint);
+  // bedava ipucu sayısı ve kilit düğmede görünür
+  function hintLabel() {
+    const b = $('#qzHint'); if (!b) return;
+    if (!b.dataset.base) b.dataset.base = b.innerHTML;
+    const n = A().hintCredits | 0;
+    b.innerHTML = A().hintLock ? '🔒 İpucu kapalı' : b.dataset.base + (n ? ` <span class="hint-free">🎁${n}</span>` : '');
+    b.classList.toggle('locked', !!A().hintLock);
+  }
+  window.addEventListener('dl:hints', hintLabel);
   $('#qzSubmit').addEventListener('click', submitTyped);
   // Karışık modda İngilizce yazma sorusundan sonra rastgele pop quiz’e geçiş
   $('#nextQuestion')?.addEventListener('click', () => {

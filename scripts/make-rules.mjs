@@ -9,11 +9,18 @@ const ts = () => ({ '.validate': 'newData.isNumber() && newData.val() <= now + 3
 const bool = () => ({ '.validate': 'newData.isBoolean()' });
 const NO = { '.validate': false };
 const msgFields = {
-  type: str(10, '/^(message|xp|level|reward|pet)$/'), amount: { '.validate': 'newData.isNumber() && newData.val() >= -100000 && newData.val() <= 100000' },
+  type: str(10, '/^(message|xp|level|reward|pet|boss|ask|hint|game)$/'), amount: { '.validate': 'newData.isNumber() && newData.val() >= -100000 && newData.val() <= 100000' },
   cat: str(6, '/^[a-z]{2,6}$/'), catLevel: num(100), level: str(2, '/^(A1|A2|B1|B2|C1|C2)$/'),
   title: str(80), text: str(600), emoji: str(16), music: bool(), at: ts(), by: str(120), broadcast: bool(),
   // pet komutları (yalnızca yönetici gönderebilir; uygulama ayrıca doğrular)
-  action: str(12, '/^(heal|feed|energy|restore|revive|set|stage|name|species|flow|roam|say|react|reset)$/'),
+  action: str(12, '/^(heal|feed|energy|restore|revive|set|stage|name|species|flow|roam|say|react|reset|shiny|role)$/'),
+  role: str(10, '/^(tank|melee|ranger|assassin|support|magician|trickster)$/'),
+  // özel boss (type=boss)
+  mon: str(14, '/^[A-Za-z]{2,14}$/'),
+  // soru-cevap bildirimi (type=ask): evet/hayır, serbest yanıt ya da onay listesi
+  kind: str(6, '/^(yesno|text|check)$/'), options: { $o: { '.validate': "$o.matches(/^o[0-9]$/) && newData.isString() && newData.val().length <= 80" } },
+  // ipucu hakkı (type=hint) ve mini oyun (type=game)
+  lock: bool(), game: str(10, '/^[a-z]{3,10}$/'), lang: str(2, '/^(tr|en)$/'), win: bool(),
   species: str(6, '/^(plant|chick|cat|dog|owl|gecko|whale|doodle|goat)$/'), stage: num(5), stars: num(999), name: str(16),
   hp: num(100), food: num(100), energy: num(100), emote: str(8, '/^[a-z]{2,8}$/'), on: bool(),
   $other: NO,
@@ -54,9 +61,32 @@ const rules = {
           species: str(6, '/^(plant|chick|cat|dog|owl|gecko|whale|doodle|goat)$/'), stage: num(5), stars: num(9999), name: str(16), alive: bool(),
           hp: num(10000), hpMax: num(10000), food: num(10000), foodMax: num(10000), energy: num(10000), energyMax: num(10000),
           stuffed: num(100), flow: bool(), roam: bool(), mood: str(12, '/^[a-z]{2,12}$/'), streak: num(), correct: num(), answers: num(),
+          shiny: bool(), role: str(10, '/^(tank|melee|ranger|assassin|support|magician|trickster)$/'),
           revives: num(10000), memorial: num(100), deathCat: str(6, '/^[a-z]{2,6}$/'), catchUp: num(20), updatedAt: ts(), $other: NO,
         },
         inbox: { $msg: { '.write': `${OWN} && !newData.exists()`, ...msgFields } },
+        // kullanıcının yönetici sorularına yanıtları ve özel boss sonuçları (yönetici okur)
+        replies: {
+          $msg: {
+            '.write': OWN,
+            kind: str(6, '/^(yesno|text|check|boss)$/'), q: str(200), answer: str(300), result: str(4, '/^(win|lose)$/'),
+            checks: { $c: { '.validate': "$c.matches(/^o[0-9]$/) && newData.isBoolean()" } }, at: ts(), $other: NO,
+          },
+        },
+        // süren savaşın canlı özeti (yönetici panelde izler ve müdahale eder)
+        battle: {
+          '.write': OWN,
+          active: bool(), title: str(60), round: num(1000), at: ts(),
+          units: { $i: { '.validate': "$i.matches(/^u[0-9]{1,4}$/)", uid: str(12), name: str(24), side: str(1, '/^(A|B)$/'), hp: num(), maxHp: num(), will: num(), maxWill: num(), role: str(10), alive: bool(), $other: NO } },
+          $other: NO,
+        },
+        // yöneticinin canlı savaş komutları: yönetici yazar, uygulama uygulayıp siler
+        battleCmd: {
+          $c: {
+            '.write': `(${ADMIN}) || (${OWN} && !newData.exists())`,
+            op: str(8, '/^(heal|hurt|shield|buff|weaken|confuse|will|ko|revive)$/'), target: str(12), at: ts(), $other: NO,
+          },
+        },
         $other: NO,
       },
     },

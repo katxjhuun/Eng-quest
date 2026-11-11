@@ -1,6 +1,6 @@
 // dam-la — savaş ekranı ve arena: takım kurma, sıra tabanlı savaş arayüzü, ödüller.
 // Pet kayar gibi hareket etmez: saldırırken yerinde gerilip öne atılır (esneme), vurulunca sarsılır; uzak saldırılar mermiyle gider.
-import { createBattle, nextActor, act, aiChoose, movesOf, targetKind, validTargets, botTeam, stanceSeen, rapportOf } from './engine.js';
+import { createBattle, nextActor, act, aiChoose, movesOf, targetKind, validTargets, botTeam, stanceSeen, rapportOf, adminOp } from './engine.js';
 import { createFx } from './fx.js';
 import { MONSTERS, COMMON, BOSS_FOR_STAGE, monsterSVG } from './monsters.js';
 import { TYPES, ROLES, STANCES, ROLE_IDS, ARGS } from '../pets/codex.js';
@@ -205,6 +205,41 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
     return res.winner === 'A' ? 'win' : 'lose';
   }
 
+  // yöneticinin gönderdiği özel boss savaşı (evrimle ilgisi yok). sonuç: 'win' | 'lose'
+  async function special(monId, stage = 0, title = '', intro = '') {
+    const p = getPet(); if (!p || !p.alive) { core.toast('Petin şu an savaşamaz; özel boss bekliyor.'); return null; }
+    const M = MONSTERS[monId] || MONSTERS[BOSS_FOR_STAGE[0]];
+    const id = MONSTERS[monId] ? monId : BOSS_FOR_STAGE[0];
+    const foes = [{ kind: 'mon', mon: id, stage: Math.max(0, Math.min(5, stage | 0)), role: M.role, boss: !!M.boss }];
+    const res = await fight([petDef(), ...allyDefs()], foes, { title: title || M.name, eye: 'ÖZEL BOSS · YÖNETİCİDEN', canFlee: false, intro: intro || M.desc });
+    const s = state();
+    if (res.winner === 'A') { s.wins++; if (M.boss) s.bossWins++; } else s.losses++;
+    core.saveLocal(true);
+    return res.winner === 'A' ? 'win' : 'lose';
+  }
+
+  // ---------- yöneticinin canlı müdahalesi ----------
+  let cmdQueue = [], cmdOff = null, pubTimer = null, animBusy = false;
+  function publish(force) {
+    if (!B) return;
+    clearTimeout(pubTimer);
+    pubTimer = setTimeout(() => {
+      if (!B) return;
+      const units = {}; B.units.forEach((u, i) => { units['u' + i] = { uid: u.uid, name: String(u.name || '').slice(0, 24), side: u.side, hp: Math.round(u.hp), maxHp: Math.round(u.maxHp), will: Math.round(u.will), maxWill: Math.round(u.maxWill), role: u.role, alive: !!u.alive }; });
+      core.admin?.battlePublish({ active: !B.over, title: String($('#btTitle').textContent || 'Savaş').slice(0, 60), round: B.round | 0, units });
+    }, force ? 0 : 500);
+  }
+  async function applyCmds() {
+    if (!B || animBusy || !cmdQueue.length) return;
+    animBusy = true;
+    while (cmdQueue.length && B && !B.over) {
+      const c = cmdQueue.shift();
+      const evs = adminOp(B, c.target, c.op);
+      if (evs.length) await animate(evs);
+    }
+    animBusy = false; refresh(); publish();
+  }
+
   // ---------- savaş döngüsü ----------
   let B = null, resolveFight = null, picking = null;
   function close() { root.classList.remove('show'); document.body.classList.remove('bt-open'); }
@@ -244,6 +279,7 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
       el.querySelector('.bt-fxs').textContent = fx.join('');
     }
     $('#btRound').textContent = `Tur ${B.round}`;
+    publish();
   }
   const cardOf = uid => root.querySelector(`[data-uid="${uid}"]`);
   const nameOf = uid => B.units.find(u => u.uid === uid)?.name || '';
@@ -268,6 +304,10 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
         await FX.cast(ev, B);
         await wait(T(ev.kind === 'attack' ? 160 : 120));
         cardOf(ev.from)?.classList.remove('acting');
+      } else if (ev.type === 'admin') {
+        const t = { heal: '💚 iyileştirdi', hurt: '⚡ çarptı', shield: '🛡️ kalkan verdi', buff: '💪 güçlendirdi', weaken: '🔻 zayıflattı', confuse: '💫 kafasını karıştırdı', will: '💬 iradesini kırdı', ko: '☠️ devirdi', revive: '✨ ayağa kaldırdı' }[ev.op] || 'müdahale etti';
+        log(`⚡ <b>Yönetici</b> ${esc(nameOf(ev.to))} için ${t}`);
+        FX.admin?.(ev.to, ev.op); await wait(T(520));
       } else if (ev.type === 'say') { log(`<b>${esc(nameOf(ev.from))}</b>: ${esc(ev.text)}`); await wait(T(700)); }
       else if (ev.type === 'hit') {
         const el = cardOf(ev.to);
@@ -372,6 +412,7 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
 
   async function fight(teamA, teamB, opts = {}) {
     B = createBattle(teamA, teamB, opts);
+    cmdQueue = []; cmdOff?.(); cmdOff = core.admin?.onBattleCmd?.(c => { cmdQueue.push(c); if (picking) applyCmds().then(() => { if (B?.over && picking) { const r = picking.resolve; picking = null; root.querySelectorAll('.pickable,.turn').forEach(x => x.classList.remove('pickable', 'turn')); $('#btPanel').innerHTML = ''; r({ skip: true }); } }); }) || null;
     const origB = new Set(B.units.filter(u => u.side === 'B').map(u => u.uid));
     $('#btTitle').textContent = opts.title || 'Savaş'; $('#btEye').textContent = opts.eye || 'SAVAŞ';
     $('#btFlee').classList.toggle('hidden', !opts.canFlee);
@@ -386,9 +427,15 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
       let choice;
       if (u.side === 'A' && !u.convert) { choice = await chooseFor(u); if (choice.flee) { fled = true; break; } }
       else { await wait(T(380)); choice = aiChoose(B, u); }
+      if (choice.skip) continue;
+      await applyCmds();
+      if (B.over || !u.alive) { publish(); continue; }
       const evs = act(B, u, choice.move, choice.target);
-      await animate(evs);
+      animBusy = true; await animate(evs); animBusy = false;
+      publish();
+      await applyCmds();
     }
+    cmdOff?.(); cmdOff = null; clearTimeout(pubTimer); core.admin?.battlePublish(null);
     const winner = fled ? 'B' : B.winner;
     const foes = B.units.filter(u => origB.has(u.uid));
     if (fled) { log('Kaçtın. Bir dahaki sefere.'); await wait(T(700)); close(); return { winner: 'B', fled: true, foes }; }
@@ -404,5 +451,5 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
     return { winner, foes };
   }
 
-  return { openArena, training, boss, fight, state, close: () => hub.classList.remove('show') };
+  return { openArena, training, boss, special, fight, state, close: () => hub.classList.remove('show') };
 }

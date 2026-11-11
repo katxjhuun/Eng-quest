@@ -329,3 +329,26 @@ export function botTeam(stage, size, pool, exclude = []) {
   return out;
 }
 export { BASE };
+
+// Yöneticinin canlı müdahalesi (panelden): herhangi bir birime iyileştirme, hasar, kalkan, güç, zayıflatma, kafa karışıklığı,
+// irade kırma, nakavt ya da canlandırma. Olay listesi döner; arayüz bunları özel bir efektle canlandırır.
+export function adminOp(b, uid, op) {
+  const t = b.units.find(u => u.uid === uid), ev = [];
+  if (!t || b.over) return ev;
+  ev.push({ type: 'admin', to: uid, op });
+  if (op === 'revive') {
+    if (!t.alive && t.out === 'ko') { t.alive = true; t.out = null; t.hp = Math.round(t.maxHp * 0.5); ev.push({ type: 'heal', to: uid, amt: t.hp }); if (!b.order.includes(uid)) b.order.push(uid); }
+    settle(b, ev); return ev;
+  }
+  if (!t.alive) return ev;
+  if (op === 'heal') { const h = Math.round(t.maxHp * 0.35); t.hp = Math.min(t.maxHp, t.hp + h); ev.push({ type: 'heal', to: uid, amt: h }); }
+  else if (op === 'hurt') { const d = Math.max(1, Math.round(t.maxHp * 0.3)); t.hp = Math.max(0, t.hp - d); ev.push({ type: 'hit', from: uid, to: uid, dmg: d, mult: 1, id: 'admin', admin: true }); }
+  else if (op === 'shield') { t.fx.ward = 3; t.fx.dodge = 1; ev.push({ type: 'buff', to: uid, text: 'yönetici kalkanı' }); }
+  else if (op === 'buff') { t.fx.atkUp = 3; t.fx.spdUp = 3; ev.push({ type: 'buff', to: uid, text: 'güçlendi' }); }
+  else if (op === 'weaken') { t.fx.atkDown = 3; t.fx.defDown = 3; ev.push({ type: 'buff', to: uid, text: 'zayıfladı', bad: true }); }
+  else if (op === 'confuse') { t.fx.confused = 1; ev.push({ type: 'buff', to: uid, text: 'kafası karıştı', bad: true }); }
+  else if (op === 'will') { const w = Math.round(t.maxWill * 0.4); t.will = Math.max(0, t.will - w); ev.push({ type: 'retort', to: uid, amt: w }); }
+  else if (op === 'ko') { const d = t.hp; t.hp = 0; ev.push({ type: 'hit', from: uid, to: uid, dmg: d, mult: 1, id: 'admin', admin: true }); }
+  settle(b, ev);
+  return ev;
+}

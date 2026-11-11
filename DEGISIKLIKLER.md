@@ -1,3 +1,13 @@
+# dam-la 2.10.0 — Altın Saat, duyuru şeridi, yönetici yetkileri
+
+Uzaktan güncellemeyle gelir.
+- **Altın Saat:** 72 ay boyunca her gün, 10:00–22:00 arasında rastgele iki kez, ikişer saat. Bu sürede XP ×2; Altın Saat'te seviye atlarsan o evrimde nadir pet şansı iki katı. Üstte geri sayımlı altın şerit, bayrak süsleri, süzülen parıltılar; son 15 dakikada şerit kırmızı nabız atar. Başladığında bildirim gelir.
+- **Duyuru şeridi:** ana ekranın en üstünde kayan şerit: nadir pet (dokununca pencere), son evrim, seviye atlama, en yüksek seviye, boss zaferi. Zor başarılar altın renkte ve parıltılı; yeni geldiğinde şerit bir an parlar. Solda kendi petin ve çözülen soru sıralamandaki yerin.
+- **Bildirimler sessiz:** pet, Altın Saat ve yeni sürüm bildirimleri varsayılan olarak ses ve titreşim olmadan gelir. Ayarlar › Ses › Bildirimler'den sesli yapılabilir; Altın Saat ve sürüm bildirimleri ayrı ayrı kapatılabilir.
+- **Yeni sürüm bildirimi** (ana ekrana eklenmiş web sürümünde).
+- **Yönetici paneli:** gece modu; peti nadir yapma ve savaş rolünü değiştirme; özel boss gönderme; süren savaşı canlı izleyip oyuncuya ya da rakibe müdahale; evet/hayır, serbest yanıt ve onay listesi şeklinde sorular (yanıtlar panelde); bedava ipucu hakkı verme/alma, ipuçlarını kapatma; mini oyunlarda bölüm ayarlama ya da bölümü geçmiş sayma.
+
+---
 # dam-la 2.9.0 — Yeni hilebaz, savaş animasyonları, yenilenen mini oyunlar
 
 Uzaktan güncellemeyle gelir.

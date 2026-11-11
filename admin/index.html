@@ -14,7 +14,7 @@
 <body>
   <header class="top">
     <div class="brand"><img src="./logo.png" alt="" class="logo"><div><strong>dam-la</strong><small>Yönetici paneli</small></div></div>
-    <div class="who hidden" id="who"><span id="whoEmail"></span><button class="ghost" id="signOut">Çıkış</button></div>
+    <div class="top-r"><button class="ghost icon" id="themeBtn" title="Gece modu" aria-label="Gece modu">🌙</button><div class="who hidden" id="who"><span id="whoEmail"></span><button class="ghost" id="signOut">Çıkış</button></div></div>
   </header>
 
   <main>
@@ -68,11 +68,12 @@
 
       <h3>🐾 Pet</h3>
       <div class="petcard" id="dPet"></div>
+      <div class="livebattle hidden" id="dBattle"></div>
 
       <h3>İşlem</h3>
       <div class="seg tabs" id="actTabs">
         <button data-t="xp" class="on">± XP</button><button data-t="level">Seviye</button><button data-t="reward">🎁 Ödül</button><button data-t="message">✉️ Mesaj</button><button data-t="pet">🐾 Pet</button>
-      </div>
+      <button data-t="ask">💬 Sor</button><button data-t="boss">👑 Boss</button><button data-t="hint">💡 İpucu</button><button data-t="game">🎮 Oyun</button></div>
       <form class="act" data-t="xp" id="fXp">
         <div class="row">
           <label>Miktar<input name="amount" type="number" step="1" value="10" required></label>
@@ -135,6 +136,11 @@
           <div class="row bottom"><label>Tür<select name="species" id="pSpecies"></select></label><button type="button" class="ghost" data-pa="species">Türü değiştir</button></div>
           <p class="note">Tür değişince form numarası korunur (örn. Form 4 kedi → Form 4 köpek).</p>
         </div>
+        <div class="pgroup"><span class="plabel">Nadir form ve savaş rolü</span>
+          <div class="pbtns"><button type="button" data-pa="shiny" id="paShiny">✨ Nadir yap</button></div>
+          <div class="row bottom"><label>Rol<select name="role" id="pRole"><option value="tank">🛡️ Tank</option><option value="melee">⚔️ Yakın dövüşçü</option><option value="ranger">🏹 Nişancı</option><option value="assassin">🗡️ Suikastçı</option><option value="support">✚ Destek</option><option value="magician">✦ Büyücü</option><option value="trickster">🎭 Hilebaz</option></select></label><button type="button" class="ghost" data-pa="role">Rolü değiştir</button></div>
+          <p class="note">Nadir yapılınca duyuru şeridinde herkese duyurulur.</p>
+        </div>
         <div class="pgroup"><span class="plabel">Modlar</span>
           <div class="pbtns"><button type="button" data-pa="flow" id="paFlow">🌊 Flow’u aç</button><button type="button" data-pa="roam" id="paRoam">🐾 Dolaşmayı kapat</button></div>
         </div>
@@ -153,6 +159,37 @@
         <div class="pgroup zone"><button type="button" class="ghost small" data-pa="reset">Peti sıfırla · yeni pet seçtir</button></div>
       </form>
 
+      <form class="act hidden" data-t="ask" id="fAsk">
+        <div class="seg" id="askKind"><button type="button" data-k="yesno" class="on">👍 Evet / Hayır</button><button type="button" data-k="text">✍️ Serbest yanıt</button><button type="button" data-k="check">☑️ Onay listesi</button></div>
+        <label>Başlık<input name="title" value="Bir sorum var" maxlength="60" required></label>
+        <label>Soru<textarea name="text" rows="2" maxlength="500" required placeholder="Örn. Bugünkü sorular zor muydu?"></textarea></label>
+        <div class="askopts hidden" id="askOpts"></div>
+        <button class="primary">Soruyu gönder</button>
+        <p class="note">Uygulamada pencere olarak açılır; yanıt aşağıdaki “Yanıtlar” bölümüne düşer.</p>
+      </form>
+      <form class="act hidden" data-t="boss" id="fBoss">
+        <div class="row"><label>Boss<select name="mon" id="bossMon"></select></label><label class="narrow">Güç (evre)<select name="stage"><option value="0">1</option><option value="1">2</option><option value="2">3</option><option value="3">4</option><option value="4">5</option><option value="5">6</option></select></label></div>
+        <label>Başlık<input name="title" maxlength="60" placeholder="Örn. Gece Bekçisi seni çağırıyor"></label>
+        <label>Açıklama<textarea name="text" rows="2" maxlength="300" placeholder="Savaştan önce görünür."></textarea></label>
+        <button class="primary">⚔️ Özel boss gönder</button>
+        <p class="note">Kullanıcı kabul edince savaş başlar; sonucu “Yanıtlar”da görürsün. Savaş sürerken yukarıdaki canlı panelden müdahale edebilirsin.</p>
+      </form>
+      <form class="act hidden" data-t="hint" id="fHint">
+        <div class="row"><label>Bedava ipucu<input name="amount" type="number" min="-50" max="50" step="1" value="3"></label></div>
+        <div class="quick"><button type="button" data-hq="1">+1</button><button type="button" data-hq="3">+3</button><button type="button" data-hq="10">+10</button><button type="button" data-hq="-3">−3</button></div>
+        <label>Not (isteğe bağlı)<input name="text" maxlength="120"></label>
+        <div class="pbtns"><button class="primary" type="submit">💡 Gönder</button><button type="button" class="ghost" id="hintLock">🔒 İpuçlarını kapat</button><button type="button" class="ghost" id="hintUnlock">🔓 İpuçlarını aç</button></div>
+        <p class="note">Bedava ipucu XP’yi düşürmez. Kapatınca kullanıcı ipucu alamaz, açana kadar.</p>
+      </form>
+      <form class="act hidden" data-t="game" id="fGame">
+        <div class="row"><label>Oyun<select name="game" id="gameSel"></select></label><label class="narrow">Dil<select name="lang"><option value="tr">TR</option><option value="en">EN</option></select></label></div>
+        <div class="row bottom"><label>Bölüm<input name="level" type="number" min="1" max="1000" step="1" value="1"></label><button type="button" class="ghost" id="gameSet">Bölüme ayarla</button></div>
+        <div class="pbtns"><button type="button" class="primary" id="gameWin">🏆 Şu anki bölümü geçmiş say</button></div>
+        <p class="note" id="gameNote">Oyun açıksa yeni bölümle yeniden başlar.</p>
+      </form>
+
+      <h3>Yanıtlar <small>(sorular ve özel boss sonuçları)</small></h3>
+      <div class="msgs" id="dReplies"></div>
       <h3>Bekleyen gönderiler <small>(uygulama açılınca teslim edilir)</small></h3>
       <div class="msgs" id="dPending"></div>
       <h3>Teslim edilenler</h3>

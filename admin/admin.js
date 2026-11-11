@@ -10,6 +10,8 @@ import { SUBJECTS, SUBJECT_ORDER } from '../src/data/subjects.js';
 import { DEPARTMENTS } from '../src/data/departments.js';
 import { THEMES } from '../src/themes.js';
 import { petSVG, stageName, PET_SPECIES, coatFromName } from '../src/pet-art.js';
+import { MONSTERS, monsterSVG } from '../src/battle/monsters.js';
+import { GAMES_META } from '../src/games/meta.js';
 
 // Başka bir sitenin paneli görünmez çerçeve içinde açıp tıklatmasını engelle (clickjacking).
 if (window.top !== window.self) { document.documentElement.style.display = 'none'; try { window.top.location = window.self.location.href; } catch {} }
@@ -26,12 +28,13 @@ const CAT_XP_STEP = 40;
 const CATS = [{ id: 'en', icon: '🇬🇧', label: 'İngilizce' }, ...SUBJECT_ORDER.map(id => ({ id, icon: SUBJECTS[id].icon, label: SUBJECTS[id].label }))];
 const catInfo = id => CATS.find(c => c.id === id) || (id === 'mix' ? { id, icon: '🔀', label: 'Karışık' } : { id, icon: '•', label: id || '—' });
 const MODE_LABEL = { type: 'Yazarak', quiz: 'Pop Quiz', listen: 'Dinleyerek', mix: 'Karışık' };
-const TYPE_ICON = { message: '✉️', xp: '⭐', level: '🎓', reward: '🎁', pet: '🐾' };
+const TYPE_ICON = { message: '✉️', xp: '⭐', level: '🎓', reward: '🎁', pet: '🐾', ask: '💬', boss: '👑', hint: '💡', game: '🎮' };
+const ROLE_TR = { tank: '🛡️ Tank', melee: '⚔️ Yakın dövüşçü', ranger: '🏹 Nişancı', assassin: '🗡️ Suikastçı', support: '✚ Destek', magician: '✦ Büyücü', trickster: '🎭 Hilebaz' };
 // ---- pet ----
 const PET_KINDS = { plant: { label: 'Bitki', food: '💧', foodLabel: 'Su' }, chick: { label: 'Civciv', food: '🌾', foodLabel: 'Yem' }, cat: { label: 'Kedi', food: '🐟', foodLabel: 'Mama' }, dog: { label: 'Köpek', food: '🦴', foodLabel: 'Mama' }, owl: { label: 'Baykuş', food: '🐭', foodLabel: 'Av' }, gecko: { label: 'Gecko', food: '🦗', foodLabel: 'Böcek' } , whale: { label: 'Balina', food: '🦐', foodLabel: 'Plankton' }, doodle: { label: 'Doodle', food: '🍞', foodLabel: 'Kırıntı' }, goat: { label: 'Keçi', food: '🌿', foodLabel: 'Ot' } };
 const PET_MOODS = ['idle', 'happy', 'love', 'sad', 'sleep', 'groggy', 'sleepy', 'poked', 'surprised', 'hungry', 'focus', 'full', 'eat', 'dead'];
 const MOOD_TR = { idle: 'keyifli', happy: 'mutlu', love: 'sevgi dolu', sad: 'üzgün', sleep: 'uyuyor', groggy: 'mahmur', sleepy: 'uykulu', poked: 'dürtülmüş', surprised: 'şaşkın', hungry: 'aç', focus: 'odaklanmış', full: 'mayışmış', eat: 'yiyor', dead: 'öldü' };
-const PET_ACT = { heal: '❤️ Can dolduruldu', feed: '🍖 Beslendi', energy: '⚡ Enerji dolduruldu', restore: '✨ Hepsi dolduruldu', revive: '💫 Canlandırıldı', set: '🛠️ Değerler ayarlandı', stage: '🧬 Form', name: '🏷️ Ad', species: '🔄 Tür', flow: '🌊 Flow', roam: '🐾 Dolaşma', say: '💬 Konuştu', react: '🎭 Tepki', reset: '🐾 Pet sıfırlandı' };
+const PET_ACT = { shiny: '✨ Nadir form', role: '🎭 Rol', heal: '❤️ Can dolduruldu', feed: '🍖 Beslendi', energy: '⚡ Enerji dolduruldu', restore: '✨ Hepsi dolduruldu', revive: '💫 Canlandırıldı', set: '🛠️ Değerler ayarlandı', stage: '🧬 Form', name: '🏷️ Ad', species: '🔄 Tür', flow: '🌊 Flow', roam: '🐾 Dolaşma', say: '💬 Konuştu', react: '🎭 Tepki', reset: '🐾 Pet sıfırlandı' };
 const REACT_TR = { love: 'sevgi', joy: 'sevinç', dance: 'dans', shock: 'irkilme', sad: 'hüzün', sleep: 'uyuklama' };
 // Cihazdan gelen pet kaydı güvenilmez: her alan doğrulanır.
 function validPet(p) {
@@ -43,6 +46,7 @@ function validPet(p) {
     stuffed: n(p.stuffed, 100), flow: p.flow === true, roam: p.roam !== false, mood: PET_MOODS.includes(p.mood) ? p.mood : 'idle',
     streak: n(p.streak), correct: n(p.correct), answers: n(p.answers), revives: n(p.revives), memorial: n(p.memorial, 100), catchUp: n(p.catchUp, 20),
     deathCat: /^[a-z]{2,6}$/.test(p.deathCat || '') ? p.deathCat : '', updatedAt: n(p.updatedAt, 1e13),
+    shiny: p.shiny === true, role: Object.prototype.hasOwnProperty.call(ROLE_TR, p.role) ? p.role : '',
   };
 }
 const pct = (v, m) => Math.round(Math.max(0, Math.min(1, v / m)) * 100);
@@ -233,7 +237,7 @@ function renderSheet() {
     return `<span>${SUBJECTS[id].icon} ${esc(SUBJECTS[id].label)} · <b>Sv ${Math.floor(xp / CAT_XP_STEP) + 1}</b> · ${xp} XP</span>`;
   }).join('');
   renderPet();
-  renderMsgs(); updateLevelForm();
+  renderMsgs(); updateLevelForm(); renderReplies(); renderBattle();
 }
 function renderPet() {
   const u = users[selected]; if (!u) return;
@@ -247,13 +251,14 @@ function renderPet() {
     const bar = (cls, ic, v, mx) => `<div class="pbar ${cls}"><span>${ic}</span><div class="t"><i style="width:${pct(v, mx)}%"></i></div><b>${v}/${mx}</b></div>`;
     const chips = [
       p.alive ? `<span>${esc(MOOD_TR[p.mood] || p.mood)}</span>` : `<span class="bad">🕊️ öldü${p.deathCat ? ' · ' + esc(catInfo(p.deathCat).label) : ''}</span>`,
+      p.shiny ? '<span class="shiny">✨ nadir</span>' : '', p.role ? `<span>${esc(ROLE_TR[p.role])}</span>` : '',
       p.flow ? '<span class="on">🌊 flow</span>' : '', !p.roam ? '<span>🏠 yuvada</span>' : '', p.stuffed >= 30 ? '<span>😌 tok</span>' : '',
       p.streak ? `<span>🔥 ${p.streak} seri</span>` : '', `<span>✅ ${p.correct} doğru</span>`, p.revives ? `<span>💫 ${p.revives} canlanma</span>` : '',
       p.catchUp ? `<span class="on">🔁 ${p.catchUp} telafi</span>` : '', p.memorial ? `<span>🕊️ ${p.memorial} anı</span>` : '',
     ].join('');
     box.className = 'petcard' + (p.alive ? '' : ' isdead');
     // çizim yalnızca doğrulanmış tür/aşama/ruh hali ile üretilir
-    box.innerHTML = `<div class="pa">${petSVG(p.species, p.stage, { mood: p.alive ? p.mood : 'dead', pose: p.alive ? (p.mood === 'sleep' ? 'loaf' : 'sit') : 'flat', belly: p.stuffed / 100, coat: coatFromName(p.name) })}</div>
+    box.innerHTML = `<div class="pa">${petSVG(p.species, p.stage, { mood: p.alive ? p.mood : 'dead', pose: p.alive ? (p.mood === 'sleep' ? 'loaf' : 'sit') : 'flat', belly: p.stuffed / 100, coat: coatFromName(p.name), shiny: p.shiny })}</div>
       <div><div class="pn">${esc(p.name)}${p.stars ? ` <small>${p.stars}⭐</small>` : ''}</div><div class="pf">${esc(stageName(p.species, p.stage))} · ${esc(k.label)} · Form ${p.stage + 1}/6</div>
       <div class="chips">${chips}</div>
       ${bar('hp', '❤️', p.hp, p.hpMax)}${bar(p.species === 'plant' ? 'water' : 'food', k.food, p.food, p.foodMax)}${bar('en', '⚡', p.energy, p.energyMax)}
@@ -266,6 +271,8 @@ function renderPet() {
   $('#paRevive').disabled = !!p && p.alive;
   $('#paFlow').textContent = p?.flow ? '🌊 Flow’u kapat' : '🌊 Flow’u aç';
   $('#paRoam').textContent = p && !p.roam ? '🐾 Dolaşmayı aç' : '🐾 Dolaşmayı kapat';
+  $('#paShiny').textContent = p?.shiny ? '🐾 Nadir formu kaldır' : '✨ Nadir yap';
+  if (p?.role && document.activeElement !== $('#pRole')) $('#pRole').value = p.role;
   const sp = p?.species || f.species.value || 'cat';
   if (f.dataset.sp !== sp || !f.stage.options.length) {
     f.stage.innerHTML = [0, 1, 2, 3, 4, 5].map(i => `<option value="${i}">${i + 1} · ${esc(stageName(sp, i))}</option>`).join('');
@@ -296,6 +303,10 @@ function msgLine(m) {
     if (m.action === 'react') return `${a}: ${REACT_TR[m.emote] || m.emote || ''}`;
     return a + (m.broadcast ? ' (herkese)' : '');
   }
+  if (m.type === 'ask') return `Soru (${({ yesno: 'evet/hayır', text: 'serbest', check: 'liste' })[m.kind] || ''}): ${m.text || m.title || ''}`;
+  if (m.type === 'boss') return `Özel boss: ${MONSTERS[m.mon]?.name || m.mon || ''} · güç ${num(m.stage) + 1}${m.title ? ' — ' + m.title : ''}`;
+  if (m.type === 'hint') return m.lock === true ? 'İpuçları kapatıldı' : m.lock === false ? 'İpuçları açıldı' : `${num(m.amount) > 0 ? '+' : ''}${num(m.amount)} bedava ipucu`;
+  if (m.type === 'game') { const g = GAMES_META.find(x => x.id === m.game); return `${g?.name || m.game}${m.lang ? ' ' + String(m.lang).toUpperCase() : ''}: ${m.win ? 'bölüm geçildi' : 'bölüm ' + num(m.level)}`; }
   if (m.type === 'reward') return `${m.emoji || '🎁'} ${m.title || 'Ödül'}${num(m.amount) ? ` · ${num(m.amount) > 0 ? '+' : ''}${num(m.amount)} XP` : ''}${m.text ? ' — ' + m.text : ''}`;
   return `${m.title ? m.title + ': ' : ''}${m.text || ''}`;
 }
@@ -416,6 +427,8 @@ $('#fPet').addEventListener('click', e => {
       if (!confirm(`${name} ${PET_KINDS[s2].label.toLocaleLowerCase('tr')} olsun mu? Form numarası korunur.`)) return;
       return pet({ action: a, species: s2 }, `Tür → ${PET_KINDS[s2].label}`);
     }
+    case 'shiny': { const on = !(p?.shiny); if (on && !confirm(`${name} nadir (parlak) forma dönüştürülsün mü? Duyuru şeridinde herkese duyurulur.`)) return; return pet({ action: a, on }, on ? `${name} nadir yapılıyor ✨` : 'Nadir form kaldırılıyor'); }
+    case 'role': { const ro = f.role.value; if (!ROLE_TR[ro]) return; if (p?.role === ro) return toast('Zaten bu rol'); return pet({ action: a, role: ro }, `Rol → ${ROLE_TR[ro]}`); }
     case 'flow': { const on = !(p?.flow); return pet({ action: a, on }, `Flow ${on ? 'açılıyor' : 'kapanıyor'}`); }
     case 'roam': { const on = p ? !p.roam : false; return pet({ action: a, on }, `Dolaşma ${on ? 'açılıyor' : 'kapanıyor'}`); }
     case 'say': {
@@ -456,3 +469,95 @@ $('#fBroadcast').addEventListener('submit', async e => {
   try { await update(ref(db), patch); toast(`${targets.length} kullanıcıya gönderildi`); $('#bcModal').classList.add('hidden'); }
   catch (err) { toast('Gönderilemedi: ' + (err.code || err.message)); }
 });
+
+
+// ---------------- yanıtlar (soru-cevap, özel boss sonucu) ----------------
+function renderReplies() {
+  const u = users[selected]; if (!u) return;
+  const list = Object.entries(u.replies || {}).filter(([id, v]) => safeKey(id) && v && typeof v === 'object').map(([id, v]) => ({ ...v, id })).sort((a, b) => num(b.at) - num(a.at)).slice(0, 30);
+  const optsOf = id => (history.find(h => h.id === id)?.options) || {};
+  $('#dReplies').innerHTML = list.length ? list.map(r => {
+    let body;
+    if (r.kind === 'boss') body = `👑 ${esc(r.q || 'Özel boss')} → <b class="${r.result === 'win' ? 'ok' : 'bad'}">${r.result === 'win' ? 'kazandı' : 'kaybetti'}</b>`;
+    else if (r.kind === 'check') { const o = optsOf(r.id); body = `<b>${esc(r.q || '')}</b><div class="ck">${Object.entries(r.checks || {}).sort().map(([k, v]) => `<span class="${v ? 'on' : ''}">${v ? '☑' : '☐'} ${esc(o[k] || k)}</span>`).join('')}</div>${r.answer ? `<i>${esc(r.answer)}</i>` : ''}`; }
+    else body = `<b>${esc(r.q || '')}</b><div class="ans">“${esc(r.answer || '')}”</div>`;
+    return `<div class="msg"><span class="mi">${r.kind === 'boss' ? '👑' : '💬'}</span><div class="mb">${body}<small>${ago(r.at)}</small></div></div>`;
+  }).join('') : '<p class="empty">Henüz yanıt yok.</p>';
+}
+
+// ---------------- canlı savaş: izle ve müdahale et ----------------
+const OPS = [['heal', '💚 İyileştir'], ['hurt', '⚡ Hasar'], ['shield', '🛡️ Kalkan'], ['buff', '💪 Güçlendir'], ['weaken', '🔻 Zayıflat'], ['confuse', '💫 Kafa karıştır'], ['will', '💬 İrade kır'], ['ko', '☠️ Devir'], ['revive', '✨ Canlandır']];
+function renderBattle() {
+  const u = users[selected], box = $('#dBattle'); if (!u || !box) return;
+  const bt = u.battle;
+  const fresh = bt && bt.active && now() - num(bt.at) < 3 * 60000;
+  box.classList.toggle('hidden', !fresh);
+  if (!fresh) return;
+  const units = Object.entries(bt.units || {}).filter(([k, v]) => /^u[0-9]{1,4}$/.test(k) && v && typeof v === 'object').map(([, v]) => v);
+  const card = x => {
+    const hp = pct(num(x.hp), Math.max(1, num(x.maxHp))), wl = pct(num(x.will), Math.max(1, num(x.maxWill)));
+    return `<div class="lb-u ${x.alive ? '' : 'down'}" data-target="${esc(String(x.uid).slice(0, 12))}"><div class="lb-n"><b>${esc(x.name)}</b><small>${esc(ROLE_TR[x.role] || '')}</small></div>
+      <div class="lb-bar hp"><i style="width:${hp}%"></i></div><div class="lb-bar will"><i style="width:${wl}%"></i></div><small>${num(x.hp)}/${num(x.maxHp)} can · irade ${wl}%</small>
+      <div class="lb-ops">${OPS.filter(([op]) => x.alive ? op !== 'revive' : op === 'revive').map(([op, l]) => `<button type="button" data-op="${op}">${l}</button>`).join('')}</div></div>`;
+  };
+  const side = s2 => units.filter(x => x.side === s2).map(card).join('');
+  box.innerHTML = `<div class="lb-h"><span class="dot on"></span><b>Canlı savaş</b> · ${esc(bt.title || '')} · tur ${num(bt.round)}</div>
+    <div class="lb-cols"><div><div class="lb-side me">🟣 Oyuncunun takımı · <i>yardım et</i></div>${side('A')}</div><div><div class="lb-side foe">🔴 Rakipler · <i>yardım et ya da zorlaştır</i></div>${side('B')}</div></div>`;
+}
+$('#dBattle')?.addEventListener('click', async e => {
+  const b = e.target.closest('[data-op]'); if (!b || !selected) return;
+  const target = b.closest('[data-target]')?.dataset.target; if (!target) return;
+  b.disabled = true;
+  try { await set(push(ref(db, `users/${selected}/battleCmd`)), { op: b.dataset.op, target, at: serverTimestamp() }); toast('Müdahale gönderildi ⚡'); }
+  catch (err) { toast('Olmadı: ' + (err.code || err.message)); }
+  setTimeout(() => { b.disabled = false; }, 800);
+});
+
+// ---------------- soru-cevap ----------------
+let askKind = 'yesno';
+const askOpts = $('#askOpts');
+if (askOpts) askOpts.innerHTML = Array.from({ length: 6 }, (_, i) => `<label>Madde ${i + 1}<input name="o${i}" maxlength="80" ${i < 2 ? 'placeholder="Örn. Bugün 10 soru çöz"' : ''}></label>`).join('');
+$('#askKind')?.addEventListener('click', e => {
+  const b = e.target.closest('[data-k]'); if (!b) return; askKind = b.dataset.k;
+  [...$('#askKind').children].forEach(x => x.classList.toggle('on', x === b));
+  askOpts.classList.toggle('hidden', askKind !== 'check');
+});
+$('#fAsk')?.addEventListener('submit', e => {
+  e.preventDefault(); const f = e.target;
+  const msg = { type: 'ask', kind: askKind, title: f.title.value.trim().slice(0, 80), text: f.text.value.trim().slice(0, 500) };
+  if (askKind === 'check') { const o = {}; for (let i = 0; i < 6; i++) { const v = f['o' + i].value.trim().slice(0, 80); if (v) o['o' + i] = v; } if (!Object.keys(o).length) return toast('En az bir madde yaz'); msg.options = o; }
+  sendSelected(msg, 'Soru gönderildi'); f.text.value = '';
+});
+
+// ---------------- özel boss ----------------
+const bossSel = $('#bossMon');
+if (bossSel) bossSel.innerHTML = Object.entries(MONSTERS).sort((a, b) => (b[1].boss ? 1 : 0) - (a[1].boss ? 1 : 0)).map(([id, m]) => `<option value="${esc(id)}">${m.boss ? '👑 ' : ''}${esc(m.name)}</option>`).join('');
+$('#fBoss')?.addEventListener('submit', e => {
+  e.preventDefault(); const f = e.target, mon = f.mon.value; if (!MONSTERS[mon]) return;
+  sendSelected({ type: 'boss', mon, stage: Math.max(0, Math.min(5, num(f.stage.value))), title: f.title.value.trim().slice(0, 80), text: f.text.value.trim().slice(0, 300) }, `${MONSTERS[mon].name} gönderildi`);
+});
+
+// ---------------- ipucu hakkı ----------------
+document.querySelector('#fHint .quick')?.addEventListener('click', e => { const b = e.target.closest('[data-hq]'); if (b) $('#fHint').amount.value = b.dataset.hq; });
+$('#fHint')?.addEventListener('submit', e => {
+  e.preventDefault(); const f = e.target, amount = Math.max(-50, Math.min(50, num(f.amount.value))); if (!amount) return toast('Miktar 0 olamaz');
+  sendSelected({ type: 'hint', amount, text: f.text.value.trim().slice(0, 120) }, `${amount > 0 ? '+' : ''}${amount} bedava ipucu`);
+});
+$('#hintLock')?.addEventListener('click', () => { if (confirm('Bu kullanıcının ipuçları kapatılsın mı?')) sendSelected({ type: 'hint', lock: true }, 'İpuçları kapatılıyor'); });
+$('#hintUnlock')?.addEventListener('click', () => sendSelected({ type: 'hint', lock: false }, 'İpuçları açılıyor'));
+
+// ---------------- mini oyunlar ----------------
+const gameSel = $('#gameSel');
+if (gameSel) gameSel.innerHTML = GAMES_META.map(g => `<option value="${g.id}">${esc(g.name)}</option>`).join('');
+const gameLangOk = () => { const g = GAMES_META.find(x => x.id === gameSel.value); $('#fGame').lang.disabled = !g?.lang; return g; };
+gameSel?.addEventListener('change', gameLangOk);
+$('#fGame')?.addEventListener('submit', e => e.preventDefault());
+$('#gameSet')?.addEventListener('click', () => { const g = gameLangOk(), f = $('#fGame'), level = Math.max(1, Math.min(1000, num(f.level.value))); sendSelected({ type: 'game', game: g.id, ...(g.lang ? { lang: f.lang.value } : {}), level }, `${g.name} → ${level}. bölüm`); });
+$('#gameWin')?.addEventListener('click', () => { const g = gameLangOk(), f = $('#fGame'); sendSelected({ type: 'game', game: g.id, ...(g.lang ? { lang: f.lang.value } : {}), win: true }, `${g.name}: bölüm geçildi`); });
+
+// ---------------- gece modu ----------------
+function applyTheme(t) { document.documentElement.dataset.theme = t; $('#themeBtn').textContent = t === 'dark' ? '☀️' : '🌙'; }
+let theme = 'light';
+try { theme = localStorage.getItem('dl-admin-theme') || (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); } catch {}
+applyTheme(theme);
+$('#themeBtn')?.addEventListener('click', () => { theme = theme === 'dark' ? 'light' : 'dark'; applyTheme(theme); try { localStorage.setItem('dl-admin-theme', theme); } catch {} });
