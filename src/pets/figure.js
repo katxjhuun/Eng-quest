@@ -5,6 +5,15 @@
 // Dış arayüz eski Puppet ile aynıdır: setForm, setMood, setCond, setBase, play, stop, travel, face, tick, playing, staticSVG.
 
 import { withAcc } from './acc.js';
+import { applySkin, skinDefs, skinBack, skinShadowFill, paint } from './skins.js';
+import { SETS } from './sets.js';
+// seçili set o türü sıfırdan çizdiyse onun tanımı, yoksa klasik
+const defOf = (species, skin) => SETS[skin]?.[species] || FIGS[species];
+const viewList = (def, view, stage, coat, skin, species) => def.set ? ((def.coatViews(coat)[view] || def.views.sit)(stage)) : applySkin(def.views[view](stage), skin, species, view, stage);
+// etkin görünüş seti (uygulama geneli); tek tek figürler opts.skin / setSkin ile ayrıca seçebilir
+let SKIN = 'classic';
+export function setSkin(s) { SKIN = s || 'classic'; }
+export const getSkin = () => SKIN;
 import { FIGS } from './figs.js';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -29,10 +38,12 @@ const VERB = {
   surprised: 'jump', poked: 'jump', shock: 'jump', flinch: 'jump', freeze: 'freeze',
   look: 'look', headturn: 'headturn', focus: 'focus', sniff: 'sniff', coffee: 'sip',
   groom: 'groom', lick: 'lick', tongue: 'tongue', stretch: 'stretch', shake: 'shake', roll: 'roll', dig: 'dig', tailwave: 'tailwave',
+  fear: 'fear', scared: 'fear', fly: 'fly', flap: 'fly', hit: 'hit', hurt: 'hit', spin: 'spin', twirl: 'spin',
+  stalk: 'stalk', creep: 'stalk', float: 'float', hover: 'float', wobble: 'wobble', jelly: 'wobble',
   ability: 'ability', rub: 'rub', cuddle: 'rub', full: 'none', lie: 'none', sleep: 'none', dead: 'none', wake: 'jump', flee: 'none',
 };
 const DUR = { hop: 1.2, eat: 1.6, sad: 2, cry: 2.2, doze: 2.6, lunge: 0.9, bite: 0.8, swat: 0.8, pounce: 1.2, guard: 2, jump: 0.7, freeze: 2.4, look: 1.7,
-  headturn: 2.4, focus: 2, sniff: 1.8, sip: 3, groom: 2.6, lick: 1.8, tongue: 1.4, stretch: 2, shake: 1.2, roll: 1.4, dig: 1.6, tailwave: 2.4, ability: 1.6, rub: 1.6, bask: 3.6, none: 1 };
+  headturn: 2.4, focus: 2, sniff: 1.8, sip: 3, groom: 2.6, lick: 1.8, tongue: 1.4, stretch: 2, shake: 1.2, roll: 1.4, dig: 1.6, tailwave: 2.4, ability: 1.6, rub: 1.6, bask: 3.6, stalk: 2.4, float: 2.6, wobble: 1.3, fear: 1.8, fly: 1.6, hit: 0.6, spin: 0.9, none: 1 };
 export const clipNames = () => Object.keys(VERB);
 
 // ---------------------------------------------------------------- çizim
@@ -56,13 +67,13 @@ function tf(p, ch) {
   if (sx !== 1 || sy !== 1) s += `translate(${px} ${py}) scale(${r2(sx * 1000) / 1000} ${r2(sy * 1000) / 1000}) translate(${-px} ${-py})`;
   return s.trim();
 }
-function partsHTML(list, stage, def, coat, pose) {
+function partsHTML(list, stage, def, coat, pose, skin) {
   let out = '';
   for (const pt of list) {
     if (Array.isArray(pt.min) ? !pt.min.includes(stage) : pt.min > stage) continue;
     const ch = pose?.[pt.k], t = tf(pt.p, ch);
     const inner = pt.dyn ? pt.dyn(pose?.__bend, stage) : pt.s;
-    out += `<g data-k="${pt.k}"${t ? ` transform="${t}"` : ''}${ch?.o != null ? ` opacity="${r2(ch.o)}"` : ''}>${coatSwap(inner, def, coat, stage)}${partsHTML(pt.kids, stage, def, coat, pose)}</g>`;
+    out += `<g data-k="${pt.k}"${t ? ` transform="${t}"` : ''}${ch?.o != null ? ` opacity="${r2(ch.o)}"` : ''}>${pt.raw ? inner : paint(coatSwap(inner, def, coat, stage), skin)}${partsHTML(pt.kids, stage, def, coat, pose, skin)}</g>`;
   }
   return out;
 }
@@ -116,9 +127,12 @@ function computePose(st) {
   if (verb === 'bask') lidV = Math.max(lidV, 0.6);
   if (!asleep) lidV = Math.max(lidV, st.blink);
   const [lo, lc] = def.lid || [0, 1];
-  const lidSy = lerp(lo, lc, lidV);
+  // yeni görünüş setlerinde kapak kendi gözünü kaplar: 0 açık → 1 tam kapalı
+  const lidSy = st.skin && st.skin !== 'classic' ? lidV : lerp(lo, lc, lidV);
   for (const k of st.keys) {
     if (k.startsWith('lid')) A(k, { sy: Math.max(0.001, lidSy) });
+    // oyuncak setinde göz kırpma, boncuk gözün yassılmasıdır
+    if (st.skin === 'toy' && k.startsWith('pup')) A(k, { sy: Math.max(0.1, 1 - lidV) });
     if (k.startsWith('pup')) A(k, { x: st.look * 1.6, y: (verb === 'look' || verb === 'headturn' ? -0.6 : 0) + (mood === 'sad' ? 0.8 : 0), ...(mood === 'surprised' || verb === 'jump' ? { sx: 0.75, sy: 0.75 } : {}) });
   }
 
@@ -213,6 +227,20 @@ function computePose(st) {
     case 'tailwave': { A('tail', { r: 16 * Math.sin(cT * 4) * ce }); break; }
     case 'bask': { A('head', side ? { r: -8 * ce } : { y: -2 * ce }); A('body', { sy: 1 - 0.02 * ce }); break; }
     case 'rub': { A('root', { r: (side ? 0 : 5) * Math.sin(cT * 5) * ce, x: (side ? 3 : 0) * Math.sin(cT * 5) * ce }); A('head', { r: (side ? 8 : 10) * Math.sin(cT * 5) * ce }); A('tail', { r: -10 * ce }); break; }
+    // korku: büzülür, titrer, kulaklar yatar, kuyruk içe
+    case 'fear': { const a = ce; A('root', { sy: 1 - 0.1 * a, sx: 1 + 0.03 * a, x: 1.6 * Math.sin(cT * 48) * a }); A('head', side ? { r: 8 * a, y: 4 * a } : { y: 5 * a }); A('earL', { r: -24 * a }); A('earR', { r: side ? -24 * a : 24 * a }); A('tail', { r: 22 * a }); A('wingL', { r: 10 * a }); A('wingR', { r: -10 * a }); break; }
+    // uçuş: kanat çırparak havalanır (kanatsızlar zıplayıp çırpınır)
+    case 'fly': { const a = bell(cu), f = Math.sin(cT * 26); A('root', { y: -22 * a + 2 * f * a }); A('wingL', { r: (-50 + 30 * f) * a }); A('wingR', { r: (50 - 30 * f) * a }); A('earL', { r: -10 * a * f }); A('earR', { r: 10 * a * f }); A('tail', { r: 10 * f * a }); break; }
+    // darbe: geri savrulur, ezilir, toparlanır
+    case 'hit': { const a = Math.exp(-cT * 7) * Math.cos(cT * 22); A('root', { x: (side ? -8 : 0) * a, r: (side ? -8 : 6) * a, sx: 1 + 0.08 * Math.abs(a), sy: 1 - 0.08 * Math.abs(a) }); A('head', { r: -10 * a }); break; }
+    // kendi etrafında fırıl fırıl dönüş (önden görünüşte ekran düzleminde, yandan görünüşte yön değiştirerek)
+    case 'spin': { const e = cu < 1 ? cu * cu * (3 - 2 * cu) : 1; if (side) A('root', { sx: Math.cos(e * TAU * 2) || 0.001, y: -6 * bell(cu) }); else A('root', { r: 360 * e, y: -6 * bell(cu) }); break; }
+    // sinsi yaklaşma: gövde alçalır, baş öne uzanır, kuyruk ucu titrer, gözler hedefe kilitlenir
+    case 'stalk': { const a = ce; A('root', { y: 5 * a, sy: 1 - 0.07 * a }); A('head', side ? { r: 9 * a, y: 3 * a } : { y: 5 * a }); A('tail', { r: (-4 + 5 * Math.sin(cT * 11)) * a }); A('earL', { r: (side ? -8 : -10) * a }); A('earR', { r: (side ? -8 : 10) * a }); break; }
+    // süzülme: yerden kalkıp yavaşça salınır (kozmik setin imza hareketi; her sette çalışır)
+    case 'float': { const a = bell(cu); A('root', { y: -14 * a + 2 * Math.sin(cT * 5) * a, r: 4 * Math.sin(cT * 3) * a }); A('wingL', { r: -18 * a }); A('wingR', { r: 18 * a }); A('tail', { r: 8 * Math.sin(cT * 4) * a }); A('earL', { r: -6 * a }); A('earR', { r: 6 * a }); break; }
+    // jöle sallanması: gövde ezilip uzar
+    case 'wobble': { const a = (1 - cu) * Math.sin(cT * 18); A('root', { sx: 1 + 0.07 * a, sy: 1 - 0.07 * a }); A('head', { sx: 1 - 0.04 * a, sy: 1 + 0.04 * a }); break; }
     case 'ability': {
       const a = bell(cu);
       A('root', { y: -8 * a, sy: 1 + 0.04 * a }); A('wingL', { r: -60 * a }); A('wingR', { r: 60 * a }); A('tongue', { sx: 1 + 2 * a });
@@ -241,6 +269,8 @@ function computePose(st) {
       A(k, { y: dy, r: Math.atan(sl) * 180 / Math.PI * (k === 'tail' ? 1.5 : 1) });
     }
   }
+  // kozmik set: dururken hafifçe süzülür (yalnızca dikey; yer gölgesi yerinde kalır, pet kaymaz)
+  if (st.skin === 'cosmic' && base !== 'dead' && !moving && !asleep) A('root', { y: -3 - 2.5 * Math.sin(t * 1.4) });
   pose.__outer = outer;
   return pose;
 }
@@ -333,18 +363,23 @@ export class Puppet {
   }
   build() {
     if (!this.svg || !this.def) return;
+    { const nd = defOf(this.species, this.skinNow()); if (nd !== this.def) { this.def = nd; this.view = ''; } this.k = STAGE_K[this.stage] * (this.def.scale || 1); }
     const v = viewOf(this.def, this.base, this.turnT < 1 && Math.abs(this.faceCur) < 0.5);
-    if (v === this.view && this.svg.firstChild) return;
+    if (v === this.view && this.svg.firstChild && this.builtSkin === this.skinNow()) return;
     this.view = v;
-    const list = withAcc(this.def.views[v](this.stage), this.species, v, this.stage, this.acc);
+    const sk = this.skinNow(); this.builtSkin = sk;
+    const list = withAcc(viewList(this.def, v, this.stage, this.coat, sk, this.species), this.species, v, this.stage, this.acc, this.def);
     this.parts = {};
     const walk = l => l.forEach(p => { this.parts[p.k] = p; walk(p.kids); });
     walk(list);
-    this.svg.innerHTML = `${filterDefs(this.uid + 'g')}<ellipse data-k="shadow" cx="${MIDX}" cy="${GROUND + 1}" rx="${46 * this.k}" ry="4" fill="#1E1B1C" opacity=".14"/><g data-k="outer"><g data-k="root" filter="url(#${this.uid}g)">${partsHTML(list, this.stage, this.def, this.coat)}</g></g>`;
+    this.svg.innerHTML = `${filterDefs(this.uid + 'g')}${this.def.set ? this.def.defs(this.coat) + this.def.back(this.k) : skinDefs(sk) + skinBack(sk, MIDX, GROUND, this.k)}<ellipse data-k="shadow" cx="${MIDX}" cy="${GROUND + 1}" rx="${46 * this.k}" ry="4" fill="${skinShadowFill(sk)}" opacity=".14"/><g data-k="outer"><g data-k="root" filter="url(#${this.uid}g)">${partsHTML(list, this.stage, this.def, this.coat, null, sk)}</g></g>`;
     this.els = {};
     this.svg.querySelectorAll('[data-k]').forEach(el => { this.els[el.dataset.k] = el; });
     this.keys = Object.keys(this.parts);
   }
+  // görünüş seti: kendi seçimi yoksa uygulamanın etkin seti
+  skinNow() { return this.skin || SKIN; }
+  setSkin(s) { this.skin = s || null; if (this.builtSkin !== this.skinNow()) { this.view = ''; this.build(); } }
   // takılı aksesuarlar (kimlik listesi); değişirse çizim yeniden kurulur
   setAcc(ids) { const k = (ids || []).join(','); if (k === this.accKey) return; this.accKey = k; this.acc = ids || []; this.view = ''; this.build(); }
   setMood(m) { this.mood = m || 'idle'; }
@@ -401,7 +436,7 @@ export class Puppet {
     const hf = this.turnT >= 1 ? this.facing : side(hu, this.turnFrom, this.facing, 0.45);
     return { def: this.def, species: this.species, view: this.view, keys: this.keys, t: this.t, base: this.base, mood: this.mood,
       clip: this.clip, clipT: this.clipT, clipDur: this.clipDur, ph: this.ph, faceCur: this.faceCur, hf, yaw: this.turnT < 1 ? Math.sin(u * Math.PI) : 0,
-      blink, look: this.look, k: this.k, dir: this.dir, form: this.def.form?.[this.stage] };
+      blink, look: this.look, k: this.k, dir: this.dir, form: this.def.form?.[this.stage], skin: this.skinNow() };
   }
   tick(dt) {
     if (!this.def || !this.svg) return;
@@ -427,7 +462,7 @@ export class Puppet {
     if (this.els.shadow) { this.els.shadow.setAttribute('rx', r2(46 * k * (1 - air * 0.5))); this.els.shadow.setAttribute('cx', r2(MIDX + o.x)); }
     for (const key of this.keys) {
       const el = this.els[key]; if (!el) continue;
-      if (this.parts[key].dyn) { const h = coatSwap(this.parts[key].dyn(pose.__bend, this.stage), this.def, this.coat, this.stage); if (el._h !== h) { el._h = h; el.innerHTML = h; } }
+      if (this.parts[key].dyn) { const h = paint(coatSwap(this.parts[key].dyn(pose.__bend, this.stage), this.def, this.coat, this.stage), this.builtSkin); if (el._h !== h) { el._h = h; el.innerHTML = h; } }
       const ch = pose[key], t = tf(this.parts[key].p, ch);
       if (el._t !== t) { el._t = t; t ? el.setAttribute('transform', t) : el.removeAttribute('transform'); }
       const op = ch?.o;
@@ -441,17 +476,18 @@ export class Puppet {
 let staticSeq = 0;
 export function staticSVG(species, stage, opts = {}) {
   if (!FIGS[species]) species = 'chick';
-  const def = FIGS[species];
+  const skin = opts.skin || SKIN;
+  const def = defOf(species, skin);
   stage = clamp(stage | 0, 0, 5);
   const mood = opts.mood || 'idle';
   const base = mood === 'dead' ? 'dead' : mood === 'sleep' ? 'sleep' : (opts.pose === 'lie' || opts.pose === 'flat' || mood === 'full') ? 'lie' : 'idle';
   const view = viewOf(def, base);
-  const list = withAcc(def.views[view](stage), species, view, stage, opts.acc);
+  const list = withAcc(viewList(def, view, stage, opts.coat | 0, skin, species), species, view, stage, opts.acc, def);
   const keys = []; const walk = l => l.forEach(p => { keys.push(p.k); walk(p.kids); }); walk(list);
-  const k = STAGE_K[stage];
-  const pose = computePose({ def, species, view, keys, t: opts.t || 0.6, base, mood, clip: '', clipT: 0, clipDur: 1, ph: 0, faceCur: opts.face || 1, hf: opts.face || 1, yaw: 0, blink: 0, look: 0, k, dir: [1, 0], form: def.form?.[stage] });
+  const k = STAGE_K[stage] * (def.scale || 1);
+  const pose = computePose({ def, species, view, keys, t: opts.t || 0.6, base, mood, clip: '', clipT: 0, clipDur: 1, ph: 0, faceCur: opts.face || 1, hf: opts.face || 1, yaw: 0, blink: 0, look: 0, k, dir: [1, 0], form: def.form?.[stage], skin });
   const root = pose.root || {};
   const id = 'fs' + (++staticSeq);
   const rt = `translate(${MIDX} ${GROUND}) scale(${r2((root.sx ?? 1) * k * 1000) / 1000} ${r2((root.sy ?? 1) * k * 1000) / 1000}) translate(${-MIDX} ${-GROUND})`;
-  return `<svg class="pet-svg ${opts.cls || ''}${base === 'dead' ? ' is-dead' : ''}" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${filterDefs(id)}<ellipse cx="${MIDX}" cy="${GROUND + 1}" rx="${r2(46 * k)}" ry="4" fill="#1E1B1C" opacity=".14"/><g transform="${rt}" filter="url(#${id})">${partsHTML(list, stage, def, opts.coat | 0, pose)}</g></svg>`;
+  return `<svg class="pet-svg ${opts.cls || ''}${base === 'dead' ? ' is-dead' : ''}" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${filterDefs(id)}${def.set ? def.defs(opts.coat | 0) + def.back(k) : skinDefs(skin) + skinBack(skin, MIDX, GROUND, k)}<ellipse cx="${MIDX}" cy="${GROUND + 1}" rx="${r2(46 * k)}" ry="4" fill="${skinShadowFill(skin)}" opacity=".14"/><g transform="${rt}" filter="url(#${id})">${partsHTML(list, stage, def, opts.coat | 0, pose, skin)}</g></svg>`;
 }

@@ -6,7 +6,7 @@ import { noteExtras, notifySound, wantGolden, wantUpdate } from './notify.js';
 import { isGolden, GOLDEN_XP } from './golden.js';
 import { webPushSupported, webPushNeedsInstall, enableWebPush, currentWebPush } from './webpush.js';
 import { petSVG, homeSVG, stageName, PET_SPECIES, randomCoat, shinyFilter } from './pet-art.js';
-import { Puppet } from './pets/figure.js';
+import { Puppet, getSkin } from './pets/figure.js';
 import { TYPES, SPECIES_TYPE, ROLES, SIGNATURE, SHINY, SHINY_CHANCE, HINT_VOICE, loreParts, randomRole, battleStats, BEATS } from './pets/codex.js';
 import { CAT_XP_STEP, catLabel } from './quiz.js';
 import { SUBJECT_ORDER } from './data/subjects.js';
@@ -640,12 +640,12 @@ export function initPet(core, quiz) {
   }
   // türe özel boşta hareketleri (ağırlıklı seçim)
   const IDLE_KIT = {
-    cat: [['groom', 2600, 4], ['stretch', 2000, 2], ['look', 1700, 2], ['sit', 3000, 2]],
-    dog: [['sniff', 1800, 3], ['shake', 1400, 2], ['chase', 2200, 1], ['look', 1700, 2], ['sit', 2600, 1]],
-    chick: [['look', 1700, 3], ['mirror', 3200, 2], ['petals', 3400, 2], ['hop', 950, 1], ['stretch', 2000, 1]],
+    cat: [['groom', 2600, 4], ['stretch', 2000, 2], ['look', 1700, 2], ['sit', 3000, 2], ['stalk', 2400, 2]],
+    dog: [['sniff', 1800, 3], ['shake', 1400, 2], ['chase', 2200, 1], ['look', 1700, 2], ['sit', 2600, 1], ['stalk', 2200, 1]],
+    chick: [['look', 1700, 3], ['mirror', 3200, 2], ['petals', 3400, 2], ['hop', 950, 1], ['stretch', 2000, 1], ['fly', 1600, 1]],
     plant: [['photo', 3600, 3], ['sit', 3000, 2], ['look', 1700, 1]],
-    owl: [['headturn', 2400, 3], ['look', 1700, 1], ['sit', 3000, 2], ['coffee', 4000, 1]],
-    gecko: [['lick', 1800, 3], ['tongue', 1600, 2], ['freeze', 3000, 2], ['tailwave', 2600, 1], ['bask', 4200, 1]],
+    owl: [['headturn', 2400, 3], ['look', 1700, 1], ['sit', 3000, 2], ['coffee', 4000, 1], ['fly', 1600, 1]],
+    gecko: [['lick', 1800, 3], ['tongue', 1600, 2], ['freeze', 3000, 2], ['tailwave', 2600, 1], ['bask', 4200, 1], ['stalk', 2400, 1]],
     whale: [['look', 2200, 2], ['stretch', 2400, 2], ['tailwave', 2600, 2], ['ability', 2000, 1]],
     doodle: [['freeze', 4000, 4], ['sit', 3600, 3], ['look', 2000, 1], ['sad', 2600, 1]],
     goat: [['look', 1800, 2], ['sniff', 1800, 2], ['freeze', 2600, 2], ['eat', 2000, 1]],
@@ -665,10 +665,13 @@ export function initPet(core, quiz) {
     if (m === 'sleepy') { dozing = true; drawSprite(); setAnim('doze', 3200); emote('zz', 2600); setTimeout(() => { dozing = false; drawSprite(); }, 3200); return; }
     if (m === 'groggy' && Math.random() < 0.5) { setAnim(Math.random() < 0.5 ? 'yawn' : 'stretch', 2000); if (Math.random() < 0.5) emote('dots', 1600); return; }
     if (m === 'hungry' && Math.random() < 0.55) { setAnim('hungry', 3000); emote('food', 2200); return; }
-    if (m === 'sad' && Math.random() < 0.45) { if (p.hp < mx.hp * 0.2) { setAnim('cry', 3000); emote('tear', 2000); } else { setAnim('sad', 2200); emote('cloud', 2200); } return; }
+    if (m === 'sad' && Math.random() < 0.45) { if (p.hp < mx.hp * 0.2) { if (Math.random() < 0.35) { setAnim('fear', 1800); emote('sweat', 1600); } else { setAnim('cry', 3000); emote('tear', 2000); } } else { setAnim('sad', 2200); emote('cloud', 2200); } return; }
     if (p.flow && Math.random() < 0.4) { setAnim('focus', 2200); if (Math.random() < 0.4) emote('spark', 1500); return; }
     if (sp === 'dog' && Date.now() < guardUntil) { setAnim('protect', 3000); if (Math.random() < 0.4) emote('shield', 1500); return; }
     if (Math.random() < 0.18) { setAnim('sit', 2600); return; }
+    // görünüş setinin kendi hareketleri: kozmik süzülür, oyuncak fırıl döner, gölge sinsice izler
+    const SKX = { cosmic: [['float', 2600], ['wobble', 1300]], toy: [['spin', 900], ['wobble', 1300], ['hop', 1000]], shadow: [['stalk', 2400], ['look', 1700]] }[getSkin()];
+    if (SKX && Math.random() < 0.22) { const [n2, ms2] = SKX[Math.floor(Math.random() * SKX.length)]; setAnim(n2, ms2); return; }
     const [name, ms] = pickIdle(sp);
     if (name === 'look') { facing *= -1; if (Math.random() < 0.35) emote('ask', 1400); }
     if (name === 'hop' && Math.random() < 0.5) emote('note', 1400);
@@ -1678,6 +1681,7 @@ export function initPet(core, quiz) {
   }
   return {
     tradeCard, tradeIn, setAcc,
+    refreshSkin() { puppet.setSkin(null); artKey = ''; renderPanel(); },
     ensure, reload, setEnabled, openCodex, battle, bossPrompt, enabled: () => !off(), render: renderPanel, openChooser, openInfo, xpMod, snapshot, admin,
     onPause() { const p = P(); if (p) { tick(); p.lastSeen = Date.now(); save(); schedule(); } },
     onResume() { if (notifyAvailable()) cancelNotes(); tick(); greetIfAway(); renderPanel(); if (!notifyAvailable()) schedule(); },

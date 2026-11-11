@@ -5,6 +5,8 @@ import { ACCESSORIES, SLOTS, RARITY, accIconSVG } from './pets/acc.js';
 import { petSVG } from './pet-art.js';
 import { goldenNow } from './golden-time.js';
 import { isBirthday } from './birthday.js';
+import { setSkin } from './pets/figure.js';
+import { SKINS } from './pets/skins.js';
 
 const SLOT_NAME = { head: 'Baş', face: 'Yüz', neck: 'Boyun' };
 const SRC_TEXT = { luck: '🍀 Doğru cevaplarda şansla düşer', golden: '✨ Yalnızca Altın Saat\'te düşer', birthday: '🎂 Doğum günü etkinliğinde', progress: '📈 İlerlemeyle', boss: '⚔️ Boss savaşından' };
@@ -18,6 +20,16 @@ export function initAccessories(core, pet) {
   const owned = id => !!st().own[id];
   const equipped = () => SLOTS.map(s => st().eq[s]).filter(id => id && ACCESSORIES[id] && owned(id));
   const apply = () => pet.setAcc?.(equipped());
+  // görünüş seti (Klasik / Gölge / Kozmik / Oyuncak): uygulamanın bütün pet çizimlerine uygulanır
+  const skinNow = () => (SKINS[core.app.profile?.petSkin] ? core.app.profile.petSkin : 'classic');
+  function useSkin(id, save) {
+    if (!SKINS[id]) id = 'classic';
+    setSkin(id);
+    for (const k of Object.keys(SKINS)) document.body.classList.toggle('skin-' + k, k === id && k !== 'classic');
+    if (save) { core.app.profile.petSkin = id; core.saveLocal(true); }
+    pet.refreshSkin?.();
+  }
+  useSkin(skinNow(), false);
 
   // ---------- kazanma ----------
   const queue = [];
@@ -81,7 +93,7 @@ export function initAccessories(core, pet) {
   // ---------- dolap ----------
   const ov = document.createElement('div');
   ov.className = 'pet-overlay acc-ov'; ov.id = 'accOverlay'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true');
-  ov.innerHTML = `<div class="pet-modal acc-modal"><div class="modal-head"><div><div class="eyebrow">DOLAP</div><h2>Aksesuarlar</h2></div><button class="closebtn" data-x aria-label="Kapat">×</button></div><div id="accBody"></div></div>`;
+  ov.innerHTML = `<div class="pet-modal acc-modal"><div class="modal-head"><div><div class="eyebrow">DOLAP</div><h2>Görünüm ve aksesuarlar</h2></div><button class="closebtn" data-x aria-label="Kapat">×</button></div><div id="accBody"></div></div>`;
   document.body.appendChild(ov);
   let tab = 'head';
   function open() { if (!core.app.pet) { core.toast('Önce bir petin olmalı.'); return; } render(); ov.classList.add('show'); }
@@ -95,7 +107,8 @@ export function initAccessories(core, pet) {
     const p = core.app.pet, eq = st().eq, fresh = st().fresh || {};
     const ids = Object.keys(ACCESSORIES), have = ids.filter(owned).length;
     const list = ids.filter(id => ACCESSORIES[id].slot === tab).sort((x, y) => (owned(y) - owned(x)) || (Object.keys(RARITY).indexOf(ACCESSORIES[x].rarity) - Object.keys(RARITY).indexOf(ACCESSORIES[y].rarity)));
-    ov.querySelector('#accBody').innerHTML = `<div class="acc-stage">${petSVG(p.species, p.stage, { coat: p.coat, shiny: p.shiny, mood: 'happy', acc: equipped() })}</div>
+    ov.querySelector('#accBody').innerHTML = `<div class="acc-skins">${Object.entries(SKINS).map(([id, S]) => `<button class="acc-skin sk-${id}${skinNow() === id ? ' on' : ''}" data-skin="${id}"><span>${petSVG(p.species, p.stage, { coat: p.coat, shiny: p.shiny, mood: 'happy', skin: id })}</span><b>${esc(S.name)}</b></button>`).join('')}</div>
+      <div class="acc-stage sk-${skinNow()}">${petSVG(p.species, p.stage, { coat: p.coat, shiny: p.shiny, mood: 'happy', acc: equipped() })}</div>
       <div class="acc-count">${have} / ${ids.length} aksesuar</div>
       <div class="acc-tabs">${SLOTS.map(s => `<button data-tab="${s}" class="${tab === s ? 'on' : ''}">${SLOT_NAME[s]}${eq[s] ? ' •' : ''}</button>`).join('')}</div>
       <div class="acc-grid">${list.map(id => { const a = ACCESSORIES[id], R = RARITY[a.rarity], has = owned(id), on = eq[a.slot] === id;
@@ -104,6 +117,7 @@ export function initAccessories(core, pet) {
   }
   ov.addEventListener('click', e => {
     if (e.target === ov || e.target.closest('[data-x]')) { ov.classList.remove('show'); return; }
+    const sk = e.target.closest('[data-skin]'); if (sk) { useSkin(sk.dataset.skin, true); render(); core.toast(`🎨 Görünüm: ${SKINS[sk.dataset.skin].name}`); return; }
     const t = e.target.closest('[data-tab]'); if (t) { tab = t.dataset.tab; render(); return; }
     const it = e.target.closest('[data-it]'); if (!it) return;
     const id = it.dataset.it, a = ACCESSORIES[id];

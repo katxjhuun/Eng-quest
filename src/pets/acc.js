@@ -86,8 +86,8 @@ function anchorOf(species, view, stage) {
 }
 const r2 = n => Math.round(n * 100) / 100;
 // bir figürün takılı aksesuarları için tek parça (başın içine eklenir)
-export function accSVG(species, view, stage, ids) {
-  const a = anchorOf(species, view, stage); if (!a) return '';
+export function accSVG(species, view, stage, ids, anch) {
+  const a = anch || anchorOf(species, view, stage); if (!a) return '';
   const [tx, ty, w, by, ex, ey, ew] = a;
   let out = '';
   for (const id of ids || []) {
@@ -103,10 +103,10 @@ export function accSVG(species, view, stage, ids) {
   return out;
 }
 // parça ağacına aksesuar parçasını ekler (balinada gövdeye, diğerlerinde başa)
-export function withAcc(list, species, view, stage, ids) {
+export function withAcc(list, species, view, stage, ids, def) {
   if (!ids || !ids.length) return list;
-  const svg = accSVG(species, view, stage, ids); if (!svg) return list;
-  const host = species === 'whale' ? 'body' : 'head';
+  const svg = accSVG(species, view, stage, ids, def?.anch?.(view, stage)); if (!svg) return list;
+  const host = species === 'whale' && !def?.set ? 'body' : 'head';
   let done = false;
   const map = l => l.map(p => {
     if (done) return p;

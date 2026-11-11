@@ -472,3 +472,23 @@ body.lite .challenge.sk2::after,body.lite .challenge.sk3::after{animation:none;o
 .wn-body ul{margin:0;padding-left:18px}.wn-body li{font-size:13.5px;line-height:1.5;margin:4px 0;color:var(--ink,#1f1a26)}
 .wn-old{opacity:.75}
 .wn-ok{margin:12px 18px 18px}
+
+/* ── Görünüm setleri: yaşam alanı ve dolap önizlemeleri (statik arka planlar; animasyon yok) ── */
+.acc-skins{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+.acc-skin{border:2px solid var(--line,#e4ddd0);background:var(--card,#f8f4ec);border-radius:14px;padding:4px 2px 6px;color:inherit;font:inherit;display:flex;flex-direction:column;align-items:center}
+.acc-skin span{width:100%;aspect-ratio:1;border-radius:10px;display:grid;place-items:center;overflow:hidden}
+.acc-skin span svg{width:100%;height:100%}
+.acc-skin b{font-size:11.5px;margin-top:3px}
+.acc-skin.on{border-color:#6d57d8;box-shadow:0 0 0 3px #6d57d833}
+.sk-shadow>span,.acc-stage.sk-shadow{background:#FFC629}
+.sk-cosmic>span,.acc-stage.sk-cosmic{background:radial-gradient(circle at 30% 25%,#fff 0 1px,transparent 1.5px) 0 0/34px 34px,radial-gradient(circle at 70% 60%,#ffffffaa 0 1px,transparent 1.5px) 0 0/47px 47px,linear-gradient(#1a0f5c,#3b1fa8)}
+.sk-toy>span,.acc-stage.sk-toy{background:#A8E6CF}
+body.skin-shadow .pet-hab{background:#FFC629!important}
+body.skin-shadow .pet-hab-bg svg{filter:brightness(0) opacity(.85)}
+body.skin-cosmic .pet-hab{background:radial-gradient(circle at 30% 25%,#fff 0 1px,transparent 1.6px) 0 0/34px 34px,radial-gradient(circle at 70% 60%,#ffffffaa 0 1px,transparent 1.6px) 0 0/47px 47px,radial-gradient(120% 90% at 50% 100%,#7a3cff,transparent 60%),linear-gradient(#170c52,#3b1fa8)!important}
+body.skin-cosmic .pet-hab-bg svg{filter:hue-rotate(230deg) saturate(1.6) brightness(.95)}
+body.skin-cosmic .pet-away{color:#e9e2ff}
+body.skin-toy .pet-hab{background:linear-gradient(#bff0dc,#94dcc0)!important}
+body.skin-shadow .pet-hab:before{background:#E5A90F;border-top-color:#D99A00}
+body.skin-cosmic .pet-hab:before{background:linear-gradient(#3b1fa8,#2a1680);border-top-color:#7a4bff}
+body.skin-toy .pet-hab:before{background:#7FCFAE;border-top-color:#6BBF9C}
