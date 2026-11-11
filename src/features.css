@@ -413,3 +413,48 @@ body.lite .soc-msg,body.lite .soc-sheet,body.lite .soc-dbox{animation:none}
 .acc-card p{position:relative;font-size:13px;color:var(--muted,#666);margin:6px 0 12px}
 .acc-acts{position:relative;display:flex;gap:8px}.acc-acts button{flex:1}
 body.lite .acc-rays{animation:none}
+
+/* ── Soru ekranı efektleri ve seri (yalnızca transform/opacity) ── */
+.quiz-opt{transition:transform .14s cubic-bezier(.2,.9,.3,1),border-color .15s,background .15s,opacity .25s;-webkit-tap-highlight-color:transparent}
+.quiz-opt:active:not([aria-disabled="true"]){transform:scale(.975)}
+.quiz-opt.dim{opacity:.55}
+.quiz-opt.fx-pop{animation:qzPop .55s cubic-bezier(.2,1.5,.4,1)}
+@keyframes qzPop{0%{transform:scale(.96)}35%{transform:scale(1.045)}100%{transform:scale(1)}}
+.quiz-opt.fx-shake{animation:qzShake .42s ease-out}
+@keyframes qzShake{20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(2px)}}
+.quiz-opt.fx-reveal{animation:qzReveal .9s ease-out .25s both}
+@keyframes qzReveal{0%{transform:scale(1)}40%{transform:scale(1.03)}100%{transform:scale(1)}}
+.qz-enter #qzTitle,.qz-enter #qzTag,.qz-enter .quiz-opt,.qz-enter .qz-typed{animation:qzIn .38s cubic-bezier(.2,.9,.3,1) both}
+.qz-enter #qzTag{animation-delay:0ms}.qz-enter #qzTitle{animation-delay:40ms}
+.qz-enter .quiz-opt:nth-child(1){animation-delay:90ms}.qz-enter .quiz-opt:nth-child(2){animation-delay:130ms}.qz-enter .quiz-opt:nth-child(3){animation-delay:170ms}.qz-enter .quiz-opt:nth-child(4){animation-delay:210ms}
+@keyframes qzIn{from{opacity:0;transform:translateY(10px)}}
+/* seri kademeleri */
+.challenge{position:relative}
+.challenge.sk1{box-shadow:0 0 0 2px #f2a33a88,var(--shadow)}
+.challenge.sk2{box-shadow:0 0 0 2px #f07a2c,var(--shadow)}
+.challenge.sk3{box-shadow:0 0 0 2.5px #e8b53a,var(--shadow)}
+.challenge.sk2::after,.challenge.sk3::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 22px 2px #ff8a3d77;z-index:1;opacity:.35;animation:skGlow 1.8s ease-in-out infinite;will-change:opacity}
+.challenge.sk3::after{box-shadow:inset 0 0 28px 4px #ffd75e88}
+@keyframes skGlow{50%{opacity:1}}
+.challenge.sk-flash::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(circle at 50% 40%,#fff3c488,transparent 70%);animation:skFlash .7s ease-out forwards;z-index:2}
+@keyframes skFlash{from{opacity:1}to{opacity:0}}
+.sk-chip{position:absolute;top:10px;right:12px;z-index:5;display:flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;background:#2a2230;color:#fff;font-size:13px;font-weight:850;box-shadow:0 6px 16px #0003;pointer-events:none;animation:skIn .45s cubic-bezier(.2,1.5,.4,1) both;white-space:nowrap}
+.sk-chip b{font-size:15px}
+.sk-chip span{font-size:12px;opacity:.9}
+.sk-chip.t2{background:linear-gradient(90deg,#d9481f,#f08a3d)}
+.sk-chip.t3{background:linear-gradient(90deg,#a9750c,#e8b53a,#a9750c);color:#2a1a00}
+.sk-chip.big{top:8px;padding:7px 14px;font-size:15px}
+.sk-chip.big b{font-size:19px}
+.sk-chip.broke{background:#8c8e94}
+.sk-chip.out{animation:skOut .35s ease-in forwards}
+@keyframes skIn{from{transform:translateY(8px) scale(.6);opacity:0}}
+@keyframes skOut{to{transform:translateY(-10px) scale(.9);opacity:0}}
+.sk-chip.broke.out{animation:skFall .45s ease-in forwards}
+@keyframes skFall{to{transform:translateY(24px) rotate(8deg);opacity:0}}
+.sk-burst{position:fixed;z-index:60;width:0;height:0;pointer-events:none}
+.sk-burst i{position:absolute;left:0;top:0;font-style:normal;font-size:13px;color:#f2b63a;text-shadow:0 0 6px #ffd75e;transform:translate(-50%,-50%);animation:skBurst .75s cubic-bezier(.15,.8,.3,1) both;animation-delay:var(--d);will-change:transform,opacity}
+.sk-burst i.t0,.sk-burst i.t1{color:#7cc68a;text-shadow:none}
+.sk-burst i.t3{color:#ffd75e;font-size:15px}
+@keyframes skBurst{0%{transform:translate(-50%,-50%) scale(.4);opacity:1}100%{transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) rotate(var(--r)) scale(1);opacity:0}}
+body.lite .challenge.sk2::after,body.lite .challenge.sk3::after{animation:none;opacity:.6}
+@media(prefers-reduced-motion:reduce){.qz-enter *{animation:none!important}.challenge.sk2::after,.challenge.sk3::after{animation:none}}
