@@ -64,7 +64,7 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "media-src 'self' data: blob: https:",
-  `connect-src 'self' ${FB} wss://*.firebaseio.com wss://*.firebasedatabase.app https://*.googleapis.com https://itunes.apple.com https://api.deezer.com https://github.com https://*.githubusercontent.com https://huggingface.co https://*.huggingface.co https://*.hf.co https://cdn.jsdelivr.net`,
+  `connect-src 'self' blob: ${FB} wss://*.firebaseio.com wss://*.firebasedatabase.app https://*.googleapis.com https://itunes.apple.com https://api.deezer.com https://github.com https://*.githubusercontent.com https://huggingface.co https://*.huggingface.co https://*.hf.co https://cdn.jsdelivr.net`,
   "worker-src 'self' blob:",
   "font-src 'self' data:",
   "object-src 'none'",

@@ -21,8 +21,7 @@ export function initAccessories(core, pet) {
   const equipped = () => SLOTS.map(s => st().eq[s]).filter(id => id && ACCESSORIES[id] && owned(id));
   const apply = () => pet.setAcc?.(equipped());
   // görünüş seti (Klasik / Gölge / Kozmik / Oyuncak): uygulamanın bütün pet çizimlerine uygulanır
-  // yeni görünüş setleri yeniden yapılıyor: hazır olana kadar yalnızca Klasik seçilebilir
-  const SKINS_READY = false;
+  const SKINS_READY = true;
   const skinNow = () => (SKINS_READY && SKINS[core.app.profile?.petSkin] ? core.app.profile.petSkin : 'classic');
   function useSkin(id, save) {
     if (!SKINS[id]) id = 'classic';
@@ -115,7 +114,8 @@ export function initAccessories(core, pet) {
       <div class="acc-tabs">${SLOTS.map(s => `<button data-tab="${s}" class="${tab === s ? 'on' : ''}">${SLOT_NAME[s]}${eq[s] ? ' •' : ''}</button>`).join('')}</div>
       <div class="acc-grid">${list.map(id => { const a = ACCESSORIES[id], R = RARITY[a.rarity], has = owned(id), on = eq[a.slot] === id;
         return `<button class="acc-it${has ? '' : ' locked'}${on ? ' on' : ''}" data-it="${id}" style="--rc:${R.color}" ${has ? '' : 'aria-disabled="true"'}>${fresh[id] ? '<i class="acc-new">YENİ</i>' : ''}<span class="acc-ic">${accIconSVG(id)}</span><b>${has ? esc(a.name) : '???'}</b><small>${has ? `${R.name}${on ? ' · takılı' : ''}` : esc(hint(id))}</small></button>`; }).join('')}</div>
-      <p class="acc-note">Aksesuarlar sende kalır: petini takas etsen bile yenisine takabilirsin. Her yuvaya bir tane.</p>`;
+      <p class="acc-note">Aksesuarlar sende kalır: petini takas etsen bile yenisine takabilirsin. Her yuvaya bir tane.</p>
+      <p class="acc-note acc-credit">Oyuncak görünümü: serçe, kertenkele ve pudu 3B modelleri ile animasyonları <b>Quirky Series — Omabuarts Studio</b> (CC BY 4.0); diğer petler aynı tarzda çizildi.</p>`;
   }
   ov.addEventListener('click', e => {
     if (e.target === ov || e.target.closest('[data-x]')) { ov.classList.remove('show'); return; }
@@ -128,6 +128,8 @@ export function initAccessories(core, pet) {
     if (st().fresh) delete st().fresh[id];
     core.saveLocal(true); apply(); render();
   });
+  // Oyuncak (3B) seti ilk kez yüklendiğinde dolap önizlemeleri yenilenir
+  window.addEventListener('dl:pet3d-ready', () => { pet.refreshSkin?.(); if (ov.classList.contains('show')) render(); });
   apply();
   return { open, grant, equipped, apply };
 }
