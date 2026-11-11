@@ -622,7 +622,7 @@ async function prepInfo() {
 $('#prepBtn')?.addEventListener('click', () => { $('#prepModal').classList.remove('hidden'); prepInfo(); });
 $('#prepClose')?.addEventListener('click', () => $('#prepModal').classList.add('hidden'));
 $('#prepSaveCode')?.addEventListener('click', async () => {
-  const code = $('#fPrep').code.value.trim().toUpperCase();
+  const code = String($('#fPrep').code.value || '').normalize('NFKC').replace(/[İIıi]/g, 'I').replace(/[‐-―−]/g, '-').replace(/\s+/g, '').toUpperCase();
   if (code.length < 6) return toast('Kod en az 6 karakter olmalı');
   try { await set(ref(db, 'prep/code'), code); toast('Sınıf kodu kaydedildi'); prepInfo(); } catch (e) { toast('Kaydedilemedi: ' + e.message); }
 });

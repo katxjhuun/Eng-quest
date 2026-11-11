@@ -285,10 +285,12 @@ export function initCloud(core) {
   // İngilizce Hazırlık bankası: sınıf koduyla katılma; banka yalnızca üyelere açık (kurallar denetler)
   // Firebase okuması bağlantı kurulamazsa sonsuza kadar bekleyebilir: her çağrıya süre sınırı
   const tmo = (pr, ms = 12000) => Promise.race([pr, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+  // Türkçe klavye büyük harfte i → İ yazar; tire/boşluk çeşitleri de tek biçime indirilir
+  const normCode = c => String(c || '').normalize('NFKC').replace(/[İIıi]/g, 'I').replace(/[‐-―−]/g, '-').replace(/\s+/g, '').toUpperCase();
   api.prep = {
     ready: () => !!(F && state.uid && state.db),
     member: async () => { if (!api.prep.ready()) return null; try { return (await tmo(F.get(F.ref(state.db, 'prep/members/' + state.uid)))).exists(); } catch { return null; } },
-    join: async code => { if (!api.prep.ready()) return 'offline'; try { await tmo(F.set(F.ref(state.db, 'prep/members/' + state.uid), String(code).trim().toUpperCase())); return 'ok'; } catch (e) { return e?.message === 'timeout' ? 'offline' : 'bad'; } },
+    join: async code => { if (!api.prep.ready()) return 'offline'; try { await tmo(F.set(F.ref(state.db, 'prep/members/' + state.uid), normCode(code))); return 'ok'; } catch (e) { return e?.message === 'timeout' ? 'offline' : 'bad'; } },
     ver: async () => { try { return (await tmo(F.get(F.ref(state.db, 'prep/ver')))).val() || 0; } catch { return 0; } },
     bank: async () => { try { const s2 = await tmo(F.get(F.ref(state.db, 'prep/bank')), 30000); return s2.exists() ? s2.val() : null; } catch { return null; } },
   };

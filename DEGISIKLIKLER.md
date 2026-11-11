@@ -1,3 +1,10 @@
+# dam-la 2.13.2 — Sınıf kodu Ayarlar'da
+
+Uzaktan güncellemeyle gelir.
+- Sınıf kodu artık Ayarlar › Genel'in en üstünden de girilebiliyor; katılım durumu orada görünüyor.
+- Türkçe klavyede büyük harfle yazınca "İ" olan kodlar artık kabul ediliyor.
+
+---
 # dam-la 2.13.1 — Sınıf kodu düzeltmesi
 
 Uzaktan güncellemeyle gelir.
