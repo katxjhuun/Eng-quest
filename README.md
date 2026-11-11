@@ -5,7 +5,7 @@
 
 - **Kurulum, güncelleme, yönetici paneli:** [KURULUM.md](KURULUM.md)
 - **Sürüm notları:** [DEGISIKLIKLER.md](DEGISIKLIKLER.md)
-- Uygulama (web): https://katxjhuun.github.io/Eng-quest/ · Panel: https://katxjhuun.github.io/Eng-quest/admin/
+- Uygulama (web): https://katxjhuun.github.io/Eng-quest/ · Panel: https://katxjhuun.github.io/Eng-quest/admin/ · Kurulum rehberi: https://katxjhuun.github.io/Eng-quest/indir/
 
 ## Klasörler
 | Yol | İçerik |

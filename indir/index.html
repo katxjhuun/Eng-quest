@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f4f0e8">
+<meta name="format-detection" content="telephone=no">
+<title>dam-la'yı telefonuna kur</title>
+<meta name="description" content="dam-la'yı Android ve iPhone'a ücretsiz kurma rehberi.">
+<meta property="og:title" content="dam-la'yı telefonuna kur">
+<meta property="og:description" content="Android ve iPhone için adım adım, ücretsiz kurulum.">
+<meta property="og:image" content="../icon-512.png">
+<link rel="icon" href="../icon-192.png">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<style>
+:root{--bg:#f4f0e8;--paper:#fffdf8;--ink:#1f1a26;--muted:#6f6878;--line:#e4ddd0;--accent:#6d57d8;--accent2:#4ac7a2;--warn:#fff1d6;--warnInk:#7a5410}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;touch-action:manipulation}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;letter-spacing:-.01em;line-height:1.5;
+  padding:max(18px,env(safe-area-inset-top)) 18px max(28px,env(safe-area-inset-bottom))}
+main{max-width:560px;margin:0 auto}
+header{text-align:center;padding:14px 0 6px}
+.logo{width:88px;height:88px;border-radius:22px;box-shadow:0 10px 26px #3a2c5a2e;display:block;margin:0 auto 14px}
+h1{font-size:28px;letter-spacing:-.04em;margin:0 0 6px}
+.sub{color:var(--muted);font-size:15px;margin:0}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#e9e3d6;border-radius:16px;padding:5px;margin:22px 0 16px}
+.tabs button{border:0;background:transparent;border-radius:12px;padding:12px 8px;font:inherit;font-weight:750;font-size:15px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}
+.tabs button[aria-selected=true]{background:var(--paper);color:var(--ink);box-shadow:0 2px 8px #0000001a}
+.panel{display:none}.panel.on{display:block;animation:in .25s ease}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:12px}
+.note{font-size:14px;color:var(--muted);margin:0 0 4px}
+.warn{background:var(--warn);color:var(--warnInk);border-radius:14px;padding:12px 14px;font-size:14px;margin:0 0 12px;display:none}
+.warn.on{display:block}
+.warn b{display:block;margin-bottom:3px}
+.big{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;border:0;border-radius:16px;background:var(--ink);color:#fff;font:inherit;font-weight:800;font-size:17px;padding:16px;text-decoration:none;cursor:pointer;margin-top:4px}
+.big.alt{background:var(--accent)}
+.big small{font-weight:600;opacity:.7;font-size:13px}
+.ghost{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:12px;padding:9px 12px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px}
+ol{list-style:none;margin:0;padding:0;counter-reset:s}
+ol li{counter-increment:s;display:grid;grid-template-columns:34px 1fr;gap:12px;padding:14px 0;border-top:1px solid var(--line)}
+ol li:first-child{border-top:0;padding-top:4px}
+ol li::before{content:counter(s);width:34px;height:34px;border-radius:50%;background:#efeaff;color:var(--accent);font-weight:850;display:grid;place-items:center;font-size:16px}
+li strong{display:block;font-size:16px;margin-bottom:2px}
+li p{margin:0;color:var(--muted);font-size:14.5px}
+.ico{display:inline-flex;vertical-align:-5px;width:24px;height:24px;border-radius:7px;background:#e9f0ff;color:#1a73e8;align-items:center;justify-content:center;margin:0 2px}
+.ico svg{width:16px;height:16px}
+.pill{display:inline-block;background:#f0ece3;border:1px solid var(--line);border-radius:8px;padding:1px 7px;font-weight:700;color:var(--ink);font-size:14px;white-space:nowrap}
+h2{font-size:18px;margin:0 0 10px;letter-spacing:-.02em}
+details{border-top:1px solid var(--line);padding:12px 0}
+details:first-of-type{border-top:0;padding-top:0}
+summary{font-weight:750;cursor:pointer;font-size:15px}
+details p{color:var(--muted);font-size:14.5px;margin:8px 0 0}
+.ver{text-align:center;color:var(--muted);font-size:12.5px;margin-top:18px}
+.ok{color:#2f8a66}
+
+.steps{display:grid;gap:12px}
+.step{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:16px 16px 18px;overflow:hidden}
+.step .hd{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.step .n{flex:none;width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;font-weight:850;display:grid;place-items:center}
+.step .t{font-weight:800;font-size:17px;letter-spacing:-.02em;line-height:1.25}
+.step .t small{display:block;font-weight:500;color:var(--muted);font-size:13.5px;margin-top:2px}
+.ph{position:relative;width:236px;height:300px;margin:0 auto;border-radius:34px 34px 0 0;background:#111;padding:9px 9px 0;box-shadow:0 14px 30px #2a1f4024}
+.ph.full{height:auto;border-radius:34px;padding-bottom:9px}
+.sc{position:relative;height:100%;border-radius:26px 26px 0 0;overflow:hidden;background:#f2f2f7;font-size:11px;color:#111}
+.ph.full .sc{border-radius:26px}
+.sc.and{background:#f6f3fb}
+.isl{position:absolute;top:7px;left:50%;transform:translateX(-50%);width:62px;height:17px;border-radius:10px;background:#111;z-index:3}
+.sb{height:30px;display:flex;justify-content:space-between;align-items:center;padding:0 18px;font-weight:700;font-size:10.5px}
+.pg{margin:4px 10px;background:#f4f0e8;border-radius:12px;height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-weight:800;color:#1f1a26}
+.pg img{width:46px;height:46px;border-radius:12px}
+.sbar{position:absolute;left:0;right:0;bottom:0;background:#f9f9fbee;border-top:1px solid #d9d9df;padding:7px 10px 12px}
+.addr{background:#e4e4ea;border-radius:10px;padding:7px 10px;text-align:center;font-size:10.5px;color:#333;margin-bottom:8px}
+.tools{display:flex;justify-content:space-around;align-items:center;color:#1a73e8;font-size:16px}
+.tools span{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;position:relative}
+.tools svg{width:18px;height:18px}
+.tap{position:relative}
+.tap::after{content:"";position:absolute;inset:-6px;border-radius:inherit;border:3px solid #ff4d6d;animation:ring 1.4s ease-out infinite;pointer-events:none}
+.tap.r::after{border-radius:12px}
+@keyframes ring{0%{opacity:1;transform:scale(.9)}70%{opacity:.15;transform:scale(1.12)}100%{opacity:0;transform:scale(1.15)}}
+.finger{position:absolute;font-size:26px;z-index:5;animation:poke 1.4s ease-in-out infinite;filter:drop-shadow(0 2px 3px #0004);pointer-events:none}
+@keyframes poke{0%,100%{transform:translate(0,0)}45%{transform:translate(-3px,-5px)}55%{transform:translate(0,0) scale(.93)}}
+.sheet{position:absolute;left:0;right:0;bottom:0;top:58px;background:#f2f2f7;border-radius:16px 16px 0 0;box-shadow:0 -6px 18px #0002;padding:10px}
+.sheet .who{display:flex;gap:8px;align-items:center;background:#fff;border-radius:12px;padding:8px;margin-bottom:8px;font-weight:700}
+.sheet .who img{width:28px;height:28px;border-radius:7px}
+.sheet .who small{display:block;font-weight:400;color:#888;font-size:9px}
+.rows{background:#fff;border-radius:12px;overflow:hidden}
+.rows div{display:flex;justify-content:space-between;align-items:center;padding:9px 11px;border-top:1px solid #ececf0;font-size:11.5px}
+.rows div:first-child{border-top:0}
+.rows i{font-style:normal;font-size:13px;color:#333}
+.rows .hl{background:#fff4f6;font-weight:800}
+.nav3{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;font-size:12px;border-bottom:1px solid #ddd;background:#f9f9fb}
+.nav3 b{font-size:12px}
+.nav3 .blue{color:#1a73e8}
+.addcard{margin:12px;background:#fff;border-radius:12px;padding:12px;display:flex;gap:10px;align-items:center}
+.addcard img{width:48px;height:48px;border-radius:12px}
+.addcard .nm{border-bottom:1px solid #ddd;font-weight:700;font-size:13px;padding-bottom:4px;margin-bottom:4px}
+.addcard small{color:#888;font-size:9.5px}
+.home{height:100%;background:linear-gradient(160deg,#7a8cff,#c58bff 55%,#ffb3c7);padding:36px 14px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:14px 8px;align-content:start}
+.app{display:flex;flex-direction:column;align-items:center;gap:3px;color:#fff;font-size:8.5px;font-weight:600;text-shadow:0 1px 2px #0005}
+.app i{width:40px;height:40px;border-radius:11px;background:#ffffff55;display:block}
+.app img{width:40px;height:40px;border-radius:11px;display:block}
+.app .tap::after{border-radius:14px}
+.dlg{position:absolute;left:14px;right:14px;top:50%;transform:translateY(-50%);background:#fff;border-radius:20px;padding:16px 14px 12px;box-shadow:0 10px 30px #0003;text-align:center}
+.dlg img{width:40px;height:40px;border-radius:11px}
+.dlg p{margin:6px 0 10px;font-size:11.5px;line-height:1.35;color:#222}
+.dlg .bt{display:flex;justify-content:flex-end;gap:16px;font-weight:700;color:#6750a4;font-size:12px;padding-right:4px}
+.dlg .bt span{padding:4px 6px;border-radius:12px}
+.dim{position:absolute;inset:0;background:#0006}
+.dlbar{position:absolute;left:8px;right:8px;bottom:12px;background:#fff;border-radius:14px;box-shadow:0 4px 16px #0003;padding:10px 11px;font-size:10.5px}
+.dlbar b{display:block;font-size:11px;margin-bottom:6px}
+.dlbar .bt{display:flex;justify-content:flex-end;gap:12px;font-weight:800;color:#1a73e8}
+.dlbar .bt span{padding:4px 7px;border-radius:10px}
+.notif{margin:8px;background:#fff;border-radius:16px;padding:10px 11px;box-shadow:0 2px 8px #0001;display:flex;gap:9px;align-items:center}
+.notif .ic{width:28px;height:28px;border-radius:50%;background:#e3dcff;display:grid;place-items:center;font-size:14px}
+.notif b{display:block;font-size:11px}
+.notif small{color:#666;font-size:10px}
+.shade{background:#2b2a33;height:100%;padding-top:30px}
+.shade .clock{color:#fff;font-size:26px;font-weight:300;padding:0 16px 8px}
+.set{padding:10px 12px}
+.set h4{margin:4px 0 12px;font-size:15px}
+.set .app2{display:flex;align-items:center;gap:8px;margin-bottom:14px;font-weight:700}
+.set .app2 span{width:28px;height:28px;border-radius:50%;background:#e8e2f5;display:grid;place-items:center}
+.tg{display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:14px;padding:12px;font-size:11.5px;font-weight:600}
+.sw{width:36px;height:20px;border-radius:12px;background:#6750a4;position:relative;flex:none}
+.sw::after{content:"";position:absolute;right:3px;top:3px;width:14px;height:14px;border-radius:50%;background:#fff}
+.tg.tap::after{border-radius:16px}
+.cap{text-align:center;font-size:13.5px;color:var(--muted);margin:12px 4px 0}
+.appset{padding:8px 10px;background:#f4f0e8;height:100%}
+.appset .tb{display:flex;gap:4px;margin:6px 0 10px}
+.appset .tb span{flex:1;text-align:center;padding:6px 0;border-radius:9px;background:#fff;font-weight:700;font-size:10px}
+.appset .tb .on{background:#1f1a26;color:#fff}
+.appset .tg .sw{background:#4ac7a2}
+.hero-ph{display:flex;justify-content:center;gap:10px;margin:18px 0 4px}
+.sc.and .isl{width:11px;height:11px;border-radius:50%;top:10px}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img class="logo" src="../icon-512.png" alt="dam-la">
+    <h1>dam-la'yı telefonuna kur</h1>
+    <p class="sub">Ücretsiz · birkaç dokunuş · telefonunu seç 👇</p>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="t-android" aria-selected="false" data-p="android">🤖 Android</button>
+    <button role="tab" id="t-ios" aria-selected="false" data-p="ios">📱 iPhone</button>
+  </div>
+
+  <!-- ANDROID -->
+  <section class="panel" id="p-android" role="tabpanel">
+<div class="steps">
+<div class="step"><div class="hd"><div class="n">1</div><div class="t">Uygulamayı indir<small>Mor butona dokun</small></div></div><a class="big alt" id="apkBtn" href="https://github.com/katxjhuun/Eng-quest/releases/latest">⬇️ Android için indir <small id="apkSize"></small></a></div>
+<div class="step"><div class="hd"><div class="n">2</div><div class="t">“Yine de indir”e dokun<small>Play Store dışından geldiği için bu uyarı normal</small></div></div><div class="ph"><div class="sc and"><div class="isl"></div><div class="sb"><span>12:30</span><span>▾ ▮ 🔋</span></div><div class="pg" style="height:120px"><img src="../icon-180.png" alt="">dam-la</div><div class="dlbar"><b>⚠️ Bu dosya zararlı olabilir. dam-la-….apk dosyasını yine de indirmek istiyor musunuz?</b><div class="bt"><span>İptal</span><span class="tap r">Yine de indir</span></div></div><div class="finger" style="right:8px;bottom:-10px">👆</div></div></div></div>
+<div class="step"><div class="hd"><div class="n">3</div><div class="t">İndirilen dosyayı aç<small>Bildirimden ya da Dosyalar → İndirilenler</small></div></div><div class="ph"><div class="sc and"><div class="isl"></div><div class="shade"><div class="clock">12:30</div><div class="notif tap r"><div class="ic">⬇️</div><div><b>İndirme tamamlandı</b><small>dam-la-….apk · Açmak için dokun</small></div></div></div><div class="finger" style="right:2px;top:118px">👆</div></div></div></div>
+<div class="step"><div class="hd"><div class="n">4</div><div class="t">“Bu kaynaktan izin ver”i aç<small>Sonra geri tuşuna bas</small></div></div><div class="ph"><div class="sc and"><div class="isl"></div><div class="sb"><span>12:30</span><span>▾ ▮ 🔋</span></div><div class="set"><h4>Bilinmeyen uygulamaları yükle</h4><div class="app2"><span>🌐</span>Chrome</div><div class="tg tap">Bu kaynaktan izin ver<span class="sw"></span></div></div><div class="finger" style="right:14px;top:150px">👆</div></div></div><p class=cap>Bu ekran çıkmazsa bu adımı atla.</p></div>
+<div class="step"><div class="hd"><div class="n">5</div><div class="t">“Yükle”ye dokun<small>Play Koruma sorarsa “Yine de yükle”</small></div></div><div class="ph"><div class="sc and"><div class="isl"></div><div class="sb"><span>12:30</span><span>▾ ▮ 🔋</span></div><div class="dim"></div><div class="dlg"><img src="../icon-180.png" alt=""><b style="display:block;margin-top:4px">dam-la</b><p>Bu uygulamayı yüklemek istiyor musunuz?</p><div class="bt"><span>İptal</span><span class="tap r">Yükle</span></div></div><div class="finger" style="right:24px;top:212px">👆</div></div></div></div>
+<div class="step"><div class="hd"><div class="n">6</div><div class="t">Hazır! dam-la ana ekranında<small>Yeni sürümler kendiliğinden gelir</small></div></div><div class="ph"><div class="sc and"><div class="isl"></div><div class="home"><div class="app"><i></i>&nbsp;</div><div class="app"><i></i>&nbsp;</div><div class="app"><i></i>&nbsp;</div><div class="app"><i></i>&nbsp;</div><div class="app"><i></i>&nbsp;</div><div class="app"><img class="tap" src="../icon-180.png" alt="">dam-la</div></div></div></div></div>
+</div>
+</section>
+
+  <!-- IPHONE -->
+  <section class="panel" id="p-ios" role="tabpanel">
+    <div class="warn" id="notSafari">
+      <b>Önce Safari'de aç</b>
+      iPhone'da kurulum yalnızca Safari'den yapılır. Bu sayfayı başka bir uygulamanın içinde açtın. Bağlantıyı kopyala, Safari'yi aç ve adres çubuğuna yapıştır.
+      <br><button class="ghost" id="copyBtn">🔗 Bağlantıyı kopyala</button>
+    </div>
+    <div class="steps">
+<div class="step"><div class="hd"><div class="n">1</div><div class="t">dam-la'yı Safari'de aç<small>Aşağıdaki mor butona dokun</small></div></div><div class="ph"><div class="sc "><div class="isl"></div><div class="sb"><span>9:41</span><span>▮▮▮ 🔋</span></div><div class="pg"><img src="../icon-180.png" alt="">dam-la</div><div class="sbar"><div class="addr">🔒 katxjhuun.github.io</div><div class="tools"><span>‹</span><span>›</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7.5 7.5 12 3l4.5 4.5"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg></span><span>📖</span><span>⧉</span></div></div></div></div><a class="big alt" href="../" style="margin-top:14px">🌐 dam-la'yı Safari'de aç</a></div>
+<div class="step"><div class="hd"><div class="n">2</div><div class="t">Paylaş simgesine dokun<small>Ekranın altındaki kare + yukarı ok</small></div></div><div class="ph"><div class="sc "><div class="isl"></div><div class="sb"><span>9:41</span><span>▮▮▮ 🔋</span></div><div class="pg"><img src="../icon-180.png" alt="">dam-la</div><div class="sbar"><div class="addr">🔒 katxjhuun.github.io</div><div class="tools"><span>‹</span><span>›</span><span class="tap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7.5 7.5 12 3l4.5 4.5"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg></span><span>📖</span><span>⧉</span></div></div><div class="finger" style="right:84px;bottom:-4px">👆</div></div></div><p class=cap>Alt çubuk görünmüyorsa sayfayı biraz aşağı kaydır.</p></div>
+<div class="step"><div class="hd"><div class="n">3</div><div class="t">“Ana Ekrana Ekle”ye dokun<small>Listeyi biraz aşağı kaydırman gerekebilir</small></div></div><div class="ph"><div class="sc "><div class="isl"></div><div class="sb"><span>9:41</span><span>▮▮▮ 🔋</span></div><div class="sheet"><div class="who"><img src="../icon-180.png" alt=""><div>dam-la<small>katxjhuun.github.io</small></div></div><div class="rows"><div>Kopyala<i>⧉</i></div><div>Okuma Listesine Ekle<i>👓</i></div><div>Yer İşareti Ekle<i>📖</i></div><div class="hl tap r">Ana Ekrana Ekle<i>⊞</i></div><div>Sayfada Bul<i>🔍</i></div></div></div><div class="finger" style="right:20px;top:240px">👆</div></div></div></div>
+<div class="step"><div class="hd"><div class="n">4</div><div class="t">Sağ üstteki “Ekle”ye dokun<small></small></div></div><div class="ph"><div class="sc "><div class="isl"></div><div class="sb"><span>9:41</span><span>▮▮▮ 🔋</span></div><div class="nav3"><span class="blue">Vazgeç</span><b>Ana Ekrana Ekle</b><span class="blue tap r" style="font-weight:800;padding:2px 4px">Ekle</span></div><div class="addcard"><img src="../icon-180.png" alt=""><div style="flex:1"><div class="nm">dam-la</div><small>katxjhuun.github.io</small></div></div><div class="finger" style="right:0;top:58px">👆</div></div></div></div>
+<div class="step"><div class="hd"><div class="n">5</div><div class="t">Hazır! Hep bu ikondan aç<small>Safari'den değil, ana ekrandaki ikondan</small></div></div><div class="ph"><div class="sc "><div class="isl"></div><div class="home"><div class="app"><i></i>&nbsp;</div><div class="app"><i></i>&nbsp;</div><div class="app"><i></i>&nbsp;</div><div class="app"><i></i>&nbsp;</div><div class="app"><i></i>&nbsp;</div><div class="app"><i></i>&nbsp;</div><div class="app"><img class="tap" src="../icon-180.png" alt="" style="border-radius:11px">dam-la</div></div></div></div></div>
+<div class="step"><div class="hd"><div class="n">6</div><div class="t">Bildirimleri aç<small>İsteğe bağlı · Ayarlar → Pet</small></div></div><div class="ph"><div class="sc "><div class="isl"></div><div class="sb"><span>9:41</span><span>▮▮▮ 🔋</span></div><div class="appset"><b style="font-size:14px">Ayarlar</b><div class="tb"><span>Genel</span><span>Ses</span><span class="on">Pet</span></div><div class="tg tap">🔔 Pet bildirimleri<span class="sw"></span></div></div></div></div><p class=cap>iPhone bildirim iznini yalnızca ana ekrandan açılan uygulamada verir.</p></div>
+</div>
+</section>
+
+  <div class="card">
+    <h2>Sık sorulanlar</h2>
+    <details><summary>Ücretli mi?</summary><p>Hayır. Uygulama da kurulum da tamamen ücretsiz.</p></details>
+    <details><summary>Güncellemeleri nasıl alırım?</summary><p>Kendiliğinden. Android'de uygulama yeni sürümü açılışta indirir. iPhone'da da her açılışta en güncel hâli yüklenir.</p></details>
+    <details><summary>iPhone'da APK dosyası neden açılmıyor?</summary><p>APK yalnızca Android'de çalışır. Apple, App Store dışından uygulama kurmaya izin vermediği için iPhone'da “Ana Ekrana Ekle” yöntemi kullanılır.</p></details>
+    <details><summary>Ana ekrandaki ikon eski görünüyor</summary><p>Ikonu silip yukarıdaki iPhone adımlarını tekrar uygula. iOS eski ikonu bir süre önbellekte tutabiliyor.</p></details>
+    <details><summary>İlerlemem kaybolur mu?</summary><p>Uygulamanın ayarlarından Google ile giriş yaparsan ilerlemen ve petin hesabına kaydedilir. Telefon değiştirince aynı hesapla girmen yeterli.</p></details>
+  </div>
+
+  <p class="ver" id="ver"></p>
+</main>
+<script>
+(function(){
+  var ua = navigator.userAgent || '';
+  var iOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var tabs = document.querySelectorAll('.tabs button');
+  function show(p){
+    tabs.forEach(function(b){ b.setAttribute('aria-selected', b.dataset.p === p ? 'true' : 'false'); });
+    document.getElementById('p-android').classList.toggle('on', p === 'android');
+    document.getElementById('p-ios').classList.toggle('on', p === 'ios');
+  }
+  tabs.forEach(function(b){ b.addEventListener('click', function(){ show(b.dataset.p); }); });
+  var h = (location.hash || '').slice(1);
+  show(h === 'ios' || h === 'android' ? h : (iOS ? 'ios' : 'android'));
+
+  // iPhone'da Safari dışı (Chrome, Instagram, WhatsApp vb. uygulama içi tarayıcı)
+  var standalone = window.navigator.standalone === true;
+  var notSafari = iOS && (/CriOS|FxiOS|EdgiOS|OPiOS|GSA\/|Instagram|FBAN|FBAV|Line\/|Twitter|TikTok|Snapchat|WhatsApp/.test(ua) || !/Safari\//.test(ua));
+  if (notSafari && !standalone) document.getElementById('notSafari').classList.add('on');
+  document.getElementById('copyBtn').addEventListener('click', function(){
+    var b = this, url = location.href.split('#')[0] + '#ios';
+    function done(){ b.textContent = '✓ Kopyalandı, Safari\'ye yapıştır'; b.classList.add('ok'); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function(){ prompt('Bağlantıyı kopyala:', url); });
+    else prompt('Bağlantıyı kopyala:', url);
+  });
+
+  // En güncel APK bağlantısı
+  fetch('https://api.github.com/repos/katxjhuun/Eng-quest/releases/latest')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(rel){
+      if (!rel) return;
+      var apk = (rel.assets || []).filter(function(a){ return /\.apk$/i.test(a.name); })[0];
+      if (apk) {
+        document.getElementById('apkBtn').href = apk.browser_download_url;
+        document.getElementById('apkSize').textContent = '· ' + (apk.size / 1048576).toFixed(1) + ' MB';
+      }
+      if (rel.tag_name) document.getElementById('ver').textContent = 'Güncel sürüm: ' + rel.tag_name.replace(/^v/, '');
+    })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>
