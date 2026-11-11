@@ -35,7 +35,9 @@ self.addEventListener('push', event => {
   let d = {};
   try { d = event.data ? event.data.json() : {}; } catch { d = { title: 'dam-la', body: event.data ? event.data.text() : '' }; }
   event.waitUntil(self.registration.showNotification(d.title || 'dam-la', {
-    body: d.body || '', icon: './icon-192.png', badge: './icon-192.png', tag: d.tag || 'dl-pet', renotify: true, data: { url: './' },
+    body: d.body || '', icon: './icon-192.png', badge: './icon-192.png', tag: d.tag || 'dl-pet',
+    // varsayılan sessiz: ses/titreşim yok, aynı etiketle gelen bildirim tekrar dürtmez
+    silent: !d.loud, renotify: !!d.loud, vibrate: d.loud ? [80] : [], data: { url: './' },
   }));
 });
 self.addEventListener('notificationclick', event => {

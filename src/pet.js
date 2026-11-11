@@ -2,6 +2,8 @@
 // Durum app.pet içinde saklanır (yedeğe ve kalıcı kayda otomatik girer).
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { noteExtras, notifySound } from './notify.js';
+import { isGolden, GOLDEN_XP } from './golden.js';
 import { webPushSupported, webPushNeedsInstall, enableWebPush, currentWebPush } from './webpush.js';
 import { petSVG, homeSVG, stageName, PET_SPECIES, randomCoat, shinyFilter } from './pet-art.js';
 import { Puppet } from './pets/figure.js';
@@ -240,6 +242,8 @@ export function initPet(core, quiz) {
     if (gains && p && p.alive) {
       // evrim kapısı: önce boss yenilmeli
       p.bossPending = (p.bossPending | 0) + gains;
+      // Altın Saat'te atlanan seviyeler: o evrimlerde nadir form şansı iki kat
+      if (isGolden()) p.goldenEvo = (p.goldenEvo | 0) + gains;
       p.bossKeys = [...(p.bossKeys || []), ...gainedKeys];
       save(true); renderPanel();
       setTimeout(() => bossPrompt(), 900);
@@ -253,7 +257,8 @@ export function initPet(core, quiz) {
       if (p.stage < 5) {
         const from = p.stage, oldRole = p.role; p.stage++;
         p.role = randomRole(oldRole);
-        const shinyNow = !p.shiny && Math.random() < SHINY_CHANCE; if (shinyNow) p.shiny = true;
+        const gold = (p.goldenEvo | 0) > 0; if (gold) p.goldenEvo--;
+        const shinyNow = !p.shiny && Math.random() < SHINY_CHANCE * (gold ? 2 : 1); if (shinyNow) p.shiny = true;
         const mx = maxes(p); p.hp = Math.min(mx.hp, p.hp + mx.hp * 0.25); p.energy = Math.min(mx.energy, p.energy + 20);
         evoQueue.push({ type: 'evo', from, to: p.stage, role: p.role, oldRole, shiny: shinyNow });
         const parts = loreParts(PET_SPECS[p.species].soul), next = parts.findIndex((_, k) => !p.lore.includes(k));
@@ -290,6 +295,7 @@ export function initPet(core, quiz) {
       if (p.species === 'gecko' && p.prey && right) { m *= 2; p.prey = false; setTimeout(() => { emote('bug', 1600, true); sayNow('Av geldi. ×2 XP', 2400); renderPanel(); }, 900); }
     }
     if (p && p.alive && p.shiny) m *= 1.1;
+    if (isGolden()) m *= GOLDEN_XP;   // Altın Saat
     return Math.round(delta * m);
   }
   core.setXpMod(xpMod);
@@ -1412,6 +1418,7 @@ export function initPet(core, quiz) {
     if (h < 9.5) { d.setHours(9, 30, 0, 0); return d.getTime(); }
     return t;
   }
+  window.addEventListener('dl:notify-changed', () => schedule());
   // web: uygulama açıkken de takvim güncel kalsın (sayfa kapanırken yazma yarım kalabilir)
   setInterval(() => { if (!notifyAvailable() && document.visibilityState === 'visible') schedule(); }, 10 * 60 * 1000);
   async function schedule() {
@@ -1429,10 +1436,11 @@ export function initPet(core, quiz) {
       const used = new Set();
       const timed = list.map(n => { let at = quietShift(n.at); while (used.has(Math.round(at / 60000))) at += 30 * 60000; used.add(Math.round(at / 60000)); return { ...n, at }; })
         .filter(n => n.at > now + 60000);
-      if (!native) { const sub = await currentWebPush(); if (p.pushTestAt > now) timed.unshift({ at: p.pushTestAt, title: `${p.name} 🔔`, body: 'Bildirimler çalışıyor! Acıkınca sana buradan haber vereceğim.' }); if (sub) core.push?.set(sub, timed); return; }
+      if (!native) { const sub = await currentWebPush(); if (p.pushTestAt > now) timed.unshift({ at: p.pushTestAt, title: `${p.name} 🔔`, body: 'Bildirimler çalışıyor! Acıkınca sana buradan haber vereceğim.' }); if (sub) core.push?.set(sub, timed, notifySound()); return; }
       const notes = timed
         .map(n => ({ id: n.id, title: n.title, body: n.body, schedule: { at: new Date(n.at), allowWhileIdle: true }, smallIcon: 'ic_stat_pet', iconColor: '#E86FA0' }));
-      if (notes.length) await LocalNotifications.schedule({ notifications: notes });
+      const ex = await noteExtras();
+      if (notes.length) await LocalNotifications.schedule({ notifications: notes.map(n => ({ ...n, ...ex })) });
     } catch (e) { console.warn('[pet] bildirim planlanamadı', e); }
   }
   function cancelNotes() { if (notifyAvailable()) LocalNotifications.cancel({ notifications: NOTE_IDS.map(id => ({ id })) }).catch(() => {}); else if (webPushSupported()) currentWebPush().then(s => s && core.push?.set(s, [])); }

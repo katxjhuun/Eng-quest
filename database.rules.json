@@ -460,6 +460,9 @@
             }
           }
         },
+        "loud": {
+          ".validate": "newData.isBoolean()"
+        },
         "updatedAt": {
           ".validate": "newData.isNumber() && newData.val() <= now + 300000"
         },

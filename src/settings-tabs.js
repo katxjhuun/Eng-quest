@@ -2,7 +2,7 @@
 // Bölümler başlıklarına göre sekmelere dağıtılır; sonradan eklenen bölümler (ör. pet) data-tab ile kendini bildirir.
 const TABS = [
   { id: 'genel', icon: '🎨', label: 'Genel', match: ['Görünüm', 'Öğrenme'] },
-  { id: 'ses', icon: '🔊', label: 'Ses', match: ['Seslendirme', 'Müzik'] },
+  { id: 'ses', icon: '🔊', label: 'Ses', match: ['Seslendirme', 'Müzik', 'Bildirimler'] },
   { id: 'pet', icon: '🐾', label: 'Pet', match: ['Petin'] },
   { id: 'mesaj', icon: '✉️', label: 'Mesajlar', match: ['Mesajlar'] },
   { id: 'hesap', icon: '🗂️', label: 'Hesap', match: ['Kimliğin', 'İlerleme yedeği', 'güncellemeler', 'Veri'] },

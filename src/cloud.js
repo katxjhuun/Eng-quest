@@ -108,13 +108,13 @@ export function initCloud(core) {
     return F.set(r, { uid: state.uid, code: state.shortId, pet: pp, wins: wins | 0, at: F.serverTimestamp() }).then(() => true).catch(e => { lastCard = ''; console.warn('[arena]', e); return false; });
   };
   // web bildirimleri: abonelik + vakti gelince gönderilecek notlar (GitHub'daki zamanlanmış iş okur ve gönderir)
-  api.pushSet = (sub, notes) => {
+  api.pushSet = (sub, notes, loud = false) => {
     if (!state.uid || !state.db) return Promise.resolve(false);
     const r = F.ref(state.db, `push/${state.uid}`);
     if (!sub) return F.remove(r).then(() => true).catch(() => false);
     const clean = { endpoint: String(sub.endpoint || ''), keys: { p256dh: String(sub.keys?.p256dh || ''), auth: String(sub.keys?.auth || '') } };
     const list = {}; (notes || []).slice(0, 6).forEach((n, i) => { list['n' + i] = { at: Math.round(n.at), title: String(n.title).slice(0, 80), body: String(n.body).slice(0, 200) }; });
-    return F.set(r, { sub: clean, notes: list, updatedAt: F.serverTimestamp() }).then(() => true).catch(e => { console.warn('[push]', e); return false; });
+    return F.set(r, { sub: clean, notes: list, loud: !!loud, updatedAt: F.serverTimestamp() }).then(() => true).catch(e => { console.warn('[push]', e); return false; });
   };
   api.arenaGet = async code => {
     code = String(code || '').trim().toUpperCase();

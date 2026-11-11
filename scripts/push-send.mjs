@@ -41,7 +41,7 @@ snap.forEach(u => {
   jobs.push((async () => {
     if (now - n.at > LATE) { dropped++; await u.ref.child('notes').update(updates); return; }
     try {
-      await webpush.sendNotification(sub, JSON.stringify({ title: n.title, body: n.body, tag: 'dl-' + key }), { TTL: 6 * 3600, urgency: 'normal' });
+      await webpush.sendNotification(sub, JSON.stringify({ title: n.title, body: n.body, tag: 'dl-' + key, loud: v.loud === true }), { TTL: 6 * 3600, urgency: v.loud === true ? 'normal' : 'low' });
       sent++;
       await u.ref.child('notes').update(updates);
     } catch (e) {
