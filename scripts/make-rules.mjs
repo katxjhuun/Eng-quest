@@ -235,7 +235,7 @@ const rules = {
     prep: {
       code: { '.read': ADMIN, '.write': ADMIN, '.validate': 'newData.isString() && newData.val().length >= 6 && newData.val().length <= 32' },
       ver: { '.read': 'auth != null', '.write': ADMIN, '.validate': 'newData.isNumber()' },
-      bank: { '.read': "auth != null && root.child('prep/members').child(auth.uid).exists()", '.write': ADMIN },
+      bank: { '.read': `(auth != null && root.child('prep/members').child(auth.uid).exists()) || (${ADMIN})`, '.write': ADMIN },
       members: {
         '.read': ADMIN, '.write': ADMIN,
         $uid: {
