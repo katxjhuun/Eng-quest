@@ -525,3 +525,16 @@ body.study #gameView{padding-top:0}
 body.study .challenge{box-shadow:none}
 .prep-join{display:flex;flex-wrap:wrap;gap:8px}.prep-join input{flex:1 1 180px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}.prep-join button{flex:0 0 auto}
 .prep-join-msg{flex-basis:100%;font-size:12.5px;font-weight:700;color:var(--muted);min-height:18px}
+
+/* Ses seçimi: büyük dokunma kartları; uzun telefon ses listesi açılır bölümde */
+.voice-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 10px}
+.voice-card{display:flex;align-items:center;gap:6px;min-width:0;padding:9px 8px 9px 11px;border-radius:14px;border:1.5px solid rgba(0,0,0,.1);background:var(--card,#fffdf8);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.voice-card.on{border:2px solid var(--teal,#2f7d74);background:rgba(47,125,116,.08)}
+.voice-card .vc-txt{display:flex;flex-direction:column;min-width:0;flex:1}
+.voice-card b{font-size:14.5px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.voice-card small{font-size:11.5px;opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.voice-card .vc-play{flex:0 0 auto;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.06);font-size:12px}
+.voice-card.wide{grid-column:1/-1}
+.voice-more{margin:0 0 10px}
+.voice-more summary{cursor:pointer;font-size:13px;font-weight:750;opacity:.8;padding:4px 0}
+#voiceChoice{width:100%;max-width:100%;min-width:0;text-overflow:ellipsis}
