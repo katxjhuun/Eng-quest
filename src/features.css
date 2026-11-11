@@ -272,3 +272,14 @@ body.has-ticker .topbar{padding-top:0}
 .hint-free{background:#fff3d3;color:#7a5a18;border-radius:999px;padding:1px 6px;font-size:11px;margin-left:4px}
 .hintbtn.locked{opacity:.6}
 .tick-npc{font-size:10.5px!important;color:#a99fb4!important;margin-top:6px!important}
+
+/* ── iPhone (iOS Safari / ana ekran PWA) ──────────────────────── */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:manipulation}
+button,a,[role=button]{-webkit-tap-highlight-color:transparent}
+@supports(-webkit-touch-callout:none){
+  /* 16px altı alanlara odaklanınca iOS sayfayı yakınlaştırıyor */
+  input,textarea,select{font-size:16px !important}
+  body{-webkit-touch-callout:none}
+}
+.overlay,.pet-overlay{padding-top:max(16px,env(safe-area-inset-top));padding-bottom:max(16px,env(safe-area-inset-bottom))}
+.tick-pop,.ask-sheet,.inst-sheet{padding-bottom:max(16px,env(safe-area-inset-bottom))}
