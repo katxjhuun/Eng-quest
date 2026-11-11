@@ -1,54 +1,23 @@
-// Kokoro AI sesleri: istemci tarafı (iş parçacığı yönetimi, ses önbelleği, oynatma).
-export const KOKORO_VOICES = [
-  // [kimlik, ad, aksan, cinsiyet] — Kokoro'nun kalite sıralamasında üstte olanlar önce
-  ['af_heart', 'Heart', 'Amerikan', 'Kadın'], ['af_bella', 'Bella', 'Amerikan', 'Kadın'],
-  ['af_nicole', 'Nicole (fısıltılı)', 'Amerikan', 'Kadın'], ['af_aoede', 'Aoede', 'Amerikan', 'Kadın'],
-  ['af_kore', 'Kore', 'Amerikan', 'Kadın'], ['af_sarah', 'Sarah', 'Amerikan', 'Kadın'],
-  ['af_nova', 'Nova', 'Amerikan', 'Kadın'], ['af_alloy', 'Alloy', 'Amerikan', 'Kadın'],
-  ['af_sky', 'Sky', 'Amerikan', 'Kadın'], ['af_jessica', 'Jessica', 'Amerikan', 'Kadın'], ['af_river', 'River', 'Amerikan', 'Kadın'],
-  ['am_fenrir', 'Fenrir', 'Amerikan', 'Erkek'], ['am_michael', 'Michael', 'Amerikan', 'Erkek'],
-  ['am_puck', 'Puck', 'Amerikan', 'Erkek'], ['am_echo', 'Echo', 'Amerikan', 'Erkek'], ['am_eric', 'Eric', 'Amerikan', 'Erkek'],
-  ['am_liam', 'Liam', 'Amerikan', 'Erkek'], ['am_onyx', 'Onyx', 'Amerikan', 'Erkek'], ['am_adam', 'Adam', 'Amerikan', 'Erkek'], ['am_santa', 'Santa', 'Amerikan', 'Erkek'],
-  ['bf_emma', 'Emma', 'İngiliz', 'Kadın'], ['bf_isabella', 'Isabella', 'İngiliz', 'Kadın'],
-  ['bf_alice', 'Alice', 'İngiliz', 'Kadın'], ['bf_lily', 'Lily', 'İngiliz', 'Kadın'],
-  ['bm_george', 'George', 'İngiliz', 'Erkek'], ['bm_fable', 'Fable', 'İngiliz', 'Erkek'],
-  ['bm_lewis', 'Lewis', 'İngiliz', 'Erkek'], ['bm_daniel', 'Daniel', 'İngiliz', 'Erkek'],
-].map(([id, name, accent, gender]) => ({ id: 'kokoro:' + id, voice: id, name, accent, gender }));
-
-let worker = null, seq = 0;
-const pending = new Map();
-const listeners = new Set();
-let state = { phase: (safeGet('dl-kokoro-ready') === '1') ? 'cached' : 'idle', progress: 0 };
-function safeGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
-function emit(patch) { state = { ...state, ...patch }; listeners.forEach(fn => { try { fn(state); } catch {} }); }
-export function onKokoroState(fn) { listeners.add(fn); fn(state); return () => listeners.delete(fn); }
+// AI sesleri: önceden üretilmiş (Kokoro) hazır ses dosyaları. Telefonda canlı üretim çok yavaş olduğu için
+// sesler bir kez sunucuda üretilir; uygulama "dinle"de hazır dosyayı (önce cihaz önbelleği, sonra Firebase) anında çalar.
+// Hazır sesi olmayan cümleler cihaz sesiyle okunur.
+import { PACK_VOICES, audioKey, normText } from './speech-text.js';
+const INFO = { am_michael: ['Michael', 'Amerikan', 'Erkek'], bf_emma: ['Emma', 'İngiliz', 'Kadın'], bf_isabella: ['Isabella', 'İngiliz', 'Kadın'], am_puck: ['Puck', 'Amerikan', 'Erkek'] };
+export const KOKORO_VOICES = PACK_VOICES.map(id => ({ id: 'kokoro:' + id, voice: id, name: INFO[id][0], accent: INFO[id][1], gender: INFO[id][2] }));
+// eski sürümlerde seçilmiş başka bir AI sesi: en yakın hazır sese eşle
+export function packVoice(voiceId) {
+  const v = String(voiceId || '').replace(/^kokoro:/, '');
+  if (PACK_VOICES.includes(v)) return v;
+  return /^[ab]f_/.test(v) ? 'bf_emma' : 'am_michael';
+}
+// eski arayüz uyumluluğu (indirme kutusu artık yok)
+const state = { phase: 'ready', progress: 100 };
+export function onKokoroState(fn) { fn(state); return () => {}; }
 export function kokoroState() { return state; }
+export async function ensureKokoro() {}
 
-function getWorker() {
-  if (worker) return worker;
-  worker = new Worker(new URL('./vendor/kokoro-worker.js', document.baseURI), { type: 'module' });
-  worker.onmessage = e => {
-    const msg = e.data || {};
-    if (msg.type === 'progress') { emit({ phase: 'downloading', progress: Math.round(msg.progress || 0) }); return; }
-    const p = pending.get(msg.id); if (!p) return; pending.delete(msg.id);
-    if (msg.type === 'error') p.reject(new Error(msg.message)); else p.resolve(msg);
-  };
-  worker.onerror = e => { emit({ phase: 'error', error: e.message || 'Ses motoru başlatılamadı' }); pending.forEach(p => p.reject(new Error('worker'))); pending.clear(); worker = null; };
-  return worker;
-}
-function call(msg) {
-  return new Promise((resolve, reject) => { const id = ++seq; pending.set(id, { resolve, reject }); getWorker().postMessage({ ...msg, id }); });
-}
-
-export async function ensureKokoro() {
-  if (state.phase === 'ready') return;
-  emit({ phase: state.phase === 'cached' ? 'loading' : 'downloading', progress: state.progress || 0 });
-  try {
-    await call({ type: 'load' });
-    try { localStorage.setItem('dl-kokoro-ready', '1'); } catch {}
-    emit({ phase: 'ready', progress: 100 });
-  } catch (err) { emit({ phase: 'error', error: err.message }); throw err; }
-}
+let packSource = null; // (voice, key) => Promise<base64|null>
+export function setPackSource(fn) { packSource = fn; }
 
 // ---- Üretilen ses önbelleği (IndexedDB) ----
 function audioDb() {
@@ -64,48 +33,21 @@ async function cacheGet(key) {
 async function cachePut(key, blob) {
   try { const db = await audioDb(); db.transaction('wav', 'readwrite').objectStore('wav').put(blob, key); } catch {}
 }
-// ---- Üretim kuyruğu ----
-// Telefonda bir cümlenin üretimi saniyeler sürer. İşler tek tek yapılır; kullanıcının bastığı ses kuyruğun en önüne geçer,
-// bekleyen eski istekler ve önceden hazırlama (prefetch) işleri atılır. Prefetch yalnızca kuyruk boşken eklenir.
-const jobs = new Map(); // key -> { key, text, voice, speed, promise, resolve, reject, prio }
-const queue = []; let running = null;
-function enqueue(text, voice, speed, prio) {
-  const key = `${voice}|${speed.toFixed(2)}|${text}`;
-  let job = jobs.get(key);
-  if (!job) {
-    job = { key, text, voice, speed, prio };
-    job.promise = new Promise((res, rej) => { job.resolve = res; job.reject = rej; });
-    job.promise.catch(() => {});
-    jobs.set(key, job);
-  } else if (prio > job.prio) job.prio = prio;
-  if (running !== job) {
-    const i = queue.indexOf(job); if (i >= 0) queue.splice(i, 1);
-    if (prio > 0) {
-      // kullanıcı isteği: bekleyen diğer işleri at, bunu öne al
-      queue.splice(0).forEach(j => { jobs.delete(j.key); j.reject(new Error('iptal')); });
-      queue.unshift(job);
-    } else queue.push(job);
-  }
-  pump();
-  return job.promise;
+const inflight = new Map();
+function b64ToBlob(b64) { const bin = atob(b64); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return new Blob([u], { type: 'audio/mpeg' }); }
+async function getPack(voice, text) {
+  const key = audioKey(text), ck = `pack|${voice}|${key}`;
+  const cached = await cacheGet(ck); if (cached) return cached;
+  if (inflight.has(ck)) return inflight.get(ck);
+  const job = (async () => {
+    const b64 = packSource ? await packSource(voice, key) : null;
+    if (!b64) return null;
+    const blob = b64ToBlob(b64); cachePut(ck, blob); return blob;
+  })().catch(() => null).finally(() => inflight.delete(ck));
+  inflight.set(ck, job); return job;
 }
-async function pump() {
-  if (running || !queue.length) return;
-  const job = running = queue.shift();
-  try {
-    await ensureKokoro();
-    const { wav } = await call({ type: 'speak', text: job.text, voice: job.voice, speed: job.speed });
-    const blob = new Blob([wav], { type: 'audio/wav' });
-    cachePut(job.key, blob);
-    job.resolve(blob);
-  } catch (e) { job.reject(e); }
-  finally { jobs.delete(job.key); running = null; pump(); }
-}
-async function synth(text, voice, speed, prio = 1) {
-  const cached = await cacheGet(`${voice}|${speed.toFixed(2)}|${text}`);
-  if (cached) return cached;
-  return enqueue(text, voice, speed, prio);
-}
+export function hasPackSource() { return !!packSource; }
+
 // ---- Oynatma ----
 // Telefonlar (iOS ve Android WebView) dokunuştan saniyeler sonra başlayan sesi engeller; ses üretimi ise
 // birkaç saniye sürer. Bu yüzden ses kanalı dokunuş anında Web Audio ile açılır, üretilen ses aynı kanaldan çalınır.
@@ -148,32 +90,21 @@ async function playViaElement(blob) {
   } finally { URL.revokeObjectURL(url); if (current === me) current = null; }
 }
 let lastDiag = '', speakSeq = 0;
-const WAIT_MS = 9000;
 export function kokoroDiag() { return lastDiag; }
-export async function kokoroSpeak(text, voiceId, rate = 0.85, maxWait = WAIT_MS) {
+const sleep2 = ms => new Promise(r => setTimeout(r, ms));
+export async function kokoroSpeak(text, voiceId) {
   unlockAudio(); // dokunuş anında (await'ten önce)
-  const voice = String(voiceId || '').replace(/^kokoro:/, '') || 'af_heart';
-  const speed = Math.max(0.7, Math.min(1.25, rate / 0.85));
+  const voice = packVoice(voiceId);
   stopKokoro();
-  const my = ++speakSeq;
-  const t0 = performance.now();
-  const slow = setTimeout(() => { try { window.dispatchEvent(new CustomEvent('dl:kokoro-busy')); } catch {} }, 1500);
-  let blob;
-  // en fazla WAIT_MS beklenir; yetişmezse bu okuma cihaz sesiyle yapılır, AI sesi arka planda hazırlanıp saklanır
-  try { blob = await Promise.race([synth(String(text).trim(), voice, speed, 1), sleep(maxWait).then(() => { throw new Error('yavaş: AI sesi bu cihazda geç hazırlanıyor'); })]); }
-  catch (e) { if (my !== speakSeq) return; throw e; } // eskimiş istek: sessizce bırak
-  finally { clearTimeout(slow); }
-  if (my !== speakSeq) return; // bu arada başka bir şey dinlenmek istendi: eski sesi çalma
-  const gen = ((performance.now() - t0) / 1000).toFixed(1);
+  const my = ++speakSeq, t0 = performance.now();
+  const blob = await Promise.race([getPack(voice, normText(text)), sleep2(8000).then(() => null)]);
+  if (my !== speakSeq) return; // bu arada başka bir şey dinlenmek istendi
+  const ms = Math.round(performance.now() - t0);
+  if (!blob) { lastDiag = `bu cümlenin hazır AI sesi yok (${ms} ms)`; throw new Error('hazır ses yok'); }
   let how = 'webaudio';
   try { if (!(await playViaContext(blob))) { how = 'audio'; await playViaElement(blob); } }
-  catch (e) { lastDiag = `üretim ${gen} sn · çalma hatası (${how}): ${e?.message || e}`; throw e; }
-  lastDiag = `üretim ${gen} sn · çalındı (${how}, ses kanalı: ${actx?.state || 'yok'})`;
+  catch (e) { lastDiag = `hazır ses ${ms} ms'de geldi · çalma hatası (${how}): ${e?.message || e}`; throw e; }
+  lastDiag = `hazır ses ${ms} ms'de geldi · çalındı (${how})`;
 }
-// Soru açılınca sesi arka planda hazırla (kullanıcı “dinle”ye bastığında beklemesin).
-export function kokoroPrefetch(text, voiceId, rate = 0.85) {
-  if (!(state.phase === 'ready' || state.phase === 'cached')) return;
-  const voice = String(voiceId || '').replace(/^kokoro:/, '') || 'af_heart';
-  if (running || queue.length) return; // telefonu yormamak için yalnızca boşta iken
-  synth(String(text).trim(), voice, Math.max(0.7, Math.min(1.25, rate / 0.85)), 0).catch(() => {});
-}
+// soru açılınca sesleri arka planda indir (dinle'ye basınca anında çalsın)
+export function kokoroPrefetch(text, voiceId) { if (text) getPack(packVoice(voiceId), normText(text)).catch(() => {}); }

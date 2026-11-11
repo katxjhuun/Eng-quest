@@ -641,3 +641,31 @@ $('#prepUpload')?.addEventListener('click', async () => {
   try { await set(ref(db, 'prep/bank'), bank); await set(ref(db, 'prep/ver'), Date.now()); toast('Banka yüklendi'); prepInfo(); } catch (e) { toast('Yüklenemedi: ' + e.message); }
 });
 
+
+// Hazır AI ses paketleri: { voice: "am_puck", items: { <anahtar>: <base64 mp3> } } → prep/audio/<voice>/<anahtar>
+const PACK_VOICES_OK = /^(am_michael|bf_emma|bf_isabella|am_puck)$/;
+$('#prepAudio')?.addEventListener('click', async () => {
+  const files = [...($('#fPrep').audio.files || [])];
+  const msg = $('#prepAudioMsg');
+  if (!files.length) return toast('Önce ses paketi dosyalarını seç');
+  const packs = [];
+  for (const f of files) {
+    let p; try { p = JSON.parse(await f.text()); } catch { return toast(`${f.name}: JSON okunamadı`); }
+    if (!p || !PACK_VOICES_OK.test(p.voice || '') || !p.items || typeof p.items !== 'object') return toast(`${f.name}: biçim hatalı`);
+    packs.push(p);
+  }
+  const total = packs.reduce((n, p) => n + Object.keys(p.items).length, 0);
+  if (!confirm(`${packs.length} ses paketi (${total} ses dosyası) yüklensin mi? Aynı cümlenin eski sesi varsa üzerine yazılır.`)) return;
+  let done = 0;
+  try {
+    for (const p of packs) {
+      const ent = Object.entries(p.items);
+      for (let i = 0; i < ent.length; i += 150) {
+        await update(ref(db, `prep/audio/${p.voice}`), Object.fromEntries(ent.slice(i, i + 150)));
+        done += Math.min(150, ent.length - i);
+        msg.textContent = `Yükleniyor… ${done} / ${total} (${p.voice})`;
+      }
+    }
+    msg.textContent = `✓ ${total} ses dosyası yüklendi.`; toast('Sesler yüklendi');
+  } catch (e) { msg.textContent = `Hata: ${e.message} (${done}/${total} yüklendi; tekrar denersen kalanlar da yüklenir)`; }
+});

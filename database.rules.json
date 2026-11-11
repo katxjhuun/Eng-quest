@@ -991,6 +991,15 @@
         ".read": "(auth != null && root.child('prep/members').child(auth.uid).exists()) || (auth != null && auth.token.firebase.sign_in_provider == 'google.com' && root.child('admins').child(auth.uid).val() == true)",
         ".write": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && root.child('admins').child(auth.uid).val() == true"
       },
+      "audio": {
+        ".read": "(auth != null && root.child('prep/members').child(auth.uid).exists()) || (auth != null && auth.token.firebase.sign_in_provider == 'google.com' && root.child('admins').child(auth.uid).val() == true)",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && root.child('admins').child(auth.uid).val() == true",
+        "$voice": {
+          "$key": {
+            ".validate": "newData.isString() && newData.val().length < 400000"
+          }
+        }
+      },
       "members": {
         ".read": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && root.child('admins').child(auth.uid).val() == true",
         ".write": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && root.child('admins').child(auth.uid).val() == true",

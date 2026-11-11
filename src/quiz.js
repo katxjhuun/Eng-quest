@@ -1,4 +1,5 @@
 // dam-la — konu sekmeleri, öğrenme biçimi döngüsü, pop quiz (çoktan seçmeli / yazarak / dinleyerek / karışık)
+import { questionSpeech } from './speech-text.js';
 import { SUBJECTS, SUBJECT_ORDER } from './data/subjects.js';
 import { generated, factsPending, loadFacts, onFactsLoaded } from './data/gen.js';
 import { DEPARTMENTS, DEPARTMENT_ORDER } from './data/departments.js';
@@ -307,16 +308,6 @@ export function initQuiz(core) {
   const BOOK = { wb: 'Empower B1 · Workbook', sb: "Empower B1 2. baskı · Student's Book" };
   const BOOK_SHORT = { wb: 'Empower B1', sb: 'Empower B1 2nd' };
   // Soruyu dinlerken cevap söylenmez: boşluk “…” olarak okunur; tırnaklı İngilizce kısım varsa yalnız o okunur.
-  const TRC = /[çğıöşüÇĞİÖŞÜ]/;
-  function questionSpeech(q) {
-    const blank = t => t.replace(/_{2,}/g, ' … ');
-    const quoted = q.match(/“([^”]+)”/);
-    if (quoted && !TRC.test(quoted[1])) return { text: blank(quoted[1]), lang: 'en' };
-    const sort = q.match(/^Kelimeleri sırala:\s*(.+)$/);
-    if (sort) return { text: sort[1].replace(/\s*\/\s*/g, ', ').replace(/\s*\?$/, ''), lang: 'en' };
-    const core0 = q.replace(/\s*\([^)]*[çğıöşüÇĞİÖŞÜ][^)]*\)\s*/g, ' ').trim();
-    return TRC.test(core0) ? { text: q.replace(/_{2,}/g, ' boşluk '), lang: 'tr' } : { text: blank(core0), lang: 'en' };
-  }
   function epItems() {
     if (epCache) return epCache;
     if (!EP) return [];
@@ -420,6 +411,7 @@ export function initQuiz(core) {
     const seen = Q().items[item.id];
     return { id: item.id, style, done: false, choice: null, typed: '', hints: [], tries: 0, order: seededShuffle([0, ...item.opts.map((_, i) => i + 1)], hash(item.id + Date.now())), revealed: style !== 'listen', rep: !!(seen && (seen.c + seen.w) > 0), at: Date.now() };
   }
+  let prefId = null;
   function cur(cat = A().cat) {
     const q = Q();
     let c = q.cur[cat];
@@ -587,7 +579,9 @@ export function initQuiz(core) {
     core.renderProgress();
     notifyLive(item, c);
     if (speak && c.style === 'listen' && !c.done) setTimeout(() => sayItem(item), 250);
-    core.prefetchVoice?.(item.speak?.lang === 'en' ? item.speak.text : null);
+    if (prefId !== c.id) { prefId = c.id; // soru açılınca bu soruda dinlenebilecek İngilizce sesleri hazırla
+      const pre = [item.speak?.lang === 'en' && item.speak.text, item.ans?.lang === 'en' && item.ans.text, ...(item.optLang === 'en' ? [item.a, ...(item.opts || [])] : [])].filter(Boolean);
+      pre.forEach(t => core.prefetchVoice?.(t)); }
   }
 
   // ---- yazarak (harf kutuları) ----

@@ -293,6 +293,8 @@ export function initCloud(core) {
     join: async code => { if (!api.prep.ready()) return 'offline'; try { await tmo(F.set(F.ref(state.db, 'prep/members/' + state.uid), normCode(code))); return 'ok'; } catch (e) { return e?.message === 'timeout' ? 'offline' : 'bad'; } },
     ver: async () => { try { return (await tmo(F.get(F.ref(state.db, 'prep/ver')))).val() || 0; } catch { return 0; } },
     bank: async () => { try { const s2 = await tmo(F.get(F.ref(state.db, 'prep/bank')), 30000); return s2.exists() ? s2.val() : null; } catch { return null; } },
+    // hazır AI sesi: base64 mp3 ya da yoksa null
+    audio: async (voice, key) => { if (!api.prep.ready()) return null; try { const s3 = await tmo(F.get(F.ref(state.db, `prep/audio/${voice}/${key}`)), 8000); return s3.exists() ? s3.val() : null; } catch { return null; } },
   };
 
   return api;

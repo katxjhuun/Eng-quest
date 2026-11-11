@@ -76,14 +76,7 @@ html = html.replace('<meta charset="utf-8">', `<meta charset="utf-8">\n<meta htt
 await writeFile(path.join(out, 'index.html'), html);
 
 await cp(path.join(root, 'public'), out, { recursive: true });
-// Kokoro AI sesi: kütüphane uygulamayla birlikte gelir; transformers ayarına erişim için dışa aktarım eklenir.
-await mkdir(path.join(out, 'vendor'), { recursive: true });
-let kokoroLib = await readFile(path.join(root, 'node_modules/kokoro-js/dist/kokoro.web.js'), 'utf8');
-const KOKORO_EXPORT = 'export{Ef as KokoroTTS,kf as TextSplitterStream,Mf as env};';
-if (!kokoroLib.includes(KOKORO_EXPORT)) throw new Error('kokoro-js sürümü değişmiş: dışa aktarım satırı bulunamadı');
-kokoroLib = kokoroLib.replace(KOKORO_EXPORT, 'export{Ef as KokoroTTS,kf as TextSplitterStream,Mf as env,Wg as transformersEnv};');
-await writeFile(path.join(out, 'vendor/kokoro.web.js'), kokoroLib);
-await cp(path.join(root, 'src/vendor/kokoro-worker.js'), path.join(out, 'vendor/kokoro-worker.js'));
+// AI sesleri artık önceden üretilmiş hazır dosyalar (kokoro.js); cihazda çalışan ses motoru pakete eklenmiyor.
 const sw = (await readFile(path.join(out, 'sw.js'), 'utf8')).replace('__APP_VERSION__', version);
 await writeFile(path.join(out, 'sw.js'), sw);
 await writeFile(path.join(out, 'version.json'), JSON.stringify({ version, buildTime }, null, 2));

@@ -236,6 +236,11 @@ const rules = {
       code: { '.read': ADMIN, '.write': ADMIN, '.validate': 'newData.isString() && newData.val().length >= 6 && newData.val().length <= 32' },
       ver: { '.read': 'auth != null', '.write': ADMIN, '.validate': 'newData.isNumber()' },
       bank: { '.read': `(auth != null && root.child('prep/members').child(auth.uid).exists()) || (${ADMIN})`, '.write': ADMIN },
+      // hazır AI ses dosyaları (base64 mp3): prep/audio/<ses>/<anahtar> — yalnızca sınıf üyeleri okur
+      audio: {
+        '.read': `(auth != null && root.child('prep/members').child(auth.uid).exists()) || (${ADMIN})`, '.write': ADMIN,
+        $voice: { $key: { '.validate': 'newData.isString() && newData.val().length < 400000' } },
+      },
       members: {
         '.read': ADMIN, '.write': ADMIN,
         $uid: {
