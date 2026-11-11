@@ -5,9 +5,19 @@ import admin from 'firebase-admin';
 import webpush from 'web-push';
 import { FIREBASE_CONFIG, VAPID_PUBLIC_KEY } from '../src/config.js';
 
-const SA = process.env.FIREBASE_SERVICE_ACCOUNT, PRIV = process.env.VAPID_PRIVATE_KEY;
+import { createECDH } from 'node:crypto';
+const SA = process.env.FIREBASE_SERVICE_ACCOUNT;
+// yapıştırırken araya giren boşluk, tırnak, standart base64 (+/=) gibi farklar düzeltilir
+const PRIV = String(process.env.VAPID_PRIVATE_KEY || '').trim().replace(/^["']|["']$/g, '').replace(/\s+/g, '').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 if (!SA || !PRIV) { console.log('Gizli değişkenler eksik (FIREBASE_SERVICE_ACCOUNT, VAPID_PRIVATE_KEY); bildirim gönderilmedi.'); process.exit(0); }
-admin.initializeApp({ credential: admin.credential.cert(JSON.parse(SA)), databaseURL: FIREBASE_CONFIG.databaseURL });
+// özel anahtarın eşi olan açık anahtarı hesapla; koddakiyle eşleşmiyorsa açık anahtarı yaz (gizli değildir) ve dur
+let derived = '';
+try { const e = createECDH('prime256v1'); e.setPrivateKey(Buffer.from(PRIV, 'base64url')); derived = e.getPublicKey().toString('base64url'); }
+catch (err) { console.log('VAPID_PRIVATE_KEY okunamadı (uzunluk ' + PRIV.length + ', 43 olmalı):', err.message); process.exit(1); }
+if (derived !== VAPID_PUBLIC_KEY) { console.log('VAPID anahtar çifti eşleşmiyor. Bu özel anahtarın açık anahtarı:\nVAPID_PUBLIC_KEY=' + derived + '\nsrc/config.js içindeki VAPID_PUBLIC_KEY bununla değiştirilmeli.'); process.exit(1); }
+let saJson;
+try { saJson = JSON.parse(SA.trim()); } catch { console.log('FIREBASE_SERVICE_ACCOUNT geçerli bir JSON değil (dosyanın tüm içeriği yapıştırılmalı).'); process.exit(1); }
+admin.initializeApp({ credential: admin.credential.cert(saJson), databaseURL: FIREBASE_CONFIG.databaseURL });
 webpush.setVapidDetails('https://github.com/katxjhuun/Eng-quest', VAPID_PUBLIC_KEY, PRIV);
 
 const db = admin.database();
