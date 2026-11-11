@@ -247,7 +247,7 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
     const team = [petDef(), ...allyDefs()];
     const res = await fight(team, foes, { title: M.name, eye: 'BOSS · EVRİM KAPISI', canFlee: false, intro: M.desc });
     const s = state();
-    if (res.winner === 'A') { s.bossWins++; s.wins++; const pp = getPet(); try { core.feed?.post({ kind: 'boss', tier: 2, name: pp?.name, species: pp?.species, stage: pp?.stage, coat: pp?.coat | 0, shiny: !!pp?.shiny }); } catch {} } else s.losses++;
+    if (res.winner === 'A') { s.bossWins++; s.wins++; window.dispatchEvent(new CustomEvent('dl:boss-win', { detail: { mon: id } })); const pp = getPet(); try { core.feed?.post({ kind: 'boss', tier: 2, name: pp?.name, species: pp?.species, stage: pp?.stage, coat: pp?.coat | 0, shiny: !!pp?.shiny }); } catch {} } else s.losses++;
     core.saveLocal(true);
     return res.winner === 'A' ? 'win' : 'lose';
   }
@@ -260,7 +260,7 @@ export function initBattleUI({ core, petSVG, getPet, onChange }) {
     const foes = [{ kind: 'mon', mon: id, stage: Math.max(0, Math.min(5, stage | 0)), role: M.role, boss: !!M.boss }];
     const res = await fight([petDef(), ...allyDefs()], foes, { title: title || M.name, eye: 'ÖZEL BOSS · YÖNETİCİDEN', canFlee: false, intro: intro || M.desc });
     const s = state();
-    if (res.winner === 'A') { s.wins++; if (M.boss) s.bossWins++; } else s.losses++;
+    if (res.winner === 'A') { s.wins++; if (M.boss) { s.bossWins++; window.dispatchEvent(new CustomEvent('dl:boss-win', { detail: { mon: id } })); } } else s.losses++;
     core.saveLocal(true);
     return res.winner === 'A' ? 'win' : 'lose';
   }

@@ -382,3 +382,34 @@ body.lite .gold-burst::after{animation-duration:1.4s}
 .soc-menu button.danger{color:#c2362f}
 .soc-menu button:last-child{text-align:center;background:none;color:var(--muted,#777)}
 body.lite .soc-msg,body.lite .soc-sheet,body.lite .soc-dbox{animation:none}
+
+/* ── Aksesuarlar ── */
+.acc-modal{max-width:520px}
+.acc-stage{height:170px;display:grid;place-items:center;background:radial-gradient(circle at 50% 70%,#fff6dd,transparent 70%);border-radius:18px}
+.acc-stage svg{width:170px;height:170px}
+.acc-count{text-align:center;font-size:12px;font-weight:800;color:var(--muted,#777);margin:2px 0 8px}
+.acc-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--card,#efe9dd);border-radius:14px;padding:4px;margin-bottom:10px}
+.acc-tabs button{border:0;background:none;color:var(--muted,#777);font:inherit;font-weight:800;font-size:13px;padding:8px;border-radius:10px}
+.acc-tabs button.on{background:var(--paper,#fff);color:var(--ink,#111);box-shadow:0 1px 4px #0001}
+.acc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.acc-it{position:relative;border:2px solid color-mix(in srgb,var(--rc) 45%,transparent);border-color:var(--rc);background:var(--card,#f8f4ec);color:inherit;border-radius:14px;padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;font:inherit;text-align:center}
+.acc-it.on{background:#fff7dc;box-shadow:0 0 0 3px #f2cf7266}
+.acc-it.locked{border-color:var(--line,#ddd);opacity:.75}
+.acc-it.locked .acc-ic{filter:brightness(0) opacity(.25)}
+.acc-ic svg{width:58px;height:48px}
+.acc-it b{font-size:12px;line-height:1.2}
+.acc-it small{font-size:10px;color:var(--muted,#888);line-height:1.25}
+.acc-new{position:absolute;top:-7px;right:-4px;background:#e5534b;color:#fff;font-style:normal;font-size:9px;font-weight:900;padding:2px 5px;border-radius:999px}
+.acc-note{font-size:11.5px;color:var(--muted,#888);margin:12px 2px 0;line-height:1.5}
+.acc-pop{position:fixed;inset:0;z-index:130;background:#1a1520aa;display:none;align-items:center;justify-content:center;padding:20px}
+.acc-pop.show{display:flex;animation:socFade .2s ease-out}
+.acc-card{position:relative;overflow:hidden;width:100%;max-width:330px;background:var(--paper,#fff);color:var(--ink,#111);border-radius:24px;padding:18px;text-align:center;border:3px solid var(--rc);animation:accPop .45s cubic-bezier(.2,1.4,.4,1)}
+@keyframes accPop{from{transform:scale(.6);opacity:0}}
+.acc-rays{position:absolute;left:50%;top:38%;width:320px;height:320px;margin:-160px 0 0 -160px;background:repeating-conic-gradient(from 0deg,color-mix(in srgb,var(--rc) 22%,transparent) 0 10deg,transparent 10deg 20deg);border-radius:50%;animation:accSpin 9s linear infinite;pointer-events:none;will-change:transform}
+@keyframes accSpin{to{transform:rotate(360deg)}}
+.acc-prev{position:relative;height:150px;display:grid;place-items:center}.acc-prev svg{width:150px;height:150px}
+.acc-card b{position:relative;display:block;font-size:20px}
+.acc-rar{position:relative;display:block;color:var(--rc);font-weight:900;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.acc-card p{position:relative;font-size:13px;color:var(--muted,#666);margin:6px 0 12px}
+.acc-acts{position:relative;display:flex;gap:8px}.acc-acts button{flex:1}
+body.lite .acc-rays{animation:none}

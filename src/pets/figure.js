@@ -4,6 +4,7 @@
 // havadayken ilerler (yerdeyken çizim, sayfadaki konum ilerlemesine karşı geri kaydırılır).
 // Dış arayüz eski Puppet ile aynıdır: setForm, setMood, setCond, setBase, play, stop, travel, face, tick, playing, staticSVG.
 
+import { withAcc } from './acc.js';
 import { FIGS } from './figs.js';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -335,7 +336,7 @@ export class Puppet {
     const v = viewOf(this.def, this.base, this.turnT < 1 && Math.abs(this.faceCur) < 0.5);
     if (v === this.view && this.svg.firstChild) return;
     this.view = v;
-    const list = this.def.views[v](this.stage);
+    const list = withAcc(this.def.views[v](this.stage), this.species, v, this.stage, this.acc);
     this.parts = {};
     const walk = l => l.forEach(p => { this.parts[p.k] = p; walk(p.kids); });
     walk(list);
@@ -344,6 +345,8 @@ export class Puppet {
     this.svg.querySelectorAll('[data-k]').forEach(el => { this.els[el.dataset.k] = el; });
     this.keys = Object.keys(this.parts);
   }
+  // takılı aksesuarlar (kimlik listesi); değişirse çizim yeniden kurulur
+  setAcc(ids) { const k = (ids || []).join(','); if (k === this.accKey) return; this.accKey = k; this.acc = ids || []; this.view = ''; this.build(); }
   setMood(m) { this.mood = m || 'idle'; }
   setCond(c) { this.cond = c || null; }
   setBase(name) {
@@ -443,7 +446,7 @@ export function staticSVG(species, stage, opts = {}) {
   const mood = opts.mood || 'idle';
   const base = mood === 'dead' ? 'dead' : mood === 'sleep' ? 'sleep' : (opts.pose === 'lie' || opts.pose === 'flat' || mood === 'full') ? 'lie' : 'idle';
   const view = viewOf(def, base);
-  const list = def.views[view](stage);
+  const list = withAcc(def.views[view](stage), species, view, stage, opts.acc);
   const keys = []; const walk = l => l.forEach(p => { keys.push(p.k); walk(p.kids); }); walk(list);
   const k = STAGE_K[stage];
   const pose = computePose({ def, species, view, keys, t: opts.t || 0.6, base, mood, clip: '', clipT: 0, clipDur: 1, ph: 0, faceCur: opts.face || 1, hf: opts.face || 1, yaw: 0, blink: 0, look: 0, k, dir: [1, 0], form: def.form?.[stage] });

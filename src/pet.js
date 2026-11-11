@@ -169,7 +169,7 @@ export function initPet(core, quiz) {
     p.stuffed = clamp(n(p.stuffed, 0), 0, 100);
     p.name = String(p.name || PET_SPECS[p.species].name).slice(0, 16);
     p.alive = p.alive !== false; p.lastTick = n(p.lastTick, Date.now()); p.lastSeen = n(p.lastSeen, Date.now());
-    p.flow = !!p.flow; p.flowCount = n(p.flowCount, 0); p.answers = n(p.answers, 0); p.correct = n(p.correct, 0); p.streak = n(p.streak, 0);
+    p.flow = !!p.flow; p.flowCount = n(p.flowCount, 0); p.flowEnd = n(p.flowEnd, 0); if (p.flow && !p.flowEnd) p.flowEnd = Date.now() + 60 * 60000; p.answers = n(p.answers, 0); p.correct = n(p.correct, 0); p.streak = n(p.streak, 0);
     p.roam = p.roam !== false; p.notify = p.notify !== false;
     if (p.species === 'plant') p.vig = clamp(n(p.vig, 0.85), 0, 1);
     // kedi/köpek tüy rengi: yoksa rastgele atanır ve kalıcı olur
@@ -308,7 +308,7 @@ export function initPet(core, quiz) {
     <div class="pet-hab" id="petHab" title="Petini çağır"><div class="pet-hab-bg" id="petHabBg"></div><div class="pet-away" id="petAway">🐾 Dolaşıyor · dokun, gelsin</div></div>
     <div class="pet-info">
       <div class="pet-title"><button class="pet-name" id="petNameBtn" aria-label="Pet bilgisi"><span id="petName">Pet</span> <span class="pet-stars" id="petStars"></span></button><span class="pet-form" id="petForm"></span>
-        <button class="flow-btn arena-btn" id="arenaBtn" aria-label="Arena">⚔️<span id="arenaSmall">Arena</span></button><button class="flow-btn" id="flowBtn" aria-pressed="false"><span class="flow-ico">🌊</span><span id="flowSmall">Flow</span></button></div>
+        <button class="flow-btn acc-btn" id="accBtn" aria-label="Aksesuarlar" title="Aksesuar dolabı">🎀</button><button class="flow-btn arena-btn" id="arenaBtn" aria-label="Arena">⚔️<span id="arenaSmall">Arena</span></button><button class="flow-btn" id="flowBtn" aria-pressed="false"><span class="flow-ico">🌊</span><span id="flowSmall">Flow</span></button></div>
       <div class="pet-status" id="petStatus"></div>
       <div class="pet-bars">
         <div class="pbar hp"><span class="pbi">❤️</span><div class="pbt"><i id="pbHp"></i></div><b id="pbHpT"></b></div>
@@ -409,6 +409,7 @@ export function initPet(core, quiz) {
   // Temel durum (boşta, oturma, yürüme, koşu, uyku, yatma, ölü) ruh hali ve hareketten gelir;
   // tepkiler (zıplama, irkilme, yemek…) bunun üstünde tek seferlik klip olarak oynar.
   const puppet = new Puppet(sprite);
+  let accIds = [];
   let running = false;
   function baseNow() {
     const p = P(); if (!p) return 'idle';
@@ -426,6 +427,7 @@ export function initPet(core, quiz) {
     const p = P(); if (!p) return;
     const mood = currentMood();
     puppet.setForm(p.species, p.stage, p.coat | 0);
+    puppet.setAcc(accIds);
     puppet.setMood(mood);
     puppet.setCond(p.species === 'plant' ? plantCond(p) : null);
     puppet.setBase(baseNow());
@@ -474,8 +476,10 @@ export function initPet(core, quiz) {
     });
     $('#arenaBtn').classList.toggle('boss', !!p.bossPending); $('#arenaSmall').textContent = p.bossPending ? (p.bossNeedQ ? 'Boss · 1 soru' : 'Boss!') : 'Arena';
     $('#flowBtn').classList.toggle('on', p.flow); $('#flowBtn').setAttribute('aria-pressed', String(p.flow));
-    $('#flowSmall').textContent = p.flow ? 'Flow açık' : 'Flow';
-    $('#flowBtn').title = p.flow ? `Enerji ${10 - (p.flowCount % 10)} soru sonra azalacak` : 'Flow: müzik ödülleri durur, enerji 10 soruda bir azalır';
+    { const fl = flowLeft(), fw = flowWait();
+      $('#flowSmall').textContent = p.flow ? `Flow · ${dur(fl)}` : fw ? `Flow · ${dur(fw)}` : 'Flow';
+      $('#flowBtn').classList.toggle('cooldown', !p.flow && fw > 0);
+      $('#flowBtn').title = p.flow ? `Flow ${dur(fl)} daha açık · enerji ${10 - (p.flowCount % 10)} soru sonra azalacak` : fw ? `Flow günde bir kez: ${dur(fw)} sonra açılabilir` : 'Flow: 1 saat; müzik ödülleri durur, enerji 10 soruda bir azalır. Sonra 16 saat bekleme.'; }
     document.body.classList.toggle('pet-flow', p.flow);
     const ph = phase(); document.body.classList.toggle('pet-night', ph === 'night' || ph === 'dawn'); document.body.classList.toggle('pet-evening', ph === 'evening');
     const cu = Object.entries(A().petCatchUp || {});
@@ -886,11 +890,26 @@ export function initPet(core, quiz) {
     goHome(); emote(p.species === 'cat' ? 'dots' : 'note', 1300);
   });
   $('#petNameBtn').addEventListener('click', () => openInfo());
+  // Flow: 1 saat sürer; bittikten (ya da erken kapatıldıktan) sonra 16 saat bekleme. Bekleme oyuncuya aittir (pet takasıyla sıfırlanmaz).
+  const FLOW_MS = 60 * 60000, FLOW_CD = 16 * 3600000;
+  const flowLeft = () => { const p = P(); return p?.flow && p.flowEnd ? Math.max(0, p.flowEnd - Date.now()) : 0; };
+  const flowWait = () => Math.max(0, (A().flowNext || 0) - Date.now());
+  const dur = ms => { const m = Math.ceil(ms / 60000); return m >= 60 ? `${Math.floor(m / 60)} sa ${m % 60 ? `${m % 60} dk` : ''}`.trim() : `${m} dk`; };
+  function endFlow(auto) {
+    const p = P(); if (!p?.flow) return;
+    p.flow = false; p.flowEnd = 0; A().flowNext = Date.now() + FLOW_CD; save(true);
+    if (auto) { core.toast('🌊 Flow süresi doldu. Tekrar 16 saat sonra açılabilir.'); say('Güzel bir akıştı! Biraz dinlenelim 😊', 2600); }
+    renderPanel();
+  }
+  setTimeout(() => { const p = P(); if (p?.flow && p.flowEnd && Date.now() >= p.flowEnd) endFlow(false); }, 2000);
+  setInterval(() => { const p = P(); if (p?.flow && p.flowEnd && Date.now() >= p.flowEnd) endFlow(true); else if (p && !document.hidden && (p.flow || flowWait())) renderPanel(); }, 30000);
   $('#flowBtn').addEventListener('click', () => {
     const p = P(); if (!p) return;
-    p.flow = !p.flow; p.flowCount = 0; save(true);
-    if (p.flow) { react('focus', 1600, 'focus', 'spark'); spawn('✦', 'spark', 2); sayNow('Flow açık! Müzik ödülleri durdu, enerjim 10 soruda bir azalır 🌊', 3600); core.toast('🌊 Flow modu açık · ödül pencereleri kapandı'); }
-    else { react('happy', 1000, 'hop', 'note'); say('Güzel bir akıştı! Biraz dinlenelim mi? 😊', 2600); core.toast('Flow modu kapandı'); }
+    if (p.flow) { if (!confirm('Flow modu kapatılsın mı? Tekrar açmak için 16 saat beklemen gerekecek.')) return; endFlow(false); react('happy', 1000, 'hop', 'note'); core.toast('Flow modu kapandı · 16 saat sonra yeniden açılabilir'); return; }
+    const w = flowWait();
+    if (w > 0) { core.toast(`🌊 Flow günde bir kez açılır: ${dur(w)} sonra tekrar kullanabilirsin.`); emote('zz', 1400); return; }
+    p.flow = true; p.flowEnd = Date.now() + FLOW_MS; p.flowCount = 0; save(true);
+    react('focus', 1600, 'focus', 'spark'); spawn('✦', 'spark', 2); sayNow('Flow açık! Bir saat boyunca odaktayız 🌊', 3600); core.toast('🌊 Flow modu 1 saat açık · ödül pencereleri kapandı');
     renderPanel();
   });
 
@@ -1382,7 +1401,7 @@ export function initPet(core, quiz) {
     const p = P(); if (!p) { openChooser(); return; }
     const sp = PET_SPECS[p.species], mx = maxes(p);
     $('#piTitle').textContent = `${p.name} · ${stageName(p.species, p.stage)}`;
-    $('#piLine').innerHTML = [0, 1, 2, 3, 4, 5].map(st => `<div class="pi-stage ${st < p.stage ? 'past' : st === p.stage ? 'now' : 'future'}">${st <= p.stage ? petSVG(p.species, st, { coat: p.coat, shiny: p.shiny }) : '<span class="pi-unknown">?</span>'}<small>${st <= p.stage ? esc(stageName(p.species, st)) : '???'}</small></div>`).join('');
+    $('#piLine').innerHTML = [0, 1, 2, 3, 4, 5].map(st => `<div class="pi-stage ${st < p.stage ? 'past' : st === p.stage ? 'now' : 'future'}">${st <= p.stage ? petSVG(p.species, st, { coat: p.coat, shiny: p.shiny, acc: st === p.stage ? accIds : [] }) : '<span class="pi-unknown">?</span>'}<small>${st <= p.stage ? esc(stageName(p.species, st)) : '???'}</small></div>`).join('');
     $('#piSkills').innerHTML = `<p class="pi-soul">${esc(sp.soul)}</p><div><b>🌀 ${esc(sp.passive.name)} (pasif)</b><span>${esc(sp.passive.desc)}</span></div><div><b>✨ ${esc(sp.active.name)} (aktif · ${sp.active.cost}⚡)</b><span>${esc(sp.active.desc)}</span></div><div><b>💪 Güçlü yanı</b><span>${esc(sp.perk)}</span></div>`;
     $('#piStats').innerHTML = `<span>❤️ ${Math.round(p.hp)}/${mx.hp}</span><span>${sp.foodIcon} ${Math.round(p.food)}/${mx.food}</span><span>⚡ ${Math.round(p.energy)}/${mx.energy}</span><span>✅ ${p.correct} doğru</span><span>⭐ ${p.stars}</span><span>💫 ${p.revives || 0} kez canlandı</span>`;
     $('#piName').value = p.name; $('#piRoam').checked = p.roam; $('#piNotify').checked = p.notify;
@@ -1603,7 +1622,7 @@ export function initPet(core, quiz) {
         publishCard?.(); break;
       }
       case 'flow':
-        p.flow = !!msg.on; p.flowCount = 0;
+        p.flow = !!msg.on; p.flowCount = 0; p.flowEnd = p.flow ? Date.now() + FLOW_MS : 0;
         out = { icon: '🌊', title: `Flow ${p.flow ? 'açıldı' : 'kapandı'}`, text: p.flow ? 'Yöneticin flow modunu açtı: müzik ödülleri durdu, enerji 10 soruda bir azalır.' : 'Yöneticin flow modunu kapattı.' };
         if (p.alive) setTimeout(() => react(p.flow ? 'focus' : 'happy', 1300, p.flow ? 'focus' : 'joy', p.flow ? 'spark' : 'note'), 300); break;
       case 'roam':
@@ -1634,6 +1653,9 @@ export function initPet(core, quiz) {
   }
 
   // ---------- takas: petin taşınabilir kartı ve gelen petle değiştirme ----------
+  // takılı aksesuarlar (accessories.js yönetir)
+  function setAcc(ids) { accIds = Array.isArray(ids) ? ids : []; puppet.setAcc(accIds); }
+  $('#accBtn').addEventListener('click', () => core.accessories?.open());
   function tradeCard() {
     const p = P(); if (!p || !p.alive) return null;
     const o = { species: p.species, name: String(p.name || '').slice(0, 16), stage: p.stage | 0, stars: Math.min(999, p.stars | 0), role: ROLES[p.role] ? p.role : 'melee', shiny: !!p.shiny };
@@ -1655,7 +1677,7 @@ export function initPet(core, quiz) {
     return true;
   }
   return {
-    tradeCard, tradeIn,
+    tradeCard, tradeIn, setAcc,
     ensure, reload, setEnabled, openCodex, battle, bossPrompt, enabled: () => !off(), render: renderPanel, openChooser, openInfo, xpMod, snapshot, admin,
     onPause() { const p = P(); if (p) { tick(); p.lastSeen = Date.now(); save(); schedule(); } },
     onResume() { if (notifyAvailable()) cancelNotes(); tick(); greetIfAway(); renderPanel(); if (!notifyAvailable()) schedule(); },

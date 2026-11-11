@@ -428,3 +428,5 @@ body.bt-open{overflow:hidden}
 .pet-home input,.pet-home textarea{-webkit-user-select:text;user-select:text;caret-color:auto}
 .pet-hab,.pet-hab *{cursor:pointer;outline:0}
 .pet-home :not(button):not(input):not(a):not(.pet-hab):not(.pet-hab *){cursor:default}
+.flow-btn.cooldown{opacity:.55;filter:grayscale(.6)}
+.acc-btn{margin-left:auto;padding:3px 7px}.acc-btn+.arena-btn{margin-left:6px}
