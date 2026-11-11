@@ -8,7 +8,11 @@ import { FIREBASE_CONFIG, VAPID_PUBLIC_KEY } from '../src/config.js';
 import { createECDH } from 'node:crypto';
 const SA = process.env.FIREBASE_SERVICE_ACCOUNT;
 // yapıştırırken araya giren boşluk, tırnak, standart base64 (+/=) gibi farklar düzeltilir
-const PRIV = String(process.env.VAPID_PRIVATE_KEY || '').trim().replace(/^["']|["']$/g, '').replace(/\s+/g, '').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+// yanlışlıkla iki anahtar ya da etiketlerle birlikte yapıştırıldıysa içinden 43 karakterlik özel anahtar ayıklanır
+const RAW = String(process.env.VAPID_PRIVATE_KEY || '');
+const picked = RAW.trim().length > 50 ? (RAW.match(/(?<![A-Za-z0-9_+/-])[A-Za-z0-9_+/-]{43}=?(?![A-Za-z0-9_+/-])/) || [])[0] : null;
+if (picked) console.log('VAPID_PRIVATE_KEY içinde fazladan metin vardı; içinden özel anahtar ayıklandı.');
+const PRIV = String(picked || RAW).trim().replace(/^["']|["']$/g, '').replace(/\s+/g, '').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 if (!SA || !PRIV) { console.log('Gizli değişkenler eksik (FIREBASE_SERVICE_ACCOUNT, VAPID_PRIVATE_KEY); bildirim gönderilmedi.'); process.exit(0); }
 // özel anahtarın eşi olan açık anahtarı hesapla; koddakiyle eşleşmiyorsa açık anahtarı yaz (gizli değildir) ve dur
 let derived = '';
