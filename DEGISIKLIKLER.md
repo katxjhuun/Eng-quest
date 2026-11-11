@@ -1,3 +1,14 @@
+# dam-la 2.11.0 — Savaş güncellemesi
+
+Uzaktan güncellemeyle gelir.
+- **Kim kimi yener?** Elementlerin yanında artık roller de birbirine üstün: Tank › Suikastçı › Büyücü › Tank ve Nişancı › Yakın › Destek › Nişancı. Savaşta ⚖️ ile açılan tablo, kartlarda üstünlük rozetleri.
+- **Element etkileri:** Yanık, Islak, Sarmaşık, Sersem, Savrulma, Korku.
+- **Enerji ve süper yetenekler:** Her rolün kendi süper yeteneği; dolunca sinematik bir şeritle kullanılır.
+- Savaşlar artık kısır döngüye girmiyor: iyileşme yorgunluğu, 10. turdan sonra arena fırtınası, daha akıllı rakip.
+- Sıra şeridi, VS açılışı, gecikmeli can izi, kritik flaşı ve yeni vuruş animasyonları.
+- Görsel kurulum rehberi: katxjhuun.github.io/Eng-quest/indir/
+
+---
 # dam-la 2.10.2 — iPhone düzenlemeleri
 
 Uzaktan güncellemeyle gelir.
