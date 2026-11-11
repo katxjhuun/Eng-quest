@@ -87,5 +87,18 @@ await cp(path.join(root, 'src/vendor/kokoro-worker.js'), path.join(out, 'vendor/
 const sw = (await readFile(path.join(out, 'sw.js'), 'utf8')).replace('__APP_VERSION__', version);
 await writeFile(path.join(out, 'sw.js'), sw);
 await writeFile(path.join(out, 'version.json'), JSON.stringify({ version, buildTime }, null, 2));
+// "Yenilikler" penceresi için: DEGISIKLIKLER.md → changelog.json (son 8 sürüm; başlık ve maddeler)
+{
+  const md = await readFile(path.join(root, 'DEGISIKLIKLER.md'), 'utf8').catch(() => '');
+  const list = [];
+  for (const block of md.split(/^# /m).slice(1)) {
+    const [head, ...rest] = block.split('\n');
+    const m = head.match(/dam-la\s+([0-9][0-9.]*)\s*[—-]\s*(.+)/); if (!m) continue;
+    const items = rest.filter(l => /^\s*-\s+/.test(l)).map(l => l.replace(/^\s*-\s+/, '').trim()).slice(0, 14);
+    list.push({ v: m[1], title: m[2].trim(), items });
+    if (list.length >= 8) break;
+  }
+  await writeFile(path.join(out, 'changelog.json'), JSON.stringify(list));
+}
 
 console.log(`✓ www/ hazır — dam-la ${version}`);

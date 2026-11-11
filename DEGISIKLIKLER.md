@@ -1,3 +1,16 @@
+# dam-la 2.12.0 — Sosyal, aksesuarlar ve daha akıcı uygulama
+
+Uzaktan güncellemeyle gelir.
+- **Sosyal 💬:** Arkadaşını kodu (DL-XXXXX) ile ekle, istekleri kabul et, WhatsApp gibi yazış. Sana yalnızca arkadaşların yazabilir; engelleme ve şikâyet var.
+- **Pet takası 🔄:** Sohbetten petini teklif et; iki taraf onaylarsa petler yer değiştirir.
+- **Pet aksesuarları 🎀:** 25 parça (baş, yüz, boyun). Şansla, Altın Saat'te, ilerledikçe ve bosslardan kazanılır. Pet panelindeki 🎀 dolaptan tak.
+- **Soru ekranı:** Daha akıcı geçişler; art arda doğru cevaplarda büyüyen seri efektleri (3, 5, 10+).
+- **Flow:** 1 saat sürer, sonra 16 saat bekleme.
+- **Daha akıcı:** Altın Saat şeridi tek ince satır, efektler hafifledi; zayıf telefonlarda kendiliğinden açılan Hafif mod (Ayarlar › Genel).
+- Duyuru şeridi birkaç dakikada bir güncellenir.
+- Oyunlar düğmesi artık bir tetris parçası.
+
+---
 # dam-la 2.11.0 — Savaş güncellemesi
 
 Uzaktan güncellemeyle gelir.
