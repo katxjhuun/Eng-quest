@@ -1398,8 +1398,9 @@ export function initPet(core, quiz) {
       if (res.reason === 'install') window.dlInstall?.();
       return;
     }
+    p.pushTestAt = Date.now() + 60000; save();
     if (!core.push?.ready()) core.toast('Bildirimler açık; internete bağlanınca etkinleşir.');
-    else core.toast('Bildirimler açık 🔔');
+    else core.toast('Bildirimler açık 🔔 Birkaç dakika içinde bir deneme bildirimi gelecek.');
     schedule();
   });
 
@@ -1428,7 +1429,7 @@ export function initPet(core, quiz) {
       const used = new Set();
       const timed = list.map(n => { let at = quietShift(n.at); while (used.has(Math.round(at / 60000))) at += 30 * 60000; used.add(Math.round(at / 60000)); return { ...n, at }; })
         .filter(n => n.at > now + 60000);
-      if (!native) { const sub = await currentWebPush(); if (sub) core.push?.set(sub, timed); return; }
+      if (!native) { const sub = await currentWebPush(); if (p.pushTestAt > now) timed.unshift({ at: p.pushTestAt, title: `${p.name} 🔔`, body: 'Bildirimler çalışıyor! Acıkınca sana buradan haber vereceğim.' }); if (sub) core.push?.set(sub, timed); return; }
       const notes = timed
         .map(n => ({ id: n.id, title: n.title, body: n.body, schedule: { at: new Date(n.at), allowWhileIdle: true }, smallIcon: 'ic_stat_pet', iconColor: '#E86FA0' }));
       if (notes.length) await LocalNotifications.schedule({ notifications: notes });
