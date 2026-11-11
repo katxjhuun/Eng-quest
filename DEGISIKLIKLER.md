@@ -1,3 +1,14 @@
+# dam-la 2.13.0 — Kategoriler ve ders çalışma modu
+
+Uzaktan güncellemeyle gelir.
+- **Üç kategori:** Akademik, Genel ve İngilizce Hazırlık. Soru alanının üstünden geçiş yapılır.
+- **İngilizce Hazırlık 📘:** Empower B1 kitapları sırayla, ünite ünite. Öğretmenin verdiği sınıf koduyla bir kez açılır.
+- **Ders çalışma modu 🎯:** Ana ekranın en üstündeki düğmeyle her şey gizlenir, yalnızca sorular kalır.
+- **Daha okunur açıklamalar:** Kural kutusu, madde madde anlatım ve cevaptan sonra tam cümle.
+- **Dinleme:** Soruyu, doğru cevabı ve açıklamayı dinleme düğmeleri. Soru dinlenirken cevap söylenmez.
+- Petler artık varsayılan olarak kapalı (Ayarlar'dan açılabilir); duyuru şeridi kaldırıldı.
+
+---
 # dam-la 2.12.0 — Sosyal, aksesuarlar ve daha akıcı uygulama
 
 Uzaktan güncellemeyle gelir.
