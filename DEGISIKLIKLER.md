@@ -1,3 +1,11 @@
+# dam-la 2.14.0 — Hazır AI sesleri
+
+Uzaktan güncellemeyle gelir.
+- **Yeni AI sesleri:** Michael, Emma, Isabella ve Puck. İngilizce Hazırlık sorularında soru, şıklar ve doğru cevap dinle'ye basınca anında çalar; bekleme yok.
+- Sesler önceden hazırlanır ve dinlendikçe cihazda saklanır; model indirmek gerekmez.
+- Hazır sesi olmayan cümleler cihaz sesiyle okunur.
+
+---
 # dam-la 2.13.3 — AI sesleri telefonda
 
 Uzaktan güncellemeyle gelir.
