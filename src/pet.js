@@ -2,6 +2,7 @@
 // Durum app.pet içinde saklanır (yedeğe ve kalıcı kayda otomatik girer).
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { webPushSupported, webPushNeedsInstall, enableWebPush, currentWebPush } from './webpush.js';
 import { petSVG, homeSVG, stageName, PET_SPECIES, randomCoat, shinyFilter } from './pet-art.js';
 import { Puppet } from './pets/figure.js';
 import { TYPES, SPECIES_TYPE, ROLES, SIGNATURE, SHINY, SHINY_CHANCE, HINT_VOICE, loreParts, randomRole, battleStats, BEATS } from './pets/codex.js';
@@ -344,7 +345,7 @@ export function initPet(core, quiz) {
   const chooser = layer('petChooser', 'chooser', `<div class="pet-modal"><div class="eyebrow">YENİ ARKADAŞIN</div><h2 id="pcTitle">Bir pet seç</h2><p id="pcLead">Doğru cevaplar onu besler, yanlışlar canını yakar. Her seviye atladığında evrimleşir. Ona iyi bak!</p><div class="pc-grid" id="pcGrid"></div><div class="pc-detail" id="pcDetail"></div><div class="pc-name hidden" id="pcNameBox"><label for="pcName">Adı ne olsun?</label><div class="pc-row"><input id="pcName" maxlength="16" autocomplete="off"><button class="primarybtn" id="pcAdopt">Sahiplen 🐾</button></div></div></div>`);
   const evoEl = layer('petEvo', 'evo', `<div class="evo-box"><div class="evo-stage"><div class="evo-rays"></div><div class="evo-old" id="evoOld"></div><div class="evo-new" id="evoNew"></div><div class="evo-sparks" id="evoSparks"></div></div><h2 id="evoTitle">Bir şeyler oluyor…</h2><p id="evoSub"></p><button class="primarybtn" id="evoOk" disabled>Harika!</button></div><div class="evo-flash"></div>`);
   const deathEl = layer('petDeath', 'death', `<div class="pet-modal"><div class="death-scene"><div class="death-ghost" id="deathPet"></div><div class="death-grave">🪦</div></div><h2 id="deathTitle"></h2><p id="deathLead"></p><div class="death-opts"><button class="death-opt" id="petRevive"><b>💫 Canlandır</b><span id="reviveTxt"></span></button><button class="death-opt" id="petNew"><b>🥚 Yeni pet</b><span id="newTxt"></span></button></div></div>`);
-  const infoEl = layer('petInfo', 'info', `<div class="pet-modal"><div class="modal-head"><div><div class="eyebrow">PETİN</div><h2 id="piTitle"></h2></div><button class="closebtn" id="piClose" aria-label="Kapat">×</button></div><div class="pi-line" id="piLine"></div><div class="pi-skills" id="piSkills"></div><div class="pi-stats" id="piStats"></div><label class="field-label" for="piName">Adı</label><div class="pc-row"><input id="piName" class="setting-input" maxlength="16"><button class="secondarybtn" id="piSave">Kaydet</button></div><label class="toggle-row"><span>Ekranda dolaşsın<small>Kapalıysa yuvasında kalır.</small></span><input type="checkbox" id="piRoam"></label><label class="toggle-row" id="piNotifyRow"><span>Acıkınca bildirim gönder<small>Uzun süre girmezsen telefonuna haber verir.</small></span><input type="checkbox" id="piNotify"></label><div class="setting-note" id="piMemorial"></div></div>`);
+  const infoEl = layer('petInfo', 'info', `<div class="pet-modal"><div class="modal-head"><div><div class="eyebrow">PETİN</div><h2 id="piTitle"></h2></div><button class="closebtn" id="piClose" aria-label="Kapat">×</button></div><div class="pi-line" id="piLine"></div><div class="pi-skills" id="piSkills"></div><div class="pi-stats" id="piStats"></div><label class="field-label" for="piName">Adı</label><div class="pc-row"><input id="piName" class="setting-input" maxlength="16"><button class="secondarybtn" id="piSave">Kaydet</button></div><label class="toggle-row"><span>Ekranda dolaşsın<small>Kapalıysa yuvasında kalır.</small></span><input type="checkbox" id="piRoam"></label><label class="toggle-row" id="piNotifyRow"><span>Acıkınca bildirim gönder<small id="piNotifyHint">Uzun süre girmezsen telefonuna haber verir.</small></span><input type="checkbox" id="piNotify"></label><div class="setting-note" id="piMemorial"></div></div>`);
 
   const loreEl = layer('petLore', 'lore', `<div class="pet-modal lore-card"><div class="eyebrow" id="loreEye">PETİNİN GÜNLÜĞÜ</div><div class="lore-art" id="loreArt"></div><p class="lore-text" id="loreText"></p><div class="lore-count" id="loreCount"></div><button class="primarybtn" id="loreOk">Okudum</button></div>`);
   const codexEl = layer('petCodex', 'codex', `<div class="pet-modal codex"><div class="modal-head"><div><div class="eyebrow">ANSİKLOPEDİ</div><h2>Petler</h2></div><button class="closebtn" id="cxClose" aria-label="Kapat">×</button></div><div class="cx-tabs" id="cxTabs"></div><div id="cxBody"></div></div>`);
@@ -1371,7 +1372,10 @@ export function initPet(core, quiz) {
     $('#piSkills').innerHTML = `<p class="pi-soul">${esc(sp.soul)}</p><div><b>🌀 ${esc(sp.passive.name)} (pasif)</b><span>${esc(sp.passive.desc)}</span></div><div><b>✨ ${esc(sp.active.name)} (aktif · ${sp.active.cost}⚡)</b><span>${esc(sp.active.desc)}</span></div><div><b>💪 Güçlü yanı</b><span>${esc(sp.perk)}</span></div>`;
     $('#piStats').innerHTML = `<span>❤️ ${Math.round(p.hp)}/${mx.hp}</span><span>${sp.foodIcon} ${Math.round(p.food)}/${mx.food}</span><span>⚡ ${Math.round(p.energy)}/${mx.energy}</span><span>✅ ${p.correct} doğru</span><span>⭐ ${p.stars}</span><span>💫 ${p.revives || 0} kez canlandı</span>`;
     $('#piName').value = p.name; $('#piRoam').checked = p.roam; $('#piNotify').checked = p.notify;
-    $('#piNotifyRow').classList.toggle('hidden', !notifyAvailable());
+    const webN = !notifyAvailable() && webPushSupported();
+    $('#piNotifyRow').classList.toggle('hidden', !notifyAvailable() && !webN);
+    $('#piNotifyHint').textContent = webN ? (webPushNeedsInstall() ? 'iPhone’da bildirim için önce siteyi ana ekrana ekle ve oradan aç.' : 'Uzun süre girmezsen telefonuna haber verir (birkaç dakika gecikebilir).') : 'Uzun süre girmezsen telefonuna haber verir.';
+    if (webN && webPushNeedsInstall()) $('#piNotify').checked = false;
     const mem = A().petMemorial || [];
     $('#piMemorial').innerHTML = mem.length ? `<b>🕊️ Anı köşesi:</b> ${mem.map(m => `${esc(m.name)} (${esc(stageName(m.species, m.stage))})`).join(', ')}` : 'Her seviye atlamada evrimleşir. Son formdan sonra her seviye bir ⭐ ekler. Gece uyur, sabah mahmurdur; çok soru çözünce karnı şişip mayışır.';
     document.querySelector('#settingsOverlay.show') && document.querySelector('#closeSettings')?.click();
@@ -1381,7 +1385,23 @@ export function initPet(core, quiz) {
   infoEl.addEventListener('click', e => { if (e.target === infoEl) infoEl.classList.remove('show'); });
   $('#piSave').addEventListener('click', () => { const p = P(); if (!p) return; p.name = ($('#piName').value.trim() || p.name).slice(0, 16); save(true); renderPanel(); openInfo(); core.toast('Adı kaydedildi'); });
   $('#piRoam').addEventListener('change', e => { const p = P(); if (!p) return; p.roam = e.target.checked; if (!p.roam) goHome(); save(); });
-  $('#piNotify').addEventListener('change', e => { const p = P(); if (!p) return; p.notify = e.target.checked; save(); if (p.notify && notifyAvailable()) LocalNotifications.requestPermissions().catch(() => {}); });
+  $('#piNotify').addEventListener('change', async e => {
+    const p = P(); if (!p) return;
+    p.notify = e.target.checked; save();
+    if (notifyAvailable()) { if (p.notify) LocalNotifications.requestPermissions().catch(() => {}); return; }
+    if (!webPushSupported()) return;
+    if (!p.notify) { core.push?.set(null); return; }
+    const res = await enableWebPush().catch(() => ({ ok: false, reason: 'error' }));
+    if (!res.ok) {
+      p.notify = false; e.target.checked = false; save();
+      core.toast(res.reason === 'install' ? 'iPhone’da bildirim için önce ana ekrana ekle (Paylaş › Ana Ekrana Ekle), sonra oradan aç.' : res.reason === 'denied' ? 'Bildirim izni verilmedi. Ayarlardan izin verebilirsin.' : 'Bu cihazda web bildirimi açılamadı.');
+      if (res.reason === 'install') window.dlInstall?.();
+      return;
+    }
+    if (!core.push?.ready()) core.toast('Bildirimler açık; internete bağlanınca etkinleşir.');
+    else core.toast('Bildirimler açık 🔔');
+    schedule();
+  });
 
   // ---------- bildirimler ----------
   const NOTE_IDS = [7101, 7102, 7103, 7104];
@@ -1391,10 +1411,14 @@ export function initPet(core, quiz) {
     if (h < 9.5) { d.setHours(9, 30, 0, 0); return d.getTime(); }
     return t;
   }
+  // web: uygulama açıkken de takvim güncel kalsın (sayfa kapanırken yazma yarım kalabilir)
+  setInterval(() => { if (!notifyAvailable() && document.visibilityState === 'visible') schedule(); }, 10 * 60 * 1000);
   async function schedule() {
-    const p = P(); if (!p || !p.alive || !p.notify || !notifyAvailable()) return;
+    const p = P(); if (!p || !p.alive || !p.notify) return;
+    const native = notifyAvailable();
+    if (!native && !webPushSupported()) return;
     try {
-      await LocalNotifications.cancel({ notifications: NOTE_IDS.map(id => ({ id })) }).catch(() => {});
+      if (native) await LocalNotifications.cancel({ notifications: NOTE_IDS.map(id => ({ id })) }).catch(() => {});
       const now = Date.now(), mx = maxes(p), rate = p.species === 'plant' ? 3 : 4, plant = p.species === 'plant', icon = PET_SPECS[p.species].foodIcon;
       const list = [];
       if (p.food > mx.food * 0.3) list.push({ id: 7101, at: now + ((p.food - mx.food * 0.3) / rate) * HOUR, title: `${p.name} ${plant ? 'susadı' : 'acıktı'} ${icon}`, body: plant ? 'Toprağım kurudu… birkaç doğru cevapla beni sular mısın? 💧' : 'Karnım guruldadı… birkaç soru çözüp beni besler misin?' });
@@ -1402,13 +1426,15 @@ export function initPet(core, quiz) {
       list.push({ id: 7103, at: now + 24 * HOUR, title: `${p.name} seni özledi 💛`, body: 'Bugün birlikte bir pop quiz çözelim mi?' });
       list.push({ id: 7104, at: now + 72 * HOUR, title: `${p.name} seni bekliyor…`, body: 'Üç gündür görüşmedik. Bir soru bile yeter!' });
       const used = new Set();
-      const notes = list.map(n => { let at = quietShift(n.at); while (used.has(Math.round(at / 60000))) at += 30 * 60000; used.add(Math.round(at / 60000)); return { ...n, at }; })
-        .filter(n => n.at > now + 60000)
+      const timed = list.map(n => { let at = quietShift(n.at); while (used.has(Math.round(at / 60000))) at += 30 * 60000; used.add(Math.round(at / 60000)); return { ...n, at }; })
+        .filter(n => n.at > now + 60000);
+      if (!native) { const sub = await currentWebPush(); if (sub) core.push?.set(sub, timed); return; }
+      const notes = timed
         .map(n => ({ id: n.id, title: n.title, body: n.body, schedule: { at: new Date(n.at), allowWhileIdle: true }, smallIcon: 'ic_stat_pet', iconColor: '#E86FA0' }));
       if (notes.length) await LocalNotifications.schedule({ notifications: notes });
     } catch (e) { console.warn('[pet] bildirim planlanamadı', e); }
   }
-  function cancelNotes() { if (notifyAvailable()) LocalNotifications.cancel({ notifications: NOTE_IDS.map(id => ({ id })) }).catch(() => {}); }
+  function cancelNotes() { if (notifyAvailable()) LocalNotifications.cancel({ notifications: NOTE_IDS.map(id => ({ id })) }).catch(() => {}); else if (webPushSupported()) currentWebPush().then(s => s && core.push?.set(s, [])); }
 
   // ---------- yaşam döngüsü ----------
   function greetIfAway() {
@@ -1579,7 +1605,7 @@ export function initPet(core, quiz) {
   return {
     ensure, reload, setEnabled, openCodex, battle, bossPrompt, enabled: () => !off(), render: renderPanel, openChooser, openInfo, xpMod, snapshot, admin,
     onPause() { const p = P(); if (p) { tick(); p.lastSeen = Date.now(); save(); schedule(); } },
-    onResume() { cancelNotes(); tick(); greetIfAway(); renderPanel(); },
+    onResume() { if (notifyAvailable()) cancelNotes(); tick(); greetIfAway(); renderPanel(); if (!notifyAvailable()) schedule(); },
     debug: { die: () => { const p = P(); if (p) { p.hp = 1; } }, evolve: n => evolveBy(n || 1), phase, react, say, tick, emote, setAnim, baseNow, puppet, ability: useAbility, tap, pet, mischief: () => catMischief(), bored: v => { catBored = v; }, isSleeping, mood: currentMood, guard: () => guardUntil },
   };
 }

@@ -418,6 +418,56 @@
         }
       }
     },
+    "push": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid",
+        ".validate": "newData.hasChildren(['sub', 'updatedAt'])",
+        "sub": {
+          ".validate": "newData.hasChildren(['endpoint', 'keys'])",
+          "endpoint": {
+            ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().matches(/^https:\\/\\//)"
+          },
+          "keys": {
+            "p256dh": {
+              ".validate": "newData.isString() && newData.val().length <= 200 && newData.val().matches(/^[A-Za-z0-9_=-]+$/)"
+            },
+            "auth": {
+              ".validate": "newData.isString() && newData.val().length <= 100 && newData.val().matches(/^[A-Za-z0-9_=-]+$/)"
+            },
+            "$other": {
+              ".validate": false
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "notes": {
+          "$n": {
+            ".validate": "$n.matches(/^n[0-9]$/) && newData.hasChildren(['at', 'title', 'body'])",
+            "at": {
+              ".validate": "newData.isNumber()"
+            },
+            "title": {
+              ".validate": "newData.isString() && newData.val().length <= 80"
+            },
+            "body": {
+              ".validate": "newData.isString() && newData.val().length <= 200"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber() && newData.val() <= now + 300000"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
     "admin": {
       ".read": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && root.child('admins').child(auth.uid).val() == true",
       ".write": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && root.child('admins').child(auth.uid).val() == true",

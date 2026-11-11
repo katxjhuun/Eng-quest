@@ -1,0 +1,44 @@
+# Web (ana ekrana eklenmiş) sürüm için pet bildirimleri. Ücretsizdir: herkese açık depolarda GitHub Actions dakikaları ücretsiz.
+# Not: GitHub zamanlanmış işleri birkaç dakika (yoğun saatlerde daha fazla) gecikebilir; depo 60 gün hiç değişmezse
+# zamanlanmış iş kendiliğinden durur, Actions sekmesinden yeniden açılır.
+name: Web bildirimleri
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: webpush
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts/push-send.mjs
+            src/config.js
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Gönderici paketleri
+        run: |
+          mkdir -p /tmp/pushdeps && cd /tmp/pushdeps && npm init -y >/dev/null && npm pkg set type=module && npm install --no-audit --no-fund firebase-admin@13 web-push@3 >/dev/null
+      - name: Vakti gelen bildirimleri gönder
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          NODE_PATH: /tmp/pushdeps/node_modules
+        run: |
+          cp scripts/push-send.mjs /tmp/pushdeps/send.mjs
+          mkdir -p /tmp/pushdeps/src && cp src/config.js /tmp/pushdeps/src/config.js
+          sed -i "s#'../src/config.js'#'./src/config.js'#" /tmp/pushdeps/send.mjs
+          cd /tmp/pushdeps && node send.mjs

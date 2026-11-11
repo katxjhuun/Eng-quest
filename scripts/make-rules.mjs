@@ -83,6 +83,22 @@ const rules = {
         $other: NO,
       },
     },
+    // Web bildirimleri: telefonun push aboneliği ve vakti gelince gönderilecek notlar. Yalnızca sahibi okur/yazar;
+    // gönderici (GitHub zamanlanmış işi) hizmet hesabıyla kurallardan bağımsız okur ve gönderilenleri siler.
+    push: {
+      $uid: {
+        '.read': OWN, '.write': OWN,
+        '.validate': "newData.hasChildren(['sub', 'updatedAt'])",
+        sub: {
+          '.validate': "newData.hasChildren(['endpoint', 'keys'])",
+          endpoint: str(1000, '/^https:\\/\\//'),
+          keys: { p256dh: str(200, '/^[A-Za-z0-9_=-]+$/'), auth: str(100, '/^[A-Za-z0-9_=-]+$/'), $other: NO },
+          $other: NO,
+        },
+        notes: { $n: { '.validate': "$n.matches(/^n[0-9]$/) && newData.hasChildren(['at', 'title', 'body'])", at: { '.validate': 'newData.isNumber()' }, title: str(80), body: str(200), $other: NO } },
+        updatedAt: ts(), $other: NO,
+      },
+    },
     admin: { '.read': ADMIN, '.write': ADMIN, labels: { $uid: str(60) } },
     admins: { $uid: { '.read': 'auth != null && auth.uid == $uid', '.write': false } },
   },

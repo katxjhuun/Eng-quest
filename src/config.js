@@ -33,3 +33,7 @@ export const FIREBASE_CONFIG = {
 // Boşsa çalar 30 saniyelik ön dinlemeyle çalışır. Anahtar gizli değildir (istemcide görünür); Google Cloud'da yalnızca
 // YouTube Data API v3 ile sınırlandırılmıştır, en kötü ihtimalle günlük kotası tükenir.
 export const YOUTUBE_API_KEY = 'AIzaSyB3Ru6YTiGQV-JnjM5ejoxhA8hBaX_PR30';
+
+// Web (ana ekrana eklenmiş) sürümde pet bildirimleri için Web Push açık anahtarı. Gizli değildir;
+// eşi olan özel anahtar yalnızca GitHub "VAPID_PRIVATE_KEY" gizli değişkenindedir (scripts/push-send.mjs kullanır).
+export const VAPID_PUBLIC_KEY = 'BGyMf6hYThY_XtHeAUoNHgALKkpkTE0uX5CyYXGE7rKmPAGWzp-zf4_fZEKIiUgTvjf2LTnWceqSvLMzpFkLRjs';

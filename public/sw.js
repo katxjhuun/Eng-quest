@@ -29,3 +29,19 @@ self.addEventListener('fetch', event => {
       .catch(() => caches.match(req).then(hit => hit || (req.mode === 'navigate' ? caches.match('./index.html') : undefined)))
   );
 });
+
+// Web Push: GitHub'daki zamanlanmış iş (scripts/push-send.mjs) petin bildirimini gönderir
+self.addEventListener('push', event => {
+  let d = {};
+  try { d = event.data ? event.data.json() : {}; } catch { d = { title: 'dam-la', body: event.data ? event.data.text() : '' }; }
+  event.waitUntil(self.registration.showNotification(d.title || 'dam-la', {
+    body: d.body || '', icon: './icon-192.png', badge: './icon-192.png', tag: d.tag || 'dl-pet', renotify: true, data: { url: './' },
+  }));
+});
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    for (const c of list) if ('focus' in c) return c.focus();
+    return self.clients.openWindow ? self.clients.openWindow(event.notification.data?.url || './') : undefined;
+  }));
+});
