@@ -8,7 +8,7 @@ import { App } from '@capacitor/app';
 import { TextToSpeech } from '@capacitor-community/text-to-speech';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { AppIcon } from '@capacitor-community/app-icon';
-import { kokoroSpeak, stopKokoro } from './kokoro.js';
+import { kokoroSpeak, stopKokoro, unlockAudio } from './kokoro.js';
 import { UPDATE_MANIFEST_URL, APP_VERSION, BUILD_TIME, UPDATE_CHECK_INTERVAL_MS } from './config.js';
 // update.json ile aynı deponun sürüm dosyaları: https://github.com/<kullanıcı>/<depo>/releases/download/
 const UPDATE_ASSET_PREFIX = UPDATE_MANIFEST_URL.replace(/\/releases\/latest\/download\/.*$/, '/releases/download/').toLowerCase();
@@ -82,6 +82,7 @@ const tts = {
     if (!text) return;
     const wantTr = /^tr/i.test(lang);
     if (!wantTr && String(voiceId).startsWith('kokoro:')) {
+      unlockAudio();
       try { await tts.stop(); return await kokoroSpeak(text, voiceId, rate); }
       catch (e) { console.warn('[kokoro] cihaz sesine geçiliyor', e); try { window.dispatchEvent(new CustomEvent('dl:kokoro-fallback', { detail: String(e?.message || e) })); } catch {} }
     }

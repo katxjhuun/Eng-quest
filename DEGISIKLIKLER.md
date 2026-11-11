@@ -1,3 +1,12 @@
+# dam-la 2.13.3 — AI sesleri telefonda
+
+Uzaktan güncellemeyle gelir.
+- AI sesi artık dakikalarca gecikmiyor: dinlemek istediğin ses sıranın en önüne geçer, arka plandaki hazırlık telefonu yormaz.
+- AI sesi 9 saniyede hazır olmazsa o seferlik cihaz sesiyle okunur; hazırlanan ses saklanır, sonraki dinleyişte AI sesiyle çalar.
+- iPhone ve Android'de sesin engellenmesi düzeltildi; iPhone'da sessiz moddayken de çalar.
+- Ayarlar › Ses'te "AI sesini test et" düğmesi: sesin kaç saniyede hazırlandığını ve sorun varsa nedenini gösterir.
+
+---
 # dam-la 2.13.2 — Sınıf kodu Ayarlar'da
 
 Uzaktan güncellemeyle gelir.
