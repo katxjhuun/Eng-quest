@@ -149,6 +149,13 @@ export function initCloud(core) {
     }, () => cb([]));
     return () => { feedOff?.(); feedOff = null; };
   };
+  // canlı dinlemek yerine arada bir çekmek: telefon sürekli bağlantı ve yeniden çizimle uğraşmaz
+  api.feedFetch = async (n = 30) => {
+    if (!state.db) return null;
+    const snap = await F.get(F.query(F.ref(state.db, 'feed'), F.orderByChild('at'), F.limitToLast(n))).catch(() => null);
+    if (!snap) return null;
+    const out = []; snap.forEach(c => { const v = c.val(); if (v && typeof v === 'object') out.push({ ...v, id: c.key }); }); return out;
+  };
   let lastBoard = '';
   api.boardSet = b => {
     if (!state.uid || !state.db || !okCode(state.shortId)) return Promise.resolve(false);

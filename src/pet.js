@@ -720,8 +720,12 @@ export function initPet(core, quiz) {
     }
     nextThink = now + (2600 + Math.random() * 3800) * (lazy ? 1.5 : 1);
   }
+  let liteChk = 0, liteOn = false;
   function frame(ts) {
     requestAnimationFrame(frame);
+    // hafif modda pet 30 kare/sn ile yetinir (pil ve akıcılık için)
+    if (ts - liteChk > 1000) { liteChk = ts; liteOn = document.body.classList.contains('lite'); }
+    if (liteOn && lastTs && ts - lastTs < 30) return;
     const p = P();
     const dt = Math.min(0.05, (ts - (lastTs || ts)) / 1000); lastTs = ts;
     const show = !!p && !blocked();

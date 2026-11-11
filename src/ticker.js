@@ -59,7 +59,9 @@ export function initTicker(core) {
     return out;
   }
   function render() {
-    bar.querySelector('#tickMe').innerHTML = meHTML();
+    if (document.hidden) return;
+    const me = meHTML(), meEl = bar.querySelector('#tickMe');
+    if (meEl.dataset.sig !== me) { meEl.dataset.sig = me; meEl.innerHTML = me; }
     const list = items();
     const one = list.map(i => `<span class="tick-it ${i.cls}${i.click ? ' click' : ''}" ${i.id ? `data-id="${esc(i.id)}"` : ''}>${i.html}</span><span class="tick-sep">•</span>`).join('');
     const track = bar.querySelector('#tickTrack');
@@ -88,26 +90,36 @@ export function initTicker(core) {
   bar.addEventListener('click', ev => { const t = ev.target.closest('[data-id]'); if (t) openPop(t.dataset.id); });
   pop.addEventListener('click', ev => { if (ev.target === pop || ev.target.closest('#tickClose')) pop.classList.remove('show'); });
 
-  let listening = false;
-  function connect() {
-    if (listening || !core.feed?.ready?.()) return;
-    listening = true;
-    core.feed.listen(list => {
-      const top = list.filter(e => (e.tier || KIND[e.kind]?.tier) >= 3).sort((a, b) => b.at - a.at)[0];
-      if (top && lastTop && top.id !== lastTop && Date.now() - (top.at || 0) < 120000) flash(top);
-      if (top) lastTop = top.id;
-      feed = list; render();
-    });
+  // Duyurular anlık değildir: birkaç dakikada bir çekilir (uygulama arka plandayken hiç çekilmez).
+  // Sıralama sorgusu tüm tabloyu taradığı için en fazla 5 dakikada bir yapılır.
+  const FEED_EVERY = 3 * 60000, RANK_EVERY = 5 * 60000;
+  let lastFeed = 0, lastRank = 0, busy = false;
+  function apply(list) {
+    if (!Array.isArray(list)) return;
+    const top = list.filter(e => (e.tier || KIND[e.kind]?.tier) >= 3).sort((a, b) => b.at - a.at)[0];
+    if (top && lastTop && top.id !== lastTop && Date.now() - (top.at || 0) < 10 * 60000) flash(top);
+    if (top) lastTop = top.id;
+    feed = list; render();
   }
-  async function refreshRank() {
-    if (!core.feed?.ready?.()) return;
+  async function pull(force) {
+    if (busy || document.hidden || !core.feed?.ready?.()) return;
+    const now = Date.now();
+    if (!force && now - lastFeed < FEED_EVERY) return;
+    busy = true; lastFeed = now;
+    try { apply(await core.feed.fetch(30)); } finally { busy = false; }
+  }
+  async function refreshRank(force) {
+    if (!core.feed?.ready?.() || document.hidden) return;
+    const now = Date.now(); if (!force && now - lastRank < RANK_EVERY) return;
+    lastRank = now;
     const p = core.app.pet, n = core.statsSnapshot?.()?.correct | 0;
     await core.feed.board({ n, name: p?.name || '', species: p?.species, stage: p?.stage | 0, shiny: !!p?.shiny, coat: p?.coat | 0 });
     rank = await core.feed.rank(n); render();
   }
   render();
-  setInterval(() => { connect(); render(); }, 15000);
-  setTimeout(() => { connect(); refreshRank(); }, 3000);
-  window.addEventListener('dl:answer', () => { clearTimeout(refreshRank.t); refreshRank.t = setTimeout(refreshRank, 4000); });
+  setInterval(() => { pull(); refreshRank(); render(); }, 60000);
+  setTimeout(() => { pull(true); refreshRank(true); }, 4000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { render(); pull(); refreshRank(); } });
+  window.addEventListener('dl:answer', () => { clearTimeout(refreshRank.t); refreshRank.t = setTimeout(() => refreshRank(), 8000); });
   return { render, refreshRank, post: e => core.feed?.post?.(e) };
 }

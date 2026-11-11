@@ -194,30 +194,31 @@ html.birthday .logo-img{box-shadow:0 0 0 3px #ffd84d,0 8px 18px rgba(255,107,152
 @keyframes instBob{50%{transform:translate(-50%,8px)}}
 
 /* ===== Altın Saat ===== */
-.gold-bar{display:none;position:sticky;top:var(--ticker-h,0px);z-index:31;margin:0 -18px 10px;padding:0 0 0;background:linear-gradient(100deg,#7a4a00,#c98a12 20%,#ffd75e 45%,#fff3c4 50%,#ffd75e 55%,#c98a12 80%,#7a4a00);background-size:250% 100%;animation:goldShine 4s linear infinite;color:#3a2400;box-shadow:0 6px 18px #c98a1255}
+.gold-bar{display:none;position:relative;z-index:2;margin:0 -18px 8px;background:linear-gradient(100deg,#9a6206,#d9a02a 30%,#ffe08a 50%,#d9a02a 70%,#9a6206);color:#3a2400;overflow:hidden;contain:layout paint;cursor:pointer}
 body.golden .gold-bar{display:block}
-@keyframes goldShine{from{background-position:0 0}to{background-position:-250% 0}}
-.gold-flags{display:flex;justify-content:space-between;height:12px;overflow:hidden;padding:0 4px}
-.gold-flags i{width:14px;height:12px;clip-path:polygon(0 0,100% 0,50% 100%);background:hsl(calc(var(--i) * 47),80%,58%);transform-origin:50% 0;animation:goldFlag 2.4s ease-in-out infinite;animation-delay:calc(var(--i) * -.13s)}
-@keyframes goldFlag{50%{transform:rotate(8deg)}}
-.gold-in{display:flex;align-items:center;gap:10px;padding:5px 16px 6px}
-.gold-ico{font-size:22px;animation:goldSpin 3s ease-in-out infinite}
-@keyframes goldSpin{50%{transform:rotate(20deg) scale(1.15)}}
-.gold-txt{flex:1;min-width:0}.gold-txt b{display:block;font-size:14px;letter-spacing:.14em;text-shadow:0 1px 0 #fff8}.gold-txt small{display:block;font-size:10.5px;font-weight:800;opacity:.85}
-.gold-time{text-align:right}.gold-time small{display:block;font-size:9.5px;font-weight:850;opacity:.8;text-transform:uppercase;letter-spacing:.06em}.gold-time b{font-size:18px;font-variant-numeric:tabular-nums}
-.gold-prog{height:4px;background:#3a240033}.gold-prog i{display:block;height:100%;background:#3a2400;transition:width 1s linear}
-.gold-bar.hurry .gold-time b{color:#a3150a;animation:goldHurry .8s ease-in-out infinite}
-.gold-bar.hurry{box-shadow:0 0 0 2px #e5534b,0 6px 22px #e5534b66}
-@keyframes goldHurry{50%{transform:scale(1.15)}}
-.gold-glitter{display:none;position:fixed;inset:0;pointer-events:none;z-index:29;overflow:hidden}
-body.golden .gold-glitter{display:block}
-.gold-glitter i{position:absolute;top:-20px;left:var(--x);width:8px;height:8px;background:radial-gradient(circle,#fff 0 20%,#ffd75e 40%,transparent 70%);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);transform:scale(var(--s));animation:goldFall 7s linear infinite;animation-delay:var(--d);opacity:.85}
+/* parlama: arka planı her karede yeniden boyamak yerine yalnızca transform ile kayan bir ışık (GPU'da, ucuz) */
+.gold-bar::after,.tick-it.t3::after,.tick-flash::after{content:"";position:absolute;top:0;bottom:0;left:0;width:40%;background:linear-gradient(100deg,transparent,#fff8 50%,transparent);transform:translateX(-120%);animation:sheen 3.2s ease-in-out infinite;pointer-events:none;will-change:transform}
+@keyframes sheen{0%{transform:translateX(-120%)}60%,100%{transform:translateX(320%)}}
+.gold-in{display:flex;align-items:center;gap:7px;height:26px;padding:0 16px;font-size:12px;white-space:nowrap}
+.gold-ico{font-size:13px}
+.gold-name{letter-spacing:.06em;text-transform:uppercase;font-size:11px}
+.gold-x{font-weight:850;background:#3a24001f;border-radius:999px;padding:1px 7px;font-size:11px}
+.gold-left{margin-left:auto;font-size:12.5px;font-variant-numeric:tabular-nums}
+.gold-prog{height:2px;background:#3a240022}.gold-prog i{display:block;height:100%;background:#3a2400aa;transform-origin:0 50%}
+.gold-bar.hurry .gold-left{color:#a3150a;animation:goldHurry 1s ease-in-out infinite}
+.gold-bar.hurry{box-shadow:inset 0 -2px 0 #e5534b}
+@keyframes goldHurry{50%{opacity:.45}}
+.gold-glitter{display:none;position:fixed;inset:0;pointer-events:none;z-index:29;overflow:hidden;contain:strict}
+body.golden.gold-fx .gold-glitter{display:block}
+/* savaş, oyun ya da pencere açıkken parıltı arkada boşuna dönmesin */
+body.bt-open .gold-glitter,body.gm-open .gold-glitter,body.modal-open .gold-glitter,body.lite .gold-glitter{display:none}
+.gold-glitter i{position:absolute;top:-20px;left:var(--x);width:8px;height:8px;background:radial-gradient(circle,#fff 0 20%,#ffd75e 40%,transparent 70%);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);transform:scale(var(--s));animation:goldFall 9s linear infinite;animation-delay:var(--d);opacity:.85;will-change:transform}
 @keyframes goldFall{0%{transform:translateY(0) rotate(0) scale(var(--s))}100%{transform:translateY(110vh) rotate(360deg) scale(var(--s))}}
-body.golden .challenge,body.golden .quiz-card{box-shadow:0 0 0 2px #e8b53a,0 0 26px #ffd75e55,var(--shadow)}
+body.golden .challenge,body.golden .quiz-card{box-shadow:0 0 0 1.5px #e8b53a99,var(--shadow)}
 body.golden .xp-fly.pos{color:#c98a12;text-shadow:0 0 10px #ffd75e}
 body.gold-burst::after{content:"✨ ALTIN SAAT ✨";position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);z-index:120;font-size:30px;font-weight:950;letter-spacing:.1em;color:#ffd75e;-webkit-text-stroke:1.5px #7a4a00;text-shadow:0 0 30px #ffd75e;white-space:nowrap;pointer-events:none;animation:goldBurst 2.5s cubic-bezier(.2,1.4,.4,1) forwards}
 @keyframes goldBurst{0%{transform:translate(-50%,-50%) scale(.2) rotate(-10deg);opacity:0}20%{transform:translate(-50%,-50%) scale(1.15);opacity:1}80%{opacity:1}100%{transform:translate(-50%,-80%) scale(1);opacity:0}}
-@media(prefers-reduced-motion:reduce){.gold-glitter{display:none!important}.gold-bar{animation:none}}
+@media(prefers-reduced-motion:reduce){.gold-glitter{display:none!important}.gold-bar::after,.tick-it.t3::after,.tick-flash::after{animation:none;display:none}}
 
 /* ===== Duyuru şeridi ===== */
 .tick-bar{position:sticky;top:0;z-index:32;margin:0 -18px;display:flex;align-items:stretch;height:calc(34px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top);background:#211b2c;color:#f4f0ff;box-shadow:0 2px 10px #0003;overflow:hidden}
@@ -233,12 +234,12 @@ body.gold-burst::after{content:"✨ ALTIN SAAT ✨";position:fixed;left:50%;top:
 .tick-it.soft{opacity:.75}
 .tick-it.me{color:#cfc4ff}
 .tick-it.t2{color:#ffd9a0}
-.tick-it.t3{font-size:13px;font-weight:900;color:#3a2400;background:linear-gradient(90deg,#c98a12,#ffd75e,#fff3c4,#ffd75e,#c98a12);background-size:200% 100%;animation:goldShine 3s linear infinite;box-shadow:0 0 10px #ffd75e88}
+.tick-it.t3{position:relative;overflow:hidden;font-size:13px;font-weight:900;color:#3a2400;background:linear-gradient(90deg,#c98a12,#ffd75e,#fff3c4,#ffd75e,#c98a12);box-shadow:0 0 10px #ffd75e88}
 .tick-it.gold{color:#ffd75e;font-weight:900}
 .tick-it.mine{outline:1.5px solid #8bc77e}
 .tick-it.click{cursor:pointer;text-decoration:underline dotted 1px;text-underline-offset:3px}
 .tick-sep{opacity:.35;margin:0 4px}
-.tick-flash{position:absolute;inset:env(safe-area-inset-top) 0 0 0;z-index:3;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(90deg,#7a4a00,#ffd75e,#fff6d0,#ffd75e,#7a4a00);background-size:200% 100%;color:#3a2400;font-size:13px;animation:tickFlash 6s ease forwards,goldShine 2s linear infinite;cursor:pointer}
+.tick-flash{position:absolute;inset:env(safe-area-inset-top) 0 0 0;z-index:3;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(90deg,#7a4a00,#ffd75e,#fff6d0,#ffd75e,#7a4a00);color:#3a2400;font-size:13px;animation:tickFlash 6s ease forwards;cursor:pointer;overflow:hidden}
 .tick-flash span{font-size:18px;animation:goldSpin 1.2s ease-in-out infinite}
 @keyframes tickFlash{0%{transform:translateY(-100%)}8%,88%{transform:none}100%{transform:translateY(-100%)}}
 .tick-pop{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;background:#21182c88;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);padding:20px}
@@ -283,3 +284,11 @@ button,a,[role=button]{-webkit-tap-highlight-color:transparent}
 }
 .overlay,.pet-overlay{padding-top:max(16px,env(safe-area-inset-top));padding-bottom:max(16px,env(safe-area-inset-bottom))}
 .tick-pop,.ask-sheet,.inst-sheet{padding-bottom:max(16px,env(safe-area-inset-bottom))}
+
+/* ── Hafif mod: zayıf telefonlarda ya da ayardan açılınca süs animasyonları kapanır ── */
+body.lite .gold-glitter{display:none}
+body.lite .gold-bar::after,body.lite .tick-it.t3::after,body.lite .tick-flash::after,body.lite .gold-ico,body.lite .tick-flash span{animation:none}
+body.lite .bt-ult.ready,body.lite .bt-card.ult-ready .bt-bar.en i,body.lite .bt-card.ult-ready::before,body.lite .lg-arr,body.lite .lg-node circle,body.lite .bt-card.low .bt-bar.hp i{animation:none}
+body.lite.bt-open #btArena::before{animation:none}
+body.lite .overlay,body.lite .pet-overlay,body.lite .bt-legend,body.lite .tick-pop{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+body.lite .gold-burst::after{animation-duration:1.4s}
