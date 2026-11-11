@@ -742,11 +742,31 @@ export function initQuiz(core) {
     const code = ($('#prepCode')?.value || '').trim(), msg = $('#prepJoinMsg');
     if (code.length < 6) { msg.textContent = 'Kod en az 6 karakter.'; return; }
     msg.textContent = 'Denetleniyor…';
-    let P = null; for (let i = 0; i < 75; i++) { P = core.prep?.(); if (P && P.ready()) break; await wait(200); }
-    const r = P ? await P.join(code) : 'offline';
-    if (r === 'ok') { msg.textContent = '✓ Katıldın! Sorular indiriliyor…'; epGate = ''; epP = null; loadEp(); }
-    else msg.textContent = r === 'offline' ? 'Bağlantı yok; biraz sonra tekrar dene.' : 'Kod yanlış. Öğretmeninden kontrol etmesini iste.';
+    msg.textContent = await joinPrep(code);
   });
+  async function prepApi() { let P = null; for (let i = 0; i < 75; i++) { P = core.prep?.(); if (P && P.ready()) break; await wait(200); } return P && P.ready() ? P : null; }
+  async function joinPrep(code) {
+    const P = await prepApi();
+    const r = P ? await P.join(code) : 'offline';
+    if (r === 'ok') { epGate = ''; epP = null; loadEp(); return '✓ Katıldın! Sorular indiriliyor… Ana ekranda İngilizce Hazırlık’a geç.'; }
+    return r === 'offline' ? 'Bağlantı kurulamadı; internetini kontrol edip tekrar dene.' : 'Kod yanlış. Öğretmeninden kontrol etmesini iste.';
+  }
+  // Ayarlar › Genel › Sınıf kodu
+  async function prepStatus() {
+    const el = $('#setPrepStatus'); if (!el) return;
+    el.textContent = 'Durum denetleniyor…';
+    const P = await prepApi(); const m = P ? await P.member() : null;
+    el.textContent = m === true ? '✓ Sınıfa katıldın. Sorular ana ekranda “İngilizce Hazırlık” sekmesinde.' : m === false ? 'Henüz katılmadın. Öğretmeninin verdiği sınıf kodunu yaz.' : 'Bağlantı kurulamadı; kodu yine de deneyebilirsin.';
+  }
+  $('#setPrepForm')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const code = ($('#setPrepCode')?.value || '').trim(), msg = $('#setPrepMsg');
+    if (code.length < 6) { msg.textContent = 'Kod en az 6 karakter.'; return; }
+    msg.textContent = 'Denetleniyor…';
+    msg.textContent = await joinPrep(code);
+    if (msg.textContent.startsWith('✓')) prepStatus();
+  });
+  $('#settingsBtn')?.addEventListener('click', () => setTimeout(prepStatus, 50));
   $('#qzOptions').addEventListener('click', e => { if (e.target.closest('[data-ep-retry]')) { epGate = ''; epP = null; render(); loadEp(); } });
   // kategori anahtarı: her kategoride en son açık olan sekme hatırlanır
   $('#trackSw')?.addEventListener('click', e => {
