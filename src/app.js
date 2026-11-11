@@ -1,4 +1,5 @@
 import './compat.js';
+import { initInstall } from './install.js';
 import { Platform } from './platform.js';
 import { initPet } from './pet.js';
 import { initSettingsTabs } from './settings-tabs.js';
@@ -223,5 +224,5 @@ Platform.lifecycle.onPause(()=>{pet?.onPause();saveLocal(false);flushDurable();f
 Platform.lifecycle.onBackButton(()=>{if($('#settingsOverlay').classList.contains('show')){closeOverlay('#settingsOverlay');return}if($('#calibrationOverlay').classList.contains('show')&&app.calibrated){closeOverlay('#calibrationOverlay');return}saveLocal(false);flushDurable().finally(()=>Platform.lifecycle.exitApp())});
 if(Platform.updates.available&&app.profile.autoUpdate!==false&&Platform.updates.shouldAutoCheck(updateMeta().lastCheck))setTimeout(()=>runUpdateCheck(),2500);
 Platform.lifecycle.onResume(()=>{applyBirthday({toast});pet?.onResume();if(Platform.updates.available&&app.profile.autoUpdate!==false&&!pendingUpdate&&Platform.updates.shouldAutoCheck(updateMeta().lastCheck))runUpdateCheck()});
-if(!Platform.isNative&&'serviceWorker'in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(()=>{});if(IS_STANDALONE_PREVIEW)setTimeout(()=>showRewardPopup(4),350);
+if(!Platform.isNative&&'serviceWorker'in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(()=>{});if(!Platform.isNative){try{initInstall()}catch{}}if(IS_STANDALONE_PREVIEW)setTimeout(()=>showRewardPopup(4),350);
 })();
