@@ -538,3 +538,21 @@ body.study .challenge{box-shadow:none}
 .voice-more{margin:0 0 10px}
 .voice-more summary{cursor:pointer;font-size:13px;font-weight:750;opacity:.8;padding:4px 0}
 #voiceChoice{width:100%;max-width:100%;min-width:0;text-overflow:ellipsis}
+
+/* ---- Sesli tekrar (telepromter) ve okuma metni ---- */
+.qx-drill { margin-top: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); }
+.qx-drill .dr-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.qx-drill .dr-count { display: inline-flex; align-items: center; gap: 4px; }
+.qx-drill .dr-count i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--teal); display: inline-block; }
+.qx-drill .dr-count i.on { background: var(--teal); }
+.qx-drill .dr-text { font-size: 1.15rem; line-height: 1.7; margin: 10px 0; color: var(--muted); }
+.qx-drill .dw { transition: color .15s, background .15s; padding: 0 1px; border-radius: 4px; }
+.qx-drill .dw.on { color: var(--ink); background: var(--gold-soft); font-weight: 700; }
+.qx-drill .dr-msg { min-height: 1.3em; font-size: .9rem; color: var(--muted); }
+.qx-drill .dr-msg.ok { color: var(--teal-dark); font-weight: 700; }
+.qx-drill .dr-msg.warn { color: #b3261e; font-weight: 700; }
+.qx-drill .dr-row { margin-top: 8px; }
+.qz-passage { margin: 0 0 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); }
+.qz-passage summary { cursor: pointer; font-weight: 700; }
+.qz-passage p { margin: 8px 0; line-height: 1.6; }
+.qz-passage.hidden { display: none; }

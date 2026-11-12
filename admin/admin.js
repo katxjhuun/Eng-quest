@@ -616,7 +616,7 @@ async function prepInfo() {
     const n = mem ? Object.keys(mem).length : 0;
     const count = b => (b || []).reduce((s, u) => s + ((u && u.items) || []).length, 0);
     $('#fPrep').code.value = code || '';
-    el.textContent = `Sınıf kodu: ${code ? 'ayarlı' : 'YOK (öğrenciler katılamaz)'} · Üye: ${n} öğrenci · Banka: ${bank ? `Seviye 1 ${count(bank.wb)} soru, Seviye 2 ${count(bank.sb)} soru` : 'yüklenmedi'}${ver ? ' · Sürüm ' + new Date(ver).toLocaleString('tr-TR') : ''}`;
+    el.textContent = `Sınıf kodu: ${code ? 'ayarlı' : 'YOK (öğrenciler katılamaz)'} · Üye: ${n} öğrenci · Banka: ${bank ? `Seviye 1 ${count(bank.wb)} soru, Seviye 2 ${count(bank.sb)} soru, Reading ${count(bank.rd)} soru` : 'yüklenmedi'}${ver ? ' · Sürüm ' + new Date(ver).toLocaleString('tr-TR') : ''}`;
   } catch { el.textContent = 'Okunamadı.'; }
 }
 $('#prepBtn')?.addEventListener('click', () => { $('#prepModal').classList.remove('hidden'); prepInfo(); });
@@ -636,7 +636,7 @@ $('#prepUpload')?.addEventListener('click', async () => {
   let bank;
   try { bank = JSON.parse(await file.text()); } catch { return toast('Dosya okunamadı (JSON değil)'); }
   const okBook = b => Array.isArray(b) && b.every(u => u && Number.isInteger(u.u) && typeof u.t === 'string' && Array.isArray(u.items) && u.items.every(it => Array.isArray(it) && it.length >= 6 && typeof it[2] === 'string' && typeof it[3] === 'string' && Array.isArray(it[4])));
-  if (!okBook(bank.wb || []) || !okBook(bank.sb || [])) return toast('Biçim hatalı: { wb: [...], sb: [...] } bekleniyor');
+  if (!okBook(bank.wb || []) || !okBook(bank.sb || []) || !okBook(bank.rd || [])) return toast('Biçim hatalı: { wb: [...], sb: [...], rd: [...] } bekleniyor');
   if (!confirm('Soru bankası yüklensin mi? Öğrencilerin cihazındaki kopya bir sonraki açılışta yenilenir.')) return;
   try { await set(ref(db, 'prep/bank'), bank); await set(ref(db, 'prep/ver'), Date.now()); toast('Banka yüklendi'); prepInfo(); } catch (e) { toast('Yüklenemedi: ' + e.message); }
 });
