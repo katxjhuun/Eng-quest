@@ -1,8 +1,8 @@
 {
   "name": "dam-la",
-  "version": "2.14.0",
+  "version": "2.14.1",
   "minNativeVersion": "2.1.0",
-  "nativeVersion": "2.2.0",
+  "nativeVersion": "2.3.0",
   "private": true,
   "type": "module",
   "description": "dam-la — İngilizce ve genel kültür pop quiz uygulaması (Android + iPhone)",
