@@ -1,3 +1,11 @@
+# dam-la — Açık uçlu sorular (Hazırlık)
+
+Uzaktan güncellemeyle gelir.
+- **Açık uçlu sorular:** İngilizce Hazırlık ve Hazırlık Reading'deki konuşma/yazma görevleri artık soru olarak çıkar. Seçenek yerine yazı alanı vardır: kendi cevabını İngilizce yaz, "Örnek cevabı göster"e bas.
+- Tek doğru cevap yoktur; doğru/yanlış sayılmaz, cevabını yazınca +3 XP kazanırsın ve örnek cevapla karşılaştırırsın.
+- Yazdığın taslak, uygulamadan çıksan da kaybolmaz.
+
+---
 # dam-la 2.14.0 — Hazır AI sesleri
 
 Uzaktan güncellemeyle gelir.
