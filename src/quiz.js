@@ -1,5 +1,6 @@
 // dam-la — konu sekmeleri, öğrenme biçimi döngüsü, pop quiz (çoktan seçmeli / yazarak / dinleyerek / karışık)
 import { questionSpeech } from './speech-text.js';
+import { mountDrill } from './voice-drill.js';
 import { SUBJECTS, SUBJECT_ORDER } from './data/subjects.js';
 import { generated, factsPending, loadFacts, onFactsLoaded } from './data/gen.js';
 import { DEPARTMENTS, DEPARTMENT_ORDER } from './data/departments.js';
@@ -16,6 +17,7 @@ export const TRACKS = [
   { id: 'akademik', icon: '🎓', label: 'Akademik', def: 'akh' },
   { id: 'genel', icon: '🧭', label: 'Genel', def: 'en' },
   { id: 'hazirlik', icon: '📘', label: 'İngilizce Hazırlık', def: 'ep' },
+  { id: 'okuma', icon: '📖', label: 'Hazırlık Reading', def: 'rd' },
 ];
 export const CATS = [
   { id: 'mix', icon: '🔀', label: 'Karışık', track: 'genel' },
@@ -25,11 +27,13 @@ export const CATS = [
   { id: 'aka', icon: '🎓', label: 'Ana dersler', track: 'akademik' },
   { id: 'akm', icon: '🔀', label: 'Karışık', track: 'akademik' },
   { id: 'ep', icon: '📘', label: 'Empower B1', track: 'hazirlik' },
+  { id: 'rd', icon: '📖', label: 'Prism Reading', track: 'okuma' },
 ];
-const EXTRA_CATS = ['akh', 'aka', 'akm', 'ep'];
+const EXTRA_CATS = ['akh', 'aka', 'akm', 'ep', 'rd'];
+const DRILL_XP = 3; // 5 sesli tekrar tamamlanınca küçük ödül
 const trackOf = cat => (CATS.find(c => c.id === cat) || {}).track || 'genel';
 export const CAT_XP_STEP = 40, MIX_XP_STEP = 100;
-const XP = { quiz: 4, listen: 4, type: 5, typeHinted: 3, wrong: -2 };
+const XP = { quiz: 4, listen: 4, type: 5, typeHinted: 3, wrong: -2, open: 3 }; // open: açık uçlu soru (doğru/yanlış yok)
 const MAX_TRIES = 3;
 const REVIEW_STEPS = [0, 1, 3, 7, 14, 30].map(d => d * 86400000);
 
@@ -149,10 +153,13 @@ export function initQuiz(core) {
     const q = app.quiz;
     q.items = q.items || {}; q.catXp = q.catXp || {}; q.cur = q.cur || {}; q.recent = q.recent || [];
     q.correct = q.correct || 0; q.wrong = q.wrong || 0; q.streak = q.streak || 0; q.rewardCount = q.rewardCount || 0;
+    // seviye sonuçları (ep/rd kitapları): yalnızca bilinen anahtarlar ve true/false değerleri
+    if (!q.lvl || typeof q.lvl !== 'object' || Array.isArray(q.lvl)) q.lvl = {};
+    for (const k of Object.keys(q.lvl)) { if (!['wb', 'sb', 'rd'].includes(k) || !q.lvl[k] || typeof q.lvl[k] !== 'object') delete q.lvl[k]; else q.lvl[k] = { decided: q.lvl[k].decided === true, passed: q.lvl[k].passed === true }; }
     if (!app.cat || !CATS.some(c => c.id === app.cat)) app.cat = 'en';
     // İçe aktarılan yedek dosyası güvenilmez olabilir: bozuk/yabancı soru durumlarını at.
     for (const [k, c] of Object.entries(q.cur)) {
-      const ok = c && typeof c === 'object' && (c.legacy === true || (typeof c.id === 'string' && Array.isArray(c.order) && c.order.every(n => Number.isInteger(n) && n >= 0 && n <= 9) && MODES.some(m => m.id === c.style) && Array.isArray(c.hints) && c.hints.every(Number.isInteger) && (c.typed == null || typeof c.typed === 'string')));
+      const ok = c && typeof c === 'object' && (c.legacy === true || (typeof c.id === 'string' && Array.isArray(c.order) && c.order.every(n => Number.isInteger(n) && n >= 0 && n <= 9) && (MODES.some(m => m.id === c.style) || c.style === 'open') && Array.isArray(c.hints) && c.hints.every(Number.isInteger) && (c.typed == null || typeof c.typed === 'string')));
       if (!ok || !CATS.some(x => x.id === k)) delete q.cur[k];
     }
     for (const [k, v] of Object.entries(q.catXp)) if ((!SUBJECTS[k] && !EXTRA_CATS.includes(k)) || !Number.isFinite(v)) delete q.catXp[k];
@@ -275,7 +282,7 @@ export function initQuiz(core) {
       empty: ['📭 Henüz soru yok', 'Öğretmenin soruları henüz yüklemedi. Biraz sonra tekrar dene.'],
     }[epGate] || ['📘 Bağlanıyor…', 'Sınıf kodun varsa aşağıya yazabilirsin. Daha önce katıldıysan sorular birazdan açılır.'];
     showLegacy(false);
-    $('#qzTag').textContent = '📘 İNGİLİZCE HAZIRLIK';
+    $('#qzTag').textContent = A().cat === 'rd' ? '📖 HAZIRLIK READING' : '📘 İNGİLİZCE HAZIRLIK';
     $('#qzCount').textContent = '';
     $('#qzTitle').textContent = T[0]; $('#qzTitle').classList.remove('qz-hidden');
     $('#qzSub').textContent = T[1]; $('#qzSub').classList.remove('qz-hidden');
@@ -289,8 +296,8 @@ export function initQuiz(core) {
         + (epGate === 'offline' ? `<button class="mini-btn" type="button" data-ep-retry>↻ Tekrar dene</button>` : '');
     const ex = $('#qzExplain'); if (ex) ex.innerHTML = '';
   }
-  const pendingFor = cat => ((cat === 'akh' || cat === 'aka' || cat === 'akm') && !ACAD) || (cat === 'ep' && !EP);
-  function loadFor(cat) { if (cat === 'ep') loadEp(); else if (cat === 'akh' || cat === 'aka' || cat === 'akm') loadAcad(); }
+  const pendingFor = cat => ((cat === 'akh' || cat === 'aka' || cat === 'akm') && !ACAD) || ((cat === 'ep' || cat === 'rd') && !EP);
+  function loadFor(cat) { if (cat === 'ep' || cat === 'rd') loadEp(); else if (cat === 'akh' || cat === 'aka' || cat === 'akm') loadAcad(); }
   const acadDept = () => (ACAD && ACAD[A().profile.dept] ? A().profile.dept : 'genel');
   function acadItems(kind, dept = acadDept()) {
     if (!ACAD) return [];
@@ -304,46 +311,78 @@ export function initQuiz(core) {
   }
   // 1. seviye barı: Empower B1 (Pre-intermediate, 1. baskı) Workbook · 2. seviye barı: Empower B1 2. baskı Student's Book.
   // Kitaplar birbirine karışmaz; ünite sırasıyla. Biçim: [bölüm, tür, soru, cevap, [3 yanlış], açıklama, (sesli metin)]
-  const KIND = { gr: 'Dilbilgisi', vo: 'Kelime', ee: 'Gündelik İngilizce', wp: 'Wordpower', pr: 'Telaffuz' };
-  const BOOK = { wb: 'Empower B1 · Workbook', sb: "Empower B1 2. baskı · Student's Book" };
-  const BOOK_SHORT = { wb: 'Empower B1', sb: 'Empower B1 2nd' };
+  const KIND = { gr: 'Dilbilgisi', vo: 'Kelime', ee: 'Gündelik İngilizce', wp: 'Wordpower', pr: 'Telaffuz', rc: 'Okuma', op: 'Açık uçlu' };
+  const LEVELS = { ep: ['wb', 'sb'], rd: ['rd'] }; // her kategorinin seviyeleri (kitaplar sırayla)
+  const BOOK = { wb: 'Empower B1 · Workbook', sb: "Empower B1 2. baskı · Student's Book", rd: 'Prism Reading 1' };
+  const BOOK_SHORT = { wb: 'Empower B1', sb: 'Empower B1 2nd', rd: 'Prism Reading 1' };
   // Soruyu dinlerken cevap söylenmez: boşluk “…” olarak okunur; tırnaklı İngilizce kısım varsa yalnız o okunur.
   function epItems() {
     if (epCache) return epCache;
     if (!EP) return [];
     const out = [];
-    for (const b of ['wb', 'sb']) (EP[b] || []).forEach(un => un.items.forEach((it, i) => {
-      const [sec, kind, q, a, opts, exp, say] = it;
+    for (const b of ['wb', 'sb', 'rd']) (EP[b] || []).forEach(un => un.items.forEach((it, i) => {
+      const [sec, kind, q, a, opts, exp, say, passage] = it;
       const en = /[a-z]/i.test(a) && !/[çğıöşüÇĞİÖŞÜ]/.test(a);
-      out.push({ id: `ep-${b}-${un.u}-${i}`, cat: 'ep', b, u: un.u, ord: out.length, q, a, opts, exp,
+      out.push({ id: `ep-${b}-${un.u}-${i}`, cat: b === 'rd' ? 'rd' : 'ep', b, u: un.u, ord: out.length, q, a, opts, exp, passage: passage || '',
         sub: `${BOOK[b]} · Ünite ${un.u} ${un.t} · ${sec} · ${KIND[kind] || ''}`,
-        src: `${b === 'wb' ? 'Empower B1 (Pre-intermediate) Workbook' : "Empower B1 2nd edition Student's Book"} · Ünite ${un.u} (${sec}) · ${KIND[kind] || ''}`,
-        lang: 'tr', optLang: en ? 'en' : 'tr', speak: questionSpeech(q), ans: say ? { text: say, lang: 'en' } : { text: a, lang: en ? 'en' : 'tr' }, full: say || null, typeable: typeable(a) });
+        src: `${b === 'wb' ? 'Empower B1 (Pre-intermediate) Workbook' : b === 'sb' ? "Empower B1 2nd edition Student's Book" : 'Prism Reading 1'} · Ünite ${un.u} (${sec}) · ${KIND[kind] || ''}`,
+        lang: 'tr', optLang: en ? 'en' : 'tr', speak: questionSpeech(q), ans: say ? { text: say, lang: 'en' } : { text: a, lang: en ? 'en' : 'tr' }, full: say || null, open: kind === 'op', typeable: kind !== 'op' && typeable(a) });
     }));
     return (epCache = out);
   }
-  // ilerleme: soru en az bir kez doğru bilindiyse öğrenildi; ünitenin %80'i öğrenilince sıradaki ünite açılır
-  function epProgress() {
-    const items = epItems(), q = Q(), units = { sb: {}, wb: {} };
-    for (const it of items) { const u = units[it.b][it.u] || (units[it.b][it.u] = { n: 0, ok: 0, t: '' }); u.n++; if (q.items[it.id]?.c > 0) u.ok++; }
-    const done = (b, u) => units[b][u] && units[b][u].ok / units[b][u].n >= 0.8;
+  // ilerleme: soru en az bir kez doğru bilindiyse öğrenildi; ünitedeki TÜM sorular görülüp %80'i öğrenilince sıradaki ünite açılır.
+  // Seviye = bir kaynak kitap. Kitaptaki tüm sorular görülünce seviye sonucu hesaplanır (aşağıda levelGate).
+  function epProgress(cat = 'ep') {
+    const q = Q(), books = LEVELS[cat] || ['wb'], units = {};
+    books.forEach(b => { units[b] = {}; });
+    for (const it of epItems()) {
+      if (it.cat !== cat) continue;
+      const u = units[it.b][it.u] || (units[it.b][it.u] = { n: 0, ok: 0, seen: 0 });
+      u.n++; if (q.items[it.id]) u.seen++; if (q.items[it.id]?.c > 0) u.ok++;
+    }
+    const done = (b, u) => units[b][u] && units[b][u].seen === units[b][u].n && units[b][u].ok / units[b][u].n >= 0.8;
     const list = b => Object.keys(units[b]).map(Number).sort((x, y) => x - y);
-    let book = list('wb').every(u => done('wb', u)) && list('sb').length ? 'sb' : 'wb';
+    const has = books.filter(b => list(b).length), decided = b => q.lvl[b]?.decided === true;
+    const book = has.find(b => !decided(b)) || has[has.length - 1] || books[0];
     const us = list(book), unit = us.find(u => !done(book, u)) ?? us[us.length - 1];
     const tot = us.reduce((s, u) => s + units[book][u].n, 0), ok = us.reduce((s, u) => s + units[book][u].ok, 0);
-    return { book, unit, units: units[book], order: us, pct: tot ? ok / tot : 0, allDone: book === 'sb' && us.every(u => done('sb', u)) };
+    return { book, unit, units: units[book], order: us, pct: tot ? ok / tot : 0, allDone: has.length > 0 && has.every(decided), levelNo: books.indexOf(book) + 1, levels: has.length };
   }
-  function pickEp() {
-    const items = epItems(), q = Q(), now = Date.now(), recent = new Set(q.recent.slice(-6));
-    const P = epProgress();
+  function pickEp(cat = 'ep') {
+    const items = epItems().filter(it => it.cat === cat), q = Q(), now = Date.now(), recent = new Set(q.recent.slice(-6));
+    const P = epProgress(cat);
     const due = items.filter(it => q.items[it.id] && q.items[it.id].due <= now && !recent.has(it.id) && (it.b !== P.book || it.u < P.unit || P.allDone));
     if (due.length && (Math.random() < 0.25 || P.allDone)) return due.sort((x, y) => q.items[x.id].due - q.items[y.id].due)[0];
     const here = items.filter(it => it.b === P.book && it.u === P.unit && !recent.has(it.id));
     // kitaptaki sırayla: henüz görülmemiş ilk soru; hepsi görüldüyse henüz bilinemeyenler
     return here.find(it => !q.items[it.id]) || here.filter(it => !(q.items[it.id]?.c > 0)).sort((x, y) => (q.items[x.id]?.due || 0) - (q.items[y.id]?.due || 0))[0] || due[0] || here[0] || items.find(it => !recent.has(it.id)) || items[0];
   }
+  // ---- seviye sonucu: kitaptaki tüm sorular görülünce başarı = doğru / toplam deneme ----
+  let lvlPrompt = null; // { cat, b, n, rate }: %80 altında kalınca sorulan "tekrar edilsin mi?" ekranı
+  function levelGate(cat) {
+    if (!EP) return null;
+    const P = epProgress(cat); if (P.allDone) return null;
+    const items = epItems().filter(it => it.b === P.book), q = Q();
+    if (!items.length || !items.every(it => q.items[it.id])) return null;
+    let c = 0, w = 0; for (const it of items) { c += q.items[it.id].c || 0; w += q.items[it.id].w || 0; }
+    const rate = c + w ? c / (c + w) : 0;
+    return { cat, b: P.book, n: items.length, rate, pass: rate >= 0.8 };
+  }
+  const decideLevel = (b, passed) => { Q().lvl[b] = { decided: true, passed }; };
+  function renderLevelEnd() {
+    const g = lvlPrompt; if (!g) return;
+    showLegacy(false);
+    const pct = Math.round(g.rate * 100);
+    $('#qzTag').textContent = '📊 SEVİYE SONUCU'; $('#qzCount').textContent = '';
+    $('#qzTitle').textContent = `${BOOK_SHORT[g.b]} bitti: başarın %${pct}`; $('#qzTitle').classList.remove('qz-hidden');
+    $('#qzSub').textContent = `${g.n} sorunun hepsini çözdün ama hedef %80'di. Bu seviyeyi baştan çözmek ister misin? "Evet" dersen seviye sıfırlanır ve baştan başlar; "Hayır" dersen sonraki seviyeye geçersin.`; $('#qzSub').classList.remove('qz-hidden');
+    $('#qzReveal').classList.add('hidden'); $('#qzTyped').classList.add('hidden'); $('#qzNext').classList.add('hidden');
+    $('#qzOptions').classList.remove('hidden');
+    $('#qzOptions').innerHTML = `<button class="primarybtn" type="button" data-lvl="again">🔁 Evet, baştan başla</button><button class="mini-btn" type="button" data-lvl="go">Hayır, devam et ➜</button>`;
+    const ex = $('#qzExplain'); if (ex) { ex.innerHTML = ''; ex.classList.add('hidden'); }
+  }
   function poolFor(cat) {
-    if (cat === 'ep') return epItems();
+    if (cat === 'ep' || cat === 'rd') return epItems().filter(it => it.cat === cat);
     if (cat === 'akh') return acadItems('haz');
     if (cat === 'aka') return acadItems('ana');
     if (cat === 'akm') return [...acadItems('haz'), ...acadItems('ana')];
@@ -383,7 +422,7 @@ export function initQuiz(core) {
     return list.slice().sort((x, y) => (q.items[x.id]?.due || 0) - (q.items[y.id]?.due || 0))[Math.floor(Math.random() * Math.min(3, list.length))];
   }
   function pickNext(cat) {
-    if (cat === 'ep') return pickEp();
+    if (cat === 'ep' || cat === 'rd') return pickEp(cat);
     if (cat === 'mix') {
       const cats = CATS.filter(c => c.id !== 'mix' && c.track === 'genel').map(c => c.id);
       const c = cats[Math.floor(Math.random() * cats.length)];
@@ -396,6 +435,7 @@ export function initQuiz(core) {
     return pickFrom(poolFor(cat), cat);
   }
   function resolveStyle(item, mode) {
+    if (item.open) return 'open'; // açık uçlu: kendi cevabını yaz, örnek cevabı gör
     if (mode !== 'mix') return mode === 'type' && !item.typeable ? 'quiz' : mode;
     const opts = ['quiz', 'listen'].concat(item.typeable ? ['type'] : []);
     return opts[Math.floor(Math.random() * opts.length)];
@@ -442,14 +482,14 @@ export function initQuiz(core) {
   function renderProgressOverride() {
     const app = A(), cat = app.cat;
     if (!cat || cat === 'en') return false;
-    if (cat === 'ep' && EP) {
-      const P = epProgress(), U = P.order;
-      $('#topLevel').textContent = `📘 ${P.book === 'wb' ? '1' : '2'}·Ü${P.unit}`;
-      $('#levelCaption').textContent = `Seviye ${P.book === 'wb' ? '1 · Empower B1' : '2 · Empower B1 2nd edition'}${P.allDone ? ' · tamamlandı' : ''}`;
-      const u = P.units[P.unit] || { n: 1, ok: 0 };
-      $('#xpCaption').textContent = P.allDone ? 'İki kitap da bitti: artık tekrar soruları geliyor.' : `Ünite ${P.unit}: ${u.ok}/${u.n} öğrenildi · %80'de sıradaki ünite açılır${P.book === 'wb' ? ' · sonra Seviye 2 (Empower B1 2nd)' : ''}`;
+    if ((cat === 'ep' || cat === 'rd') && EP) {
+      const P = epProgress(cat), U = P.order, ci = CATS.find(x => x.id === cat);
+      $('#topLevel').textContent = `${ci.icon} ${P.levelNo}·Ü${P.unit ?? '-'}`;
+      $('#levelCaption').textContent = `Seviye ${P.levelNo} · ${BOOK[P.book]}${P.allDone ? ' · tamamlandı' : ''}`;
+      const u = P.units[P.unit] || { n: 1, ok: 0, seen: 0 };
+      $('#xpCaption').textContent = P.allDone ? 'Tüm seviyeler bitti: artık tekrar soruları geliyor.' : `Ünite ${P.unit}: ${u.ok}/${u.n} öğrenildi · tüm sorular görülüp %80'de sıradaki ünite açılır${P.levelNo < P.levels ? ' · kitap bitince seviye sonucu' : ''}`;
       $('#xpNumber').textContent = `%${Math.round(P.pct * 100)}`;
-      $('#cefrTrack').innerHTML = U.map(n => { const x = P.units[n], f = x.ok / x.n; return `<span class="${f >= 0.8 ? 'active' : n === P.unit ? 'current' : ''}" style="--fill:${Math.round(Math.min(1, f / 0.8) * 100)}%"></span>`; }).join('');
+      $('#cefrTrack').innerHTML = U.map(n => { const x = P.units[n], f = x.ok / x.n; return `<span class="${f >= 0.8 && x.seen === x.n ? 'active' : n === P.unit ? 'current' : ''}" style="--fill:${Math.round(Math.min(1, f / 0.8) * 100)}%"></span>`; }).join('');
       $('#cefrLabels').innerHTML = U.map(n => `<span class="${n === P.unit ? 'on' : ''}">${n}</span>`).join('');
       return true;
     }
@@ -474,6 +514,7 @@ export function initQuiz(core) {
     const h1 = $('#mainTitle'), p = $('#mainLead');
     if (!h1) return;
     if (cat === 'ep') { const P = EP ? epProgress() : null; h1.textContent = 'İngilizce hazırlık.'; p.textContent = P ? `${BOOK_SHORT[P.book]} · Ünite ${P.unit}. Kitaptaki sırayla öğren; her cevaptan sonra ayrıntılı açıklama gelir.` : 'Empower B1 kitaplarını sırasıyla öğren.'; return; }
+    if (cat === 'rd') { const P = EP ? epProgress('rd') : null; h1.textContent = 'Hazırlık reading.'; p.textContent = P && P.unit != null ? `${BOOK_SHORT[P.book]} · Ünite ${P.unit}. Metni oku, soruları çöz; doğru bilince cümleyi mikrofonla 5 kez tekrar et.` : 'Prism Reading kitabını sırasıyla çöz.'; return; }
     if (cat === 'akh' || cat === 'aka' || cat === 'akm') { const lb = (ACAD && (ACAD[acadDept()] || {}).label) || 'Bölümün'; h1.textContent = `${lb}.`; p.textContent = cat === 'akh' ? 'Hazırlık: bölümüne başlamadan önce sağlam olması gereken temel konular.' : cat === 'aka' ? 'Ana dersler: bölümün çekirdek konuları, ayrıntılı açıklamalarla.' : 'Hazırlık ve ana ders sorularından karışık.'; return; }
     if (cat === 'en') { h1.textContent = 'İngilizceyi çöz.'; p.textContent = 'Aynı anlamı farklı seviyelerde söyle, bölümüne özel ileri seviye terimleri öğren.'; }
     else if (cat === 'mix') { h1.textContent = 'Karışık pop quiz.'; p.textContent = 'Her soru farklı bir konudan gelir. Doğru da bilsen yanlış da, açıklamayı oku: asıl öğrenme orada.'; }
@@ -523,16 +564,25 @@ export function initQuiz(core) {
     const app = A(), cat = app.cat;
     headline(); renderTabs(); renderModeBtn();
     const c = cur(cat);
-    if (c.pending && cat === 'ep') { renderGate(); core.renderProgress(); return; }
+    $('#qzPassage')?.classList.add('hidden');
+    if ((cat === 'ep' || cat === 'rd') && lvlPrompt && lvlPrompt.cat === cat) { unmountDrill(); renderLevelEnd(); core.renderProgress(); return; }
+    if (c.pending && (cat === 'ep' || cat === 'rd')) { renderGate(); core.renderProgress(); return; }
     if (c.pending) { showLegacy(false); $('#qzTitle').textContent = 'Sorular yükleniyor…'; $('#qzSub').textContent = ''; $('#qzOptions').innerHTML = ''; $('#qzExplain') && ($('#qzExplain').innerHTML = ''); core.renderProgress(); return; }
     if (c.legacy) { showLegacy(true); core.renderLegacy(); core.renderProgress(); notifyLive(null); return; }
     showLegacy(false);
     const item = findItem(c.id), q = Q();
     if (!item) { $('#qzTitle').textContent = 'Sorular yükleniyor…'; $('#qzOptions').innerHTML = ''; loadFacts(); return; }
     if (shownId !== c.id && !c.done) { shownId = c.id; setTimeout(() => window.dispatchEvent(new CustomEvent('dl:question', { detail: { id: c.id, cat: item.cat, style: c.style } })), 0); }
+    // okuma metni (Prism Reading): soruyla birlikte, kapatılıp açılabilir
+    let pe = $('#qzPassage');
+    if (item.passage) {
+      if (!pe) { pe = document.createElement('details'); pe.id = 'qzPassage'; pe.className = 'qz-passage'; const t = $('#qzTitle'); t.parentNode.insertBefore(pe, t); }
+      if (pe.dataset.id !== c.id) { pe.dataset.id = c.id; pe.open = true; pe.innerHTML = `<summary>📖 Metin</summary><div lang="en">${String(item.passage).split(/\n+/).map(x => `<p>${esc(x)}</p>`).join('')}</div>`; }
+      pe.classList.remove('hidden');
+    }
     const catOfItem = item.cat, catInfo = CATS.find(x => x.id === catOfItem);
     const m = MODES.find(x => x.id === c.style);
-    $('#qzTag').textContent = `${catInfo.icon} ${catInfo.label.toLocaleUpperCase('tr')} · ${MODE_TAG[m.id] || m.label}`;
+    $('#qzTag').textContent = `${catInfo.icon} ${catInfo.label.toLocaleUpperCase('tr')} · ${m ? (MODE_TAG[m.id] || m.label) : '📝 AÇIK UÇLU'}`;
     $('#qzCount').textContent = `✓ ${q.correct} · ✗ ${q.wrong} · 🔥 ${q.streak}${c.rep ? ' · 🔁 tekrar' : ''}`;
     $('#qzCount').title = `Doğru ${q.correct} · Yanlış ${q.wrong} · Seri ${q.streak}`;
     const title = $('#qzTitle');
@@ -546,7 +596,14 @@ export function initQuiz(core) {
     const optBox = $('#qzOptions'), typedBox = $('#qzTyped');
     optBox.classList.toggle('hidden', c.style === 'type');
     typedBox.classList.toggle('hidden', c.style !== 'type');
-    if (c.style !== 'type') {
+    if (c.style === 'open') {
+      const box = optBox.querySelector('.qz-open');
+      if (!box || box.dataset.id !== c.id || box.dataset.done !== String(!!c.done)) {
+        optBox.innerHTML = c.done
+          ? `<div class="qz-open" data-id="${esc(c.id)}" data-done="true">${c.typedFinal ? `<p class="qz-open-mine"><span>Senin cevabın</span><b lang="en">${esc(c.typedFinal)}</b></p>` : ''}</div>`
+          : `<div class="qz-open" data-id="${esc(c.id)}" data-done="false"><p class="qz-open-tip">📝 Açık uçlu soru: tek doğru cevap yok. Önce kendi cevabını İngilizce yaz, sonra örnek cevapla karşılaştır.</p><textarea id="qzOpenIn" lang="en" rows="4" placeholder="Write your answer here…" spellcheck="true">${esc(c.typed || '')}</textarea><button class="primarybtn qz-open-btn" data-open-show="1">👀 Örnek cevabı göster</button></div>`;
+      }
+    } else if (c.style !== 'type') {
       optBox.innerHTML = c.order.map((idx, k) => {
         const text = optionText(item, idx);
         let cls = 'quiz-opt';
@@ -566,15 +623,18 @@ export function initQuiz(core) {
       const chosen = c.choice != null && c.choice !== 0 && c.style !== 'type' ? optionText(item, c.choice) : null;
       const note = !ok && chosen && item.notes?.[chosen] ? `<p class="qx-note">${esc(item.notes[chosen])}</p>` : '';
       const ladder = item.ladder ? `<ol class="qx-ladder">${item.ladder.map(l => `<li class="${l.on ? 'on' : ''}${chosen && l.text === chosen ? ' picked' : ''}"><b>${l.level}</b><span><span lang="en">${esc(l.text)}</span><small>${esc(l.clue)}</small></span></li>`).join('')}</ol>` : '';
-      ex.innerHTML = `<div class="qx-head">${ok ? '✅ Doğru!' : '❌ Yanlış'} <span class="qx-xp ${d > 0 ? 'pos' : d < 0 ? 'neg' : 'zero'}">${d === 0 ? 'XP değişmedi' : `${d > 0 ? '+' : '−'}${Math.abs(d)} XP`}</span></div>`
+      const open = c.style === 'open';
+      ex.innerHTML = `<div class="qx-head">${open ? '📝 Örnek cevap' : ok ? '✅ Doğru!' : '❌ Yanlış'} <span class="qx-xp ${d > 0 ? 'pos' : d < 0 ? 'neg' : 'zero'}">${d === 0 ? 'XP değişmedi' : `${d > 0 ? '+' : '−'}${Math.abs(d)} XP`}</span></div>`
         + (ok ? '' : `<p class="qx-answer">Doğru cevap: <strong lang="${item.optLang}">${esc(item.a)}</strong>${c.choice != null && c.choice !== 0 && c.style !== 'type' ? ` · Senin seçimin: <s>${esc(optionText(item, c.choice))}</s>` : ''}${c.style === 'type' && c.typedFinal ? ` · Senin cevabın: <s>${esc(c.typedFinal)}</s>` : ''}</p>`)
         + note
-        + (item.full && item.full !== item.a ? `<p class="qx-full"><span>Tam cümle</span><b lang="en">${esc(item.full)}</b></p>` : '')
+        + (open ? `<p class="qx-full qx-sample"><span>Örnek cevap · tek doğru cevap değil</span><b lang="en">${esc(item.a)}</b></p>` : '')
+        + (!open && item.full && item.full !== item.a ? `<p class="qx-full"><span>Tam cümle</span><b lang="en">${esc(item.full)}</b></p>` : '')
         + formatExp(item.exp) + ladder
         + `<div class="qx-listen"><button class="mini-btn" data-say-ans="1">🔊 Cevabı dinle</button>${item.example ? `<button class="mini-btn" data-say-example="1">🔊 Örnek cümle</button>` : ''}<button class="mini-btn" data-say-exp="1">🔊 Açıklamayı dinle</button></div>`
         + `<p class="qx-src">📚 Kaynak: ${esc(item.src || '—')}</p>`;
       ex.classList.remove('hidden');
-    } else ex.classList.add('hidden');
+      mountDrillFor(item, c, ok, ex);
+    } else { ex.classList.add('hidden'); unmountDrill(); }
     $('#qzNext').classList.toggle('hidden', !c.done);
     core.renderProgress();
     notifyLive(item, c);
@@ -582,6 +642,21 @@ export function initQuiz(core) {
     if (prefId !== c.id) { prefId = c.id; // soru açılınca bu soruda dinlenebilecek İngilizce sesleri hazırla
       const pre = [item.speak?.lang === 'en' && item.speak.text, item.ans?.lang === 'en' && item.ans.text, ...(item.optLang === 'en' ? [item.a, ...(item.opts || [])] : [])].filter(Boolean);
       pre.forEach(t => core.prefetchVoice?.(t)); }
+  }
+
+  // ---- sesli tekrar (telepromter): doğru bilinen sorunun tam cümlesi mikrofonla 5 kez söylenir ----
+  let drillHandle = null, drillRoot = null, drillId = null;
+  function unmountDrill() { try { drillHandle?.stop(); } catch {} drillHandle = null; drillRoot = null; drillId = null; }
+  function mountDrillFor(item, c, ok, ex) {
+    const text = ok && !item.open && (item.cat === 'ep' || item.cat === 'rd') ? (item.full || (item.ans?.lang === 'en' ? item.ans.text : '')) : '';
+    if (!text || text.split(/\s+/).length < 3) { unmountDrill(); return; }
+    if (drillId !== c.id || !drillRoot) { // yeni soru: yeni sayaç; aynı soruda yeniden çizimde mikrofon kesilmesin
+      unmountDrill(); drillId = c.id; drillRoot = document.createElement('div'); drillRoot.className = 'qx-drill';
+      drillHandle = mountDrill(drillRoot, text, { start: c.drill || 0,
+        onProgress: n => { c.drill = n; core.saveLocal(false); },
+        onComplete: () => { if (c.drillPaid) return; c.drillPaid = true; c.drill = 5; addXp(item.cat, DRILL_XP); core.saveLocal(true); core.renderProgress(); core.toast?.(`🎤 5 tekrar tamam: +${DRILL_XP} XP`); } });
+    }
+    ex.appendChild(drillRoot);
   }
 
   // ---- yazarak (harf kutuları) ----
@@ -708,10 +783,26 @@ export function initQuiz(core) {
   }
   function next({ speak = true } = {}) {
     const cat = A().cat, q = Q();
+    unmountDrill();
+    if (cat === 'ep' || cat === 'rd') { // kitaptaki tüm sorular bitti mi? → seviye sonucu
+      const g = levelGate(cat);
+      if (g && g.pass) { decideLevel(g.b, true); core.celebrateText?.(`🎉 ${BOOK_SHORT[g.b]} tamamlandı · başarı %${Math.round(g.rate * 100)}`); }
+      else if (g) { lvlPrompt = g; core.saveLocal(false); render(); return; }
+    }
     q.cur[cat] = newCur(cat);
     core.saveLocal(false);
     holdScroll(() => render({ speak }));
+    // sıradaki soruyu ekranın ortasına al
+    if (cat === 'ep' || cat === 'rd') setTimeout(() => ($('#qzTitle') || $('#gameView'))?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 350);
   }
+  // seviye sonucu ekranındaki seçimler
+  $('#qzOptions').addEventListener('click', e => {
+    const bt = e.target.closest('[data-lvl]'); if (!bt || !lvlPrompt) return;
+    const g = lvlPrompt, q = Q(); lvlPrompt = null;
+    if (bt.dataset.lvl === 'again') { for (const it of epItems()) if (it.b === g.b) delete q.items[it.id]; delete q.lvl[g.b]; delete q.cur[g.cat]; q.recent = q.recent.filter(id => !String(id).startsWith(`ep-${g.b}-`)); }
+    else decideLevel(g.b, false);
+    next();
+  });
 
   // ---- ses ----
   function sayItem(item) { if (item?.speak) core.speak(item.speak.text, item.speak.lang); }
@@ -792,6 +883,14 @@ export function initQuiz(core) {
     const say = e.target.closest('[data-say]');
     const c = cur(), item = findItem(c.id);
     if (say) { e.stopPropagation(); const idx = c.order[+say.dataset.say]; core.speak(optionText(item, idx), item.optLang === 'en' ? 'en' : 'tr'); return; }
+    if (e.target.closest('[data-open-show]')) { // açık uçlu: yazdığını sakla, örnek cevabı aç
+      if (!item || c.done) return;
+      const txt = ($('#qzOpenIn')?.value || '').trim();
+      if (txt.split(/\s+/).filter(Boolean).length < 2) { core.toast('✍️ Önce kendi cevabını yaz (en az 2 kelime).'); $('#qzOpenIn')?.focus(); return; }
+      c.typedFinal = txt.slice(0, 1000); c.revealed = true;
+      finish(item, c, true, XP.open, e.target.closest('[data-open-show]'));
+      return;
+    }
     const b = e.target.closest('[data-opt]'); if (!b || b.classList.contains('elim')) return;
     if (!c.revealed && c.style === 'listen') c.revealed = true;
     choose(+b.dataset.opt, b);
@@ -804,6 +903,10 @@ export function initQuiz(core) {
     if (e.target.closest('[data-say-example]')) { if (item.example) core.speak(item.example, 'en'); return; }
     if (e.target.closest('[data-say-ans]')) { const a = item.ans || { text: item.a, lang: item.optLang === 'en' ? 'en' : 'tr' }; core.speak(a.text, a.lang); return; }
     if (e.target.closest('[data-say-exp]')) core.speak(speakable(String(item.exp).split(/\n\n+/)[0]), 'tr');
+  });
+  $('#qzOptions').addEventListener('input', e => { // açık uçlu cevap taslağı kaybolmasın
+    if (e.target.id !== 'qzOpenIn') return; const c = cur(); if (!c || c.done || c.style !== 'open') return;
+    c.typed = e.target.value.slice(0, 1000); core.saveLocal(false);
   });
   const input = $('#qzInput');
   $('#qzSlots').addEventListener('click', () => { try { input.focus({ preventScroll: true }); } catch {} });
