@@ -1,3 +1,9 @@
+# dam-la 2.14.6 — iPhone düzeltmesi
+
+Uzaktan güncellemeyle gelir.
+- iPhone'da yazı kutularına dokununca ekran artık yakınlaşıp kaymıyor.
+
+---
 # dam-la 2.14.5 — Akademik › Hazırlık, ipuçları ve pet aksesuarları
 
 Uzaktan güncellemeyle gelir.
