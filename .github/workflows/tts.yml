@@ -1,0 +1,77 @@
+# Hazır AI sesleri: soru bankasındaki İngilizce metinlerin eksik seslerini Kokoro ile üretip Firebase'e yükler.
+# Yeni banka yükledikten sonra Actions › "AI sesleri" › Run workflow ile çalıştır; yalnızca eksikler üretilir.
+# Herkese açık depoda dakikalar ücretsizdir. Kitap metinleri günlüğe ya da dosya olarak depoya yazılmaz.
+name: AI sesleri
+
+on:
+  workflow_dispatch:
+    inputs:
+      voices:
+        description: 'Sesler (virgülle)'
+        default: 'am_michael,bf_emma,bf_isabella,am_puck'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tts
+  cancel-in-progress: false
+
+jobs:
+  gen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        voice: [am_michael, bf_emma, bf_isabella, am_puck]
+        part: [0, 1, 2, 3, 4]
+    steps:
+      - name: Bu ses seçili mi
+        id: sel
+        run: echo "on=$([[ ",${{ inputs.voices }}," == *",${{ matrix.voice }},"* ]] && echo 1 || echo 0)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        if: steps.sel.outputs.on == '1'
+        with:
+          sparse-checkout: |
+            scripts/tts-texts.mjs
+            scripts/tts-gen.py
+            src/speech-text.js
+            src/config.js
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        if: steps.sel.outputs.on == '1'
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        if: steps.sel.outputs.on == '1'
+        with:
+          python-version: '3.11'
+      - name: Model önbelleği
+        if: steps.sel.outputs.on == '1'
+        uses: actions/cache@v4
+        with:
+          path: /tmp/model
+          key: kokoro-v1.0
+      - name: Paketler ve model
+        if: steps.sel.outputs.on == '1'
+        run: |
+          pip install -q kokoro-onnx==0.6.1 lameenc google-auth requests
+          mkdir -p /tmp/model /tmp/ttsdeps
+          for f in kokoro-v1.0.onnx voices-v1.0.bin; do [ -s /tmp/model/$f ] || curl -sSL -o /tmp/model/$f https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/$f; done
+          cd /tmp/ttsdeps && npm init -y >/dev/null && npm pkg set type=module && npm install --no-audit --no-fund firebase-admin@13 >/dev/null
+      - name: Metinler
+        if: steps.sel.outputs.on == '1'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          NODE_PATH: /tmp/ttsdeps/node_modules
+        run: |
+          mkdir -p /tmp/ttsdeps/src && cp src/speech-text.js src/config.js /tmp/ttsdeps/src/ && cp scripts/tts-texts.mjs /tmp/ttsdeps/texts.mjs
+          cd /tmp/ttsdeps && node texts.mjs
+      - name: Üret ve yükle
+        if: steps.sel.outputs.on == '1'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          DB_URL: https://dam-la-default-rtdb.europe-west1.firebasedatabase.app
+        run: python scripts/tts-gen.py ${{ matrix.voice }} ${{ matrix.part }} 5
