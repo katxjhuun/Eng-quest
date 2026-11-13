@@ -290,7 +290,12 @@ export function initCloud(core) {
   api.prep = {
     ready: () => !!(F && state.uid && state.db),
     member: async () => { if (!api.prep.ready()) return null; try { return (await tmo(F.get(F.ref(state.db, 'prep/members/' + state.uid)))).exists(); } catch { return null; } },
-    join: async code => { if (!api.prep.ready()) return 'offline'; try { await tmo(F.set(F.ref(state.db, 'prep/members/' + state.uid), normCode(code))); return 'ok'; } catch (e) { return e?.message === 'timeout' ? 'offline' : 'bad'; } },
+    join: async code => { if (!api.prep.ready()) return 'offline'; try { await tmo(F.set(F.ref(state.db, 'prep/members/' + state.uid), normCode(code))); return 'ok'; }
+      catch (e) {
+        // üyelik bir kez yazılabilir: zaten üyeyse yazma reddedilir; bu durumda "yanlış kod" deme, üye say
+        try { if ((await tmo(F.get(F.ref(state.db, 'prep/members/' + state.uid)), 8000)).exists()) return 'ok'; } catch {}
+        return e?.message === 'timeout' ? 'offline' : 'bad';
+      } },
     ver: async () => { try { return (await tmo(F.get(F.ref(state.db, 'prep/ver')))).val() || 0; } catch { return 0; } },
     bank: async () => { try { const s2 = await tmo(F.get(F.ref(state.db, 'prep/bank')), 30000); return s2.exists() ? s2.val() : null; } catch { return null; } },
     // hazır AI sesi: base64 mp3 ya da yoksa null
