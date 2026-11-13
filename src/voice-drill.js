@@ -66,8 +66,17 @@ const WebSR = () => window.SpeechRecognition || window.webkitSpeechRecognition |
 export function drillSupport() {
   if (nativePlugin()) return 'native';
   if (Capacitor.isNativePlatform()) return 'needs-update'; // yeni APK gerekir
-  return WebSR() ? 'web' : 'none';
+  if (WebSR() && !iosStandalone()) return 'web';
+  // konuşma tanıma yoksa (ör. iPhone'da ana ekrana eklenen uygulama): mikrofonun ses düzeyiyle sesli tekrar
+  return navigator.mediaDevices?.getUserMedia && (window.AudioContext || window.webkitAudioContext) ? 'vad' : 'none';
 }
+// iPhone'da ana ekrandan açılan web uygulamasında webkitSpeechRecognition görünür ama çalışmaz (Apple kısıtı)
+function iosStandalone() {
+  const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  return ios && (navigator.standalone === true || window.matchMedia?.('(display-mode: standalone)').matches);
+}
+// ---- ses düzeyi modu (VAD): kelime tanımaz; cümlenin yüksek sesle, uygun sürede ve doğal hızda söylendiğini ölçer ----
+const VAD = { secPerWord: 0.3, minVoiced: 0.55, endSilence: 750, minRms: 0.012 };
 
 export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang = 'en-US' } = {}) {
   const words = String(text).split(/\s+/).filter(Boolean);
@@ -88,9 +97,7 @@ export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang
   if (count >= DRILL_REPS) { say('✅ 5 tekrar tamam!', 'ok'); $b.classList.add('hidden'); }
   if (support === 'none' || support === 'needs-update') {
     $b.disabled = true;
-    const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    say(support === 'needs-update' ? (ios ? '🎤 Mikrofon için uygulamanın yeni iPhone sürümünü (IPA) kurman gerekiyor.' : '🎤 Mikrofon için uygulamanın yeni sürümünü (APK) kurman gerekiyor.')
-      : ios ? '🎤 iPhone’da ana ekrana eklenen web sürümü mikrofonla tanımayı desteklemiyor. Uygulamanın iPhone sürümünü (IPA) kur ya da Safari’de aç.' : '🎤 Bu tarayıcı mikrofonla tanımayı desteklemiyor (Chrome kullan).', 'warn');
+    say(support === 'needs-update' ? '🎤 Mikrofon için uygulamanın yeni sürümünü kurman gerekiyor.' : '🎤 Bu tarayıcı mikrofonu desteklemiyor.', 'warn');
   }
 
   // birden çok tanıma adayı gelir: hedefe en çok uyanı kullan
@@ -136,6 +143,55 @@ export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang
     }, Math.max(0, until - performance.now()));
   }
 
+  // ---- ses düzeyi motoru ----
+  let vad = null;
+  async function startVad() {
+    if (!vad?.stream) {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+      const AC = window.AudioContext || window.webkitAudioContext, ctx = new AC();
+      const src = ctx.createMediaStreamSource(stream), an = ctx.createAnalyser(); an.fftSize = 1024; src.connect(an);
+      vad = { stream, ctx, an, buf: new Float32Array(an.fftSize), floor: 0, raf: 0 };
+    }
+    if (vad.ctx.state === 'suspended') await vad.ctx.resume();
+    const expect = Math.max(1.2, words.length * VAD.secPerWord); // bu cümle doğal hızda yaklaşık bu kadar sürer
+    let calib = performance.now() + 350, floorSum = 0, floorN = 0, voiced = 0, first = 0, lastVoice = 0, prev = performance.now();
+    const loop = now => {
+      if (!vad || cooling || !active) return;
+      vad.an.getFloatTimeDomainData(vad.buf); let e = 0; for (const x of vad.buf) e += x * x; const rms = Math.sqrt(e / vad.buf.length);
+      const dt = (now - prev) / 1000; prev = now;
+      if (now < calib) { floorSum += rms; floorN++; }
+      else {
+        if (!vad.floor) vad.floor = floorN ? floorSum / floorN : 0.005;
+        const on = rms > Math.max(VAD.minRms, vad.floor * 2.6);
+        if (on) { if (!first) { first = now; repStart = now; } voiced += dt; lastVoice = now; }
+        else if (!first) vad.floor = vad.floor * 0.98 + rms * 0.02; // sessizken gürültü tabanını izle
+        // telepromter: söylenen süreye göre kelimeleri sırayla yak
+        const k = Math.min(total, Math.floor((voiced / expect) * total * 1.05));
+        if (k !== hits.size) { hits = new Set(Array.from({ length: k }, (_, i) => i)); paint(); }
+        if (first && now - lastVoice > VAD.endSilence) { // konuşma bitti
+          const span = (lastVoice - first) / 1000;
+          if (voiced >= expect * VAD.minVoiced) { finishVad(span); return; }
+          if (span > 0.25) say('🎤 Cümlenin tamamını yüksek sesle söyle.', 'warn');
+          first = 0; voiced = 0; hits = new Set(); paint();
+        }
+      }
+      vad.raf = requestAnimationFrame(loop);
+    };
+    say('🎤 Dinliyorum… cümleyi yüksek sesle söyle (bu cihazda ses düzeyiyle ölçülüyor).');
+    vad.raf = requestAnimationFrame(loop);
+  }
+  function finishVad(span) {
+    hits = new Set(); paint();
+    if (words.length >= SPEED_MIN_WORDS && words.length / Math.max(0.3, span) > MAX_WPS + 0.5) { cooldown('⚠️ Çok hızlı geçtin. Doğal hızınla, tam söyle. Bu tekrar sayılmadı.', 'warn'); return; }
+    count++; dots(); onProgress?.(count);
+    if (count >= DRILL_REPS) { halt(); say('✅ 5 tekrar tamam! Aferin.', 'ok'); $b.classList.add('hidden'); onComplete?.(); return; }
+    cooldown(`✔ ${count}. tekrar sayıldı.`, 'ok');
+  }
+  function stopVad(full) {
+    if (!vad) return; cancelAnimationFrame(vad.raf);
+    if (full) { try { vad.stream.getTracks().forEach(t => t.stop()); vad.ctx.close(); } catch {} vad = null; }
+  }
+
   // ---- motor ----
   async function begin() {
     if (stopped || busy || cooling || count >= DRILL_REPS) return;
@@ -143,6 +199,7 @@ export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang
     if (!repStart) repStart = performance.now(); // motor yeniden başlasa da tekrarın başlangıcı korunur
     const N = nativePlugin();
     try {
+      if (support === 'vad') { await startVad(); return; }
       if (N) {
         const perm = await N.requestPermissions?.();
         if (perm && perm.speechRecognition && perm.speechRecognition !== 'granted') { say('🎤 Mikrofon izni verilmedi.', 'warn'); halt(); return; }
@@ -161,19 +218,20 @@ export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang
         rec.onend = () => { if (active && !cooling && !stopped) setTimeout(() => { if (active && !cooling) begin(); }, 200); };
         rec.start();
       }
-    } catch (e) { say('🎤 Mikrofon açılamadı: ' + (e?.message || e), 'warn'); halt(); }
+    } catch (e) { say(e?.name === 'NotAllowedError' ? '🎤 Mikrofon izni verilmedi. Ayarlar’dan dam-la (ya da Safari) için mikrofona izin ver.' : '🎤 Mikrofon açılamadı: ' + (e?.message || e), 'warn'); halt(); }
     finally { busy = false; }
   }
   async function cleanup() {
     const N = nativePlugin();
-    try { if (N) { await N.stop?.(); } else rec?.stop(); } catch {}
+    stopVad();
+    try { if (support === 'vad') {} else if (N) { await N.stop?.(); } else rec?.stop(); } catch {}
     listeners.forEach(l => { try { l.remove(); } catch {} }); listeners = []; rec = null;
   }
-  function halt() { active = false; cooling = false; clearTimeout(coolT); clearInterval(tickT); cleanup(); $b.textContent = count ? '🎤 Devam et' : '🎤 Başla'; }
+  function halt() { active = false; cooling = false; clearTimeout(coolT); clearInterval(tickT); cleanup(); stopVad(true); $b.textContent = count ? '🎤 Devam et' : '🎤 Başla'; }
   $b.addEventListener('click', () => {
     if (active) { halt(); say('Durduruldu.'); return; }
     active = true; hits = new Set(); tFirst = 0; updates = 0; repStart = 0; paint(); $b.textContent = '⏹ Durdur';
     say('Dinliyorum… cümleyi okurken kelimeler renklenecek.'); begin();
   });
-  return { stop() { stopped = true; active = false; clearTimeout(coolT); clearInterval(tickT); cleanup(); }, get count() { return count; } };
+  return { stop() { stopped = true; active = false; clearTimeout(coolT); clearInterval(tickT); cleanup(); stopVad(true); }, get count() { return count; } };
 }
