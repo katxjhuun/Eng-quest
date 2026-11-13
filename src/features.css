@@ -643,3 +643,6 @@ html,body{overflow-x:hidden;overflow-x:clip;max-width:100%}
 .qz-topic small{font-size:11px;color:#7c739a;font-weight:700}
 .qz-topic .qz-ex{margin-top:2px;padding:6px 9px;border-radius:10px;background:#fffdf8;border:1px dashed #d6ccff;color:#201d23}
 .qz-topic .qz-ex i{font-style:normal;font-weight:700}
+
+/* iPhone: 16 px altındaki yazı alanlarına dokununca Safari sayfayı yakınlaştırır; dokunmatik cihazlarda en az 16 px */
+@media (pointer: coarse) { input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select { font-size: max(16px, 1em) !important; } }
