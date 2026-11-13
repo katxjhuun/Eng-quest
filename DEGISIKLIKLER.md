@@ -1,3 +1,12 @@
+# dam-la — Seviye geçişi, daha iyi sesli tekrar
+
+Uzaktan güncellemeyle gelir.
+- **Seviyeler arası geçiş:** Hazırlık'ta açtığın seviye ve ünitelere ilerleme kartından dokunarak dönebilirsin. Bitirdiğin bir üniteye sonradan soru eklendiyse yanında kırmızı sayı görünür; dönünce önce hiç çözmediğin yeni sorular gelir, bitince kaldığın yere otomatik dönersin.
+- **Sesli tekrar daha iyi duyuyor:** Kısaltmalar (I'm / I am), sayılar (22 / twenty two) ve küçük telaffuz farkları artık tanınıyor; normal akıcı konuşma "çok hızlı" sayılmıyor.
+- **Tekrarlar arası 2 saniye:** Her tekrardan sonra mikrofon kısa bir geri sayımla yeniden hazırlanır; bir sonraki tekrar artık kaçmaz.
+- **Akıcı kaydırma:** Sonraki soruya geçince ekran takılmadan yumuşakça ortalanır.
+
+---
 # dam-la — Açık uçlu sorular (Hazırlık)
 
 Uzaktan güncellemeyle gelir.
