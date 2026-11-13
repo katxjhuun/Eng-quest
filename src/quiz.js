@@ -14,20 +14,20 @@ export const MODES = [
 export const MODE_TAG = { type: 'YAZARAK', quiz: 'POP QUIZ', listen: 'DİNLEYEREK', mix: 'KARIŞIK' };
 // Üç kategori (track): Akademik (bölüme göre hazırlık + ana dersler), Genel (eski sekmeler), İngilizce Hazırlık (Empower B1)
 export const TRACKS = [
-  { id: 'akademik', icon: '🎓', label: 'Akademik', def: 'akh' },
+  { id: 'akademik', icon: '🎓', label: 'Akademik', def: 'ep' },
   { id: 'genel', icon: '🧭', label: 'Genel', def: 'en' },
-  { id: 'hazirlik', icon: '📘', label: 'İngilizce Hazırlık', short: 'Hazırlık', def: 'ep' },
-  { id: 'okuma', icon: '📖', label: 'Hazırlık Reading', short: 'Reading', def: 'rd' },
 ];
 export const CATS = [
   { id: 'mix', icon: '🔀', label: 'Karışık', track: 'genel' },
   { id: 'en', icon: '🇬🇧', label: 'İngilizce', track: 'genel' },
   ...SUBJECT_ORDER.map(id => ({ id, icon: SUBJECTS[id].icon, label: SUBJECTS[id].label, track: 'genel' })),
-  { id: 'akh', icon: '🧱', label: 'Hazırlık', track: 'akademik' },
+  // Akademik › Hazırlık: Empower (Seviye 1 Workbook, Seviye 2 Student's Book) ve Reading (Prism, ikinci Seviye 1)
+  { id: 'ep', icon: '📘', label: 'Hazırlık · Empower', short: 'Empower', track: 'akademik' },
+  { id: 'rd', icon: '📖', label: 'Hazırlık · Reading', short: 'Reading', track: 'akademik' },
+  // bölüme özel sorular: bankaları boşken gizli
+  { id: 'akh', icon: '🧱', label: 'Bölüm hazırlığı', short: 'Bölüm', track: 'akademik' },
   { id: 'aka', icon: '🎓', label: 'Ana dersler', track: 'akademik' },
-  { id: 'akm', icon: '🔀', label: 'Karışık', track: 'akademik' },
-  { id: 'ep', icon: '📘', label: 'Empower B1', track: 'hazirlik' },
-  { id: 'rd', icon: '📖', label: 'Prism Reading', track: 'okuma' },
+  { id: 'akm', icon: '🔀', label: 'Bölüm karışık', short: 'Karışık', track: 'akademik' },
 ];
 const EXTRA_CATS = ['akh', 'aka', 'akm', 'ep', 'rd'];
 const DRILL_XP = 3; // 5 sesli tekrar tamamlanınca küçük ödül
@@ -609,12 +609,14 @@ export function initQuiz(core) {
     else if (cat === 'mix') { h1.textContent = 'Karışık pop quiz.'; p.textContent = 'Her soru farklı bir konudan gelir. Doğru da bilsen yanlış da, açıklamayı oku: asıl öğrenme orada.'; }
     else { h1.textContent = `${c.label} pop quiz.`; p.textContent = 'Seç ya da yaz; her cevaptan sonra güvenilir kaynaklara dayanan ayrıntılı açıklama gelir.'; }
   }
+  // bölüm soruları (akh/aka/akm) henüz yoksa konu listesinde gösterme
+  function acadHidden(id) { if (!/^ak[ham]$/.test(id)) return false; if (!ACAD) { loadAcad(); return true; } return !acadItems('haz').length && !acadItems('ana').length; }
   function renderTabs() {
     const box = $('#catTabs'); if (!box) return;
     const cat = A().cat;
     const tr = trackOf(cat);
     renderLock(tr);
-    const list = CATS.filter(c => c.track === tr);
+    const list = CATS.filter(c => c.track === tr && !acadHidden(c.id));
     box.classList.toggle('hidden', list.length < 2);
     if (list.length >= 2) renderDial(box, 'cat', { items: list, cur: cat, attr: 'data-cat', label: 'Konu' });
   }
@@ -678,6 +680,7 @@ export function initQuiz(core) {
   function optionText(item, idx) { return idx === 0 ? item.a : item.opts[idx - 1]; }
   let shownId = null;
   function render({ speak = false } = {}) {
+    { const a0 = A(); if (acadHidden(a0.cat)) a0.cat = 'ep'; } // boş bölüm konusu seçiliyse Hazırlık'a geç
     const app = A(), cat = app.cat;
     headline(); renderTabs(); renderModeBtn();
     const c = cur(cat);
@@ -691,7 +694,7 @@ export function initQuiz(core) {
     if (!item && /^ak/.test(cat) && ACAD) { // akademik bankası henüz boş: sonsuz "yükleniyor" yerine açık bilgi
       showLegacy(false); $('#qzTitle').textContent = '🎓 Akademik sorular hazırlanıyor';
       $('#qzSub').textContent = 'Bölümüne özel sorular henüz eklenmedi. Şimdilik Genel ya da İngilizce Hazırlık ile devam edebilirsin.';
-      $('#qzOptions').innerHTML = `<button class="mini-btn" type="button" data-goto-track="genel">🧭 Genel'e geç</button> <button class="mini-btn" type="button" data-goto-track="hazirlik">📘 İngilizce Hazırlık'a geç</button>`;
+      $('#qzOptions').innerHTML = `<button class="mini-btn" type="button" data-goto-track="genel">🧭 Genel'e geç</button>`;
       $('#qzExplain') && ($('#qzExplain').innerHTML = ''); core.renderProgress(); return; }
     if (!item) { $('#qzTitle').textContent = 'Sorular yükleniyor…'; $('#qzOptions').innerHTML = ''; loadFacts(); return; }
     if (shownId !== c.id && !c.done) { shownId = c.id; setTimeout(() => window.dispatchEvent(new CustomEvent('dl:question', { detail: { id: c.id, cat: item.cat, style: c.style } })), 0); }
