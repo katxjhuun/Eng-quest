@@ -517,6 +517,7 @@ export function initQuiz(core) {
       if (mode === 'mix' && Math.random() < 0.35) return { legacy: true };
     }
     const item = forceItem || pickNext(cat);
+    if (!item) return { empty: true }; // bu bölümde henüz soru yok (ör. boş akademik banka): çökmek yerine boş durum
     const style = resolveStyle(item, mode);
     const seen = Q().items[item.id];
     return { id: item.id, style, done: false, choice: null, typed: '', hints: [], tries: 0, order: seededShuffle([0, ...item.opts.map((_, i) => i + 1)], hash(item.id + Date.now())), revealed: style !== 'listen', rep: !!(seen && (seen.c + seen.w) > 0), at: Date.now() };
@@ -666,6 +667,11 @@ export function initQuiz(core) {
     if (c.legacy) { showLegacy(true); core.renderLegacy(); core.renderProgress(); notifyLive(null); return; }
     showLegacy(false);
     const item = findItem(c.id), q = Q();
+    if (!item && /^ak/.test(cat) && ACAD) { // akademik bankası henüz boş: sonsuz "yükleniyor" yerine açık bilgi
+      showLegacy(false); $('#qzTitle').textContent = '🎓 Akademik sorular hazırlanıyor';
+      $('#qzSub').textContent = 'Bölümüne özel sorular henüz eklenmedi. Şimdilik Genel ya da İngilizce Hazırlık ile devam edebilirsin.';
+      $('#qzOptions').innerHTML = `<button class="mini-btn" type="button" data-goto-track="genel">🧭 Genel'e geç</button> <button class="mini-btn" type="button" data-goto-track="hazirlik">📘 İngilizce Hazırlık'a geç</button>`;
+      $('#qzExplain') && ($('#qzExplain').innerHTML = ''); core.renderProgress(); return; }
     if (!item) { $('#qzTitle').textContent = 'Sorular yükleniyor…'; $('#qzOptions').innerHTML = ''; loadFacts(); return; }
     if (shownId !== c.id && !c.done) { shownId = c.id; setTimeout(() => window.dispatchEvent(new CustomEvent('dl:question', { detail: { id: c.id, cat: item.cat, style: c.style } })), 0); }
     // okuma metni (Prism Reading): soruyla birlikte, kapatılıp açılabilir
@@ -947,6 +953,7 @@ export function initQuiz(core) {
     if (msg.textContent.startsWith('✓')) prepStatus();
   });
   $('#settingsBtn')?.addEventListener('click', () => setTimeout(prepStatus, 50));
+  $('#qzOptions').addEventListener('click', e => { const g = e.target.closest('[data-goto-track]'); if (g) { document.querySelector(`.lk-drum [data-track="${g.dataset.gotoTrack}"], #trackSw [data-track="${g.dataset.gotoTrack}"]`)?.click(); } });
   $('#qzOptions').addEventListener('click', e => { if (e.target.closest('[data-ep-retry]')) { epGate = ''; epP = null; render(); loadEp(); } });
   // kategori anahtarı: her kategoride en son açık olan sekme hatırlanır
   $('#trackSw')?.addEventListener('click', e => {

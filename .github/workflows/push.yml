@@ -41,5 +41,5 @@ jobs:
         run: |
           cp scripts/push-send.mjs /tmp/pushdeps/send.mjs
           mkdir -p /tmp/pushdeps/src && cp src/config.js src/golden-time.js /tmp/pushdeps/src/
-          sed -i "s#'../src/config.js'#'./src/config.js'#" /tmp/pushdeps/send.mjs
+          sed -i "s#'../src/#'./src/#g" /tmp/pushdeps/send.mjs
           cd /tmp/pushdeps && node send.mjs
