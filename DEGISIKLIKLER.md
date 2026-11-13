@@ -1,3 +1,12 @@
+# dam-la 2.14.7 — Soru süresi, Reading metinleri ve sınıf kodu
+
+Uzaktan güncellemeyle gelir.
+- **Soru süresi:** Her soru için 1:30. Sayacın çemberi süre azaldıkça küçülür. Son 30 saniyede sayı büyüyüp atmaya başlar, son 10 saniyede kırmızı yanıp söner. Süre biterse soru yanlış sayılır, "Süre bitti" yazar ve sonraki soruya geç butonu çıkar.
+- **Reading metinleri:** Uzun metinler kendi kutusunda kayar, taşmaz. Başlık ve paragraf düzeni okunaklı.
+- **Sınıf kodu:** Daha önce katılmış cihazda kod artık "yanlış" denmeden kabul ediliyor.
+- **Admin:** Reading metinlerini eklemek ve düzenlemek için yeni bölüm.
+
+---
 # dam-la 2.14.6 — iPhone düzeltmesi
 
 Uzaktan güncellemeyle gelir.
