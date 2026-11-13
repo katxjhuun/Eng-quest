@@ -1,3 +1,12 @@
+# dam-la — Ekrana sığan ana ekran, kilit tarzı kategori seçici, akıcı sesli tekrar
+
+Uzaktan güncellemeyle gelir.
+- **Yana kayma yok:** Ana ekranda her şey ekrana sığar; konu sekmeleri yana taşmak yerine alt satıra geçer.
+- **Bavul kilidi tarzı seçici:** Akademik / Genel / İngilizce Hazırlık / Hazırlık Reading artık ortada seçili, iki yanda önceki-sonraki duran döner bir kilit. Okla ya da parmakla sağa-sola kaydırarak çevir; sondan başa döner.
+- **Sesli tekrar her okumayı duyar:** Mikrofon tekrarlar arasında kapanmaz; ilk okumadan sonraki tekrarlar da sayılır. Hız ve gecikme kuralları kaldırıldı.
+- **2 saniyelik hazırlık sayacı:** Her okumadan sonra cümlenin üstünde büyük, yarı saydam bir sayaç çıkar; bitince cümleyi baştan oku.
+
+---
 # dam-la — Seviye geçişi, daha iyi sesli tekrar
 
 Uzaktan güncellemeyle gelir.
