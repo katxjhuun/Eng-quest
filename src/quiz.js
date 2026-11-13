@@ -80,6 +80,7 @@ export function holdScroll(fn) {
   // doğal yükseklik min-height kaldırılmadan ölçülür (kaldırmak tarayıcının kaydırmayı hemen kırpmasına yol açar)
   const natural = () => { const vt = view.getBoundingClientRect().top; let m = 0; for (const c of view.children) { const r = c.getBoundingClientRect(); if (r.height) m = Math.max(m, r.bottom - vt + (parseFloat(getComputedStyle(c).marginBottom) || 0)); } return m + (parseFloat(getComputedStyle(view).paddingBottom) || 0); };
   const shrink = () => {
+    if (holdScroll.paused) return; // yumuşak kaydırma sürerken sayfa boyu oynatılmaz (takılmanın asıl sebebi)
     const h = Math.min(prev, need());
     if (h <= natural()) { view.style.minHeight = ''; holdScroll.off?.(); return; }
     if (h <= natural) { holdScroll.off?.(); return; }
@@ -88,8 +89,31 @@ export function holdScroll(fn) {
   shrink();
   if (Math.abs(window.scrollY - y) > 1) window.scrollTo({ top: y, behavior: 'instant' });
   if (!view.style.minHeight) return;
-  window.addEventListener('scroll', shrink, { passive: true });
-  holdScroll.off = () => { window.removeEventListener('scroll', shrink); holdScroll.off = null; };
+  let raf = 0; const onScroll = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; shrink(); }); }; // karede en çok bir ölçüm
+  window.addEventListener('scroll', onScroll, { passive: true });
+  holdScroll.shrink = shrink;
+  holdScroll.off = () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf); holdScroll.off = null; holdScroll.shrink = null; };
+}
+
+// Öğeyi ekranın ortasına akıcı biçimde kaydırır: tek rAF döngüsü, yumuşak hızlanıp yavaşlama, mesafeye göre süre.
+// Kullanıcı dokunur/kaydırırsa hemen bırakır; “hareketi azalt” açıksa anında gider.
+let centerAnim = null;
+export function smoothCenter(el) {
+  if (!el) return;
+  centerAnim?.stop();
+  const r = el.getBoundingClientRect(), max = document.documentElement.scrollHeight - window.innerHeight;
+  const from = window.scrollY, to = Math.max(0, Math.min(max, from + r.top + r.height / 2 - window.innerHeight / 2)), dist = to - from;
+  if (Math.abs(dist) < 6) return;
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { window.scrollTo({ top: to, behavior: 'instant' }); return; }
+  const dur = Math.min(620, 300 + Math.abs(dist) * 0.3), t0 = performance.now();
+  const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; // easeInOutCubic
+  let id = 0;
+  const stop = () => { cancelAnimationFrame(id); window.removeEventListener('wheel', stop); window.removeEventListener('touchstart', stop); holdScroll.paused = false; holdScroll.shrink?.(); centerAnim = null; };
+  const step = now => { const t = Math.min(1, (now - t0) / dur); window.scrollTo({ top: from + dist * ease(t), behavior: 'instant' }); if (t < 1) id = requestAnimationFrame(step); else stop(); };
+  holdScroll.paused = true;
+  window.addEventListener('wheel', stop, { passive: true }); window.addEventListener('touchstart', stop, { passive: true });
+  centerAnim = { stop };
+  id = requestAnimationFrame(step);
 }
 
 export function flyXp(fromEl, delta, { target = '#xpNumber', onLand } = {}) {
@@ -156,6 +180,9 @@ export function initQuiz(core) {
     // seviye sonuçları (ep/rd kitapları): yalnızca bilinen anahtarlar ve true/false değerleri
     if (!q.lvl || typeof q.lvl !== 'object' || Array.isArray(q.lvl)) q.lvl = {};
     for (const k of Object.keys(q.lvl)) { if (!['wb', 'sb', 'rd'].includes(k) || !q.lvl[k] || typeof q.lvl[k] !== 'object') delete q.lvl[k]; else q.lvl[k] = { decided: q.lvl[k].decided === true, passed: q.lvl[k].passed === true }; }
+    // seviye/ünite seçimi (geri dönüş): { ep: { b, u } } — yalnızca bilinen kitaplar ve tam sayı ünite
+    if (!q.sel || typeof q.sel !== 'object' || Array.isArray(q.sel)) q.sel = {};
+    for (const k of Object.keys(q.sel)) { const v = q.sel[k]; if (!['ep', 'rd'].includes(k) || !v || !['wb', 'sb', 'rd'].includes(v.b) || !Number.isInteger(v.u)) delete q.sel[k]; }
     if (!app.cat || !CATS.some(c => c.id === app.cat)) app.cat = 'en';
     // İçe aktarılan yedek dosyası güvenilmez olabilir: bozuk/yabancı soru durumlarını at.
     for (const [k, c] of Object.entries(q.cur)) {
@@ -346,10 +373,51 @@ export function initQuiz(core) {
     const book = has.find(b => !decided(b)) || has[has.length - 1] || books[0];
     const us = list(book), unit = us.find(u => !done(book, u)) ?? us[us.length - 1];
     const tot = us.reduce((s, u) => s + units[book][u].n, 0), ok = us.reduce((s, u) => s + units[book][u].ok, 0);
-    return { book, unit, units: units[book], order: us, pct: tot ? ok / tot : 0, allDone: has.length > 0 && has.every(decided), levelNo: books.indexOf(book) + 1, levels: has.length };
+    return { book, unit, units: units[book], order: us, pct: tot ? ok / tot : 0, allDone: has.length > 0 && has.every(decided), levelNo: books.indexOf(book) + 1, levels: has.length,
+      all: units, has, list, done, decided };
+  }
+  // ---- açılmış seviye/üniteler arasında geçiş ----
+  // Açık: bitmiş (karara bağlanmış) kitapların tüm üniteleri + şu anki kitabın şu anki üniteye kadar olanları.
+  function unlockedUnits(P, b) {
+    const us = P.list(b); if (!us.length) return [];
+    if (P.decided(b) || P.allDone) return us;
+    if (b !== P.book) return []; // ilerideki kitap kilitli
+    return us.filter(u => u <= P.unit);
+  }
+  const freshIn = (cat, b, u) => { const q = Q(); return epItems().filter(it => it.cat === cat && it.b === b && (u == null || it.u === u) && !q.items[it.id]).length; };
+  // gösterilen konum: seçim geçerliyse seçilen kitap/ünite, değilse kaldığın yer (P.book/P.unit)
+  function epView(cat = 'ep') {
+    const P = epProgress(cat), sel = Q().sel[cat];
+    const home = { b: P.book, u: P.unit };
+    if (!sel || (sel.b === home.b && sel.u === home.u) || !unlockedUnits(P, sel.b).includes(sel.u)) { if (sel) delete Q().sel[cat]; return { P, b: home.b, u: home.u, back: false }; }
+    return { P, b: sel.b, u: sel.u, back: true };
+  }
+  function selectUnit(cat, b, u) {
+    const q = Q(), P = epProgress(cat);
+    if (!unlockedUnits(P, b).includes(u)) { core.toast('🔒 Bu ünite henüz açılmadı.'); return; }
+    if (b === P.book && u === P.unit) delete q.sel[cat]; else q.sel[cat] = { b, u };
+    const c = q.cur[cat]; if (c && !c.legacy && !c.pending) delete q.cur[cat]; // yarım soru seçilen yere geçince yenilenir
+    unmountDrill?.(); core.saveLocal(true); core.renderProgress(); render();
+    const n = freshIn(cat, b, u);
+    core.toast(b === P.book && u === P.unit ? '➜ Kaldığın yere döndün.' : n ? `↩ ${BOOK_SHORT[b]} · Ünite ${u}: ${n} yeni soru` : `↩ ${BOOK_SHORT[b]} · Ünite ${u}: yeni soru yok, öğrenemediklerin ve tekrarlar gelir`);
+  }
+  function selectBook(cat, b) {
+    const P = epProgress(cat), us = unlockedUnits(P, b); if (!us.length) { core.toast('🔒 Bu seviye henüz açılmadı.'); return; }
+    if (b === P.book) { selectUnit(cat, b, P.unit); return; }
+    const u = us.find(x => freshIn(cat, b, x)) ?? us.find(x => !P.done(b, x)) ?? us[0]; // önce yeni sorusu olan ünite
+    selectUnit(cat, b, u);
   }
   function pickEp(cat = 'ep') {
     const items = epItems().filter(it => it.cat === cat), q = Q(), now = Date.now(), recent = new Set(q.recent.slice(-6));
+    const V = epView(cat);
+    if (V.back) { // geri dönüş: önce hiç görülmemiş (sonradan eklenen) sorular, sonra öğrenilemeyenler, sonra vakti gelen tekrarlar
+      const here = items.filter(it => it.b === V.b && it.u === V.u);
+      const pick = here.find(it => !q.items[it.id])
+        || here.filter(it => !(q.items[it.id]?.c > 0) && !recent.has(it.id)).sort((x, y) => (q.items[x.id]?.due || 0) - (q.items[y.id]?.due || 0))[0]
+        || here.filter(it => q.items[it.id] && q.items[it.id].due <= now && !recent.has(it.id)).sort((x, y) => q.items[x.id].due - q.items[y.id].due)[0];
+      if (pick) return pick;
+      delete q.sel[cat]; core.toast?.(`✅ ${BOOK_SHORT[V.b]} · Ünite ${V.u}: yapılacak soru kalmadı. Kaldığın yere dönüyorsun.`);
+    }
     const P = epProgress(cat);
     const due = items.filter(it => q.items[it.id] && q.items[it.id].due <= now && !recent.has(it.id) && (it.b !== P.book || it.u < P.unit || P.allDone));
     if (due.length && (Math.random() < 0.25 || P.allDone)) return due.sort((x, y) => q.items[x.id].due - q.items[y.id].due)[0];
@@ -361,7 +429,7 @@ export function initQuiz(core) {
   let lvlPrompt = null; // { cat, b, n, rate }: %80 altında kalınca sorulan "tekrar edilsin mi?" ekranı
   function levelGate(cat) {
     if (!EP) return null;
-    const P = epProgress(cat); if (P.allDone) return null;
+    const P = epProgress(cat); if (P.allDone || P.decided(P.book)) return null;
     const items = epItems().filter(it => it.b === P.book), q = Q();
     if (!items.length || !items.every(it => q.items[it.id])) return null;
     let c = 0, w = 0; for (const it of items) { c += q.items[it.id].c || 0; w += q.items[it.id].w || 0; }
@@ -481,16 +549,29 @@ export function initQuiz(core) {
   // ---- ilerleme kartı (İngilizce dışındaki sekmeler) ----
   function renderProgressOverride() {
     const app = A(), cat = app.cat;
+    if (!((cat === 'ep' || cat === 'rd') && EP)) $('#epLevels')?.classList.add('hidden');
     if (!cat || cat === 'en') return false;
     if ((cat === 'ep' || cat === 'rd') && EP) {
-      const P = epProgress(cat), U = P.order, ci = CATS.find(x => x.id === cat);
-      $('#topLevel').textContent = `${ci.icon} ${P.levelNo}·Ü${P.unit ?? '-'}`;
-      $('#levelCaption').textContent = `Seviye ${P.levelNo} · ${BOOK[P.book]}${P.allDone ? ' · tamamlandı' : ''}`;
-      const u = P.units[P.unit] || { n: 1, ok: 0, seen: 0 };
-      $('#xpCaption').textContent = P.allDone ? 'Tüm seviyeler bitti: artık tekrar soruları geliyor.' : `Ünite ${P.unit}: ${u.ok}/${u.n} öğrenildi · tüm sorular görülüp %80'de sıradaki ünite açılır${P.levelNo < P.levels ? ' · kitap bitince seviye sonucu' : ''}`;
-      $('#xpNumber').textContent = `%${Math.round(P.pct * 100)}`;
-      $('#cefrTrack').innerHTML = U.map(n => { const x = P.units[n], f = x.ok / x.n; return `<span class="${f >= 0.8 && x.seen === x.n ? 'active' : n === P.unit ? 'current' : ''}" style="--fill:${Math.round(Math.min(1, f / 0.8) * 100)}%"></span>`; }).join('');
-      $('#cefrLabels').innerHTML = U.map(n => `<span class="${n === P.unit ? 'on' : ''}">${n}</span>`).join('');
+      const V = epView(cat), P = V.P, ci = CATS.find(x => x.id === cat), units = P.all[V.b], U = P.list(V.b), open = new Set(unlockedUnits(P, V.b));
+      const levelNo = (LEVELS[cat] || []).indexOf(V.b) + 1;
+      $('#topLevel').textContent = `${ci.icon} ${levelNo}·Ü${V.u ?? '-'}`;
+      $('#levelCaption').textContent = `Seviye ${levelNo} · ${BOOK[V.b]}${V.back ? ' · geri dönüş' : P.allDone ? ' · tamamlandı' : ''}`;
+      const u = units[V.u] || { n: 1, ok: 0, seen: 0 }, fresh = freshIn(cat, V.b, V.u);
+      $('#xpCaption').textContent = V.back ? `Ünite ${V.u}: ${fresh ? fresh + ' yeni soru · ' : ''}${u.ok}/${u.n} öğrenildi · kaldığın yer: Seviye ${P.levelNo} Ünite ${P.unit}`
+        : P.allDone ? 'Tüm seviyeler bitti: artık tekrar soruları geliyor.' : `Ünite ${V.u}: ${u.ok}/${u.n} öğrenildi · tüm sorular görülüp %80'de sıradaki ünite açılır${P.levelNo < P.levels ? ' · kitap bitince seviye sonucu' : ''}`;
+      const tot = U.reduce((t, n) => t + units[n].n, 0), ok = U.reduce((t, n) => t + units[n].ok, 0);
+      $('#xpNumber').textContent = `%${Math.round((tot ? ok / tot : 0) * 100)}`;
+      $('#cefrTrack').innerHTML = U.map(n => { const x = units[n], f = x.ok / x.n; return `<span class="${f >= 0.8 && x.seen === x.n ? 'active' : n === V.u ? 'current' : ''}" style="--fill:${Math.round(Math.min(1, f / 0.8) * 100)}%"></span>`; }).join('');
+      // ünite düğmeleri: açık olanlar tıklanır; sonradan eklenen (hiç görülmemiş) soru varsa küçük sayı gösterilir
+      $('#cefrLabels').innerHTML = U.map(n => { const isOpen = open.has(n), nf = isOpen && !(V.b === P.book && n === P.unit) ? freshIn(cat, V.b, n) : 0;
+        return `<button type="button" class="ep-u${n === V.u ? ' on' : ''}${isOpen ? '' : ' locked'}" data-ep-u="${n}" data-ep-b="${V.b}" ${isOpen ? '' : 'disabled'} aria-label="Ünite ${n}${isOpen ? '' : ' (kilitli)'}${nf ? `, ${nf} yeni soru` : ''}">${isOpen ? n : '🔒'}${nf ? `<sup>${nf}</sup>` : ''}</button>`; }).join('');
+      // seviye (kitap) düğmeleri ve “kaldığın yere dön”
+      let bar = $('#epLevels'); if (!bar) { bar = document.createElement('div'); bar.id = 'epLevels'; bar.className = 'ep-levels'; $('#cefrLabels').after(bar); }
+      const books = P.has.filter(b => unlockedUnits(P, b).length || b === P.book), locked = P.has.filter(b => !books.includes(b));
+      bar.innerHTML = (books.length + locked.length > 1 ? [...books, ...locked].map(b => { const isOpen = books.includes(b), nf = isOpen && b !== P.book ? freshIn(cat, b) : 0, no = (LEVELS[cat] || []).indexOf(b) + 1;
+        return `<button type="button" class="ep-b${b === V.b ? ' on' : ''}${isOpen ? '' : ' locked'}" data-ep-book="${b}" ${isOpen ? '' : 'disabled'}>${isOpen ? (P.decided(b) ? '✓ ' : '') : '🔒 '}Seviye ${no} · ${BOOK_SHORT[b]}${nf ? ` <sup>${nf} yeni</sup>` : ''}</button>`; }).join('') : '')
+        + (V.back ? `<button type="button" class="ep-home" data-ep-home="1">➜ Kaldığın yere dön (Seviye ${P.levelNo} · Ünite ${P.unit})</button>` : '');
+      bar.classList.toggle('hidden', !bar.innerHTML);
       return true;
     }
     const isMix = cat === 'mix', step = isMix ? MIX_XP_STEP : CAT_XP_STEP;
@@ -793,7 +874,7 @@ export function initQuiz(core) {
     core.saveLocal(false);
     holdScroll(() => render({ speak }));
     // sıradaki soruyu ekranın ortasına al
-    if (cat === 'ep' || cat === 'rd') setTimeout(() => ($('#qzTitle') || $('#gameView'))?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 350);
+    if (cat === 'ep' || cat === 'rd') requestAnimationFrame(() => requestAnimationFrame(() => smoothCenter($('#qzTitle') || $('#gameView')))); // yerleşim bitince, gecikmesiz
   }
   // seviye sonucu ekranındaki seçimler
   $('#qzOptions').addEventListener('click', e => {
@@ -903,6 +984,15 @@ export function initQuiz(core) {
     if (e.target.closest('[data-say-example]')) { if (item.example) core.speak(item.example, 'en'); return; }
     if (e.target.closest('[data-say-ans]')) { const a = item.ans || { text: item.a, lang: item.optLang === 'en' ? 'en' : 'tr' }; core.speak(a.text, a.lang); return; }
     if (e.target.closest('[data-say-exp]')) core.speak(speakable(String(item.exp).split(/\n\n+/)[0]), 'tr');
+  });
+  document.addEventListener('click', e => { // seviye/ünite geçişi (ilerleme kartı)
+    const cat = A().cat; if (!((cat === 'ep' || cat === 'rd') && EP)) return;
+    const u = e.target.closest('[data-ep-u]'), bk = e.target.closest('[data-ep-book]'), home = e.target.closest('[data-ep-home]');
+    if (!u && !bk && !home) return;
+    if (lvlPrompt && lvlPrompt.cat === cat) { core.toast('Önce seviye sonucunu seç.'); return; }
+    if (u) selectUnit(cat, u.dataset.epB, +u.dataset.epU);
+    else if (bk) selectBook(cat, bk.dataset.epBook);
+    else { const P = epProgress(cat); selectUnit(cat, P.book, P.unit); }
   });
   $('#qzOptions').addEventListener('input', e => { // açık uçlu cevap taslağı kaybolmasın
     if (e.target.id !== 'qzOpenIn') return; const c = cur(); if (!c || c.done || c.style !== 'open') return;
