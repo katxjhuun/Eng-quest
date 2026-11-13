@@ -1,3 +1,12 @@
+# dam-la 2.14.5 — Akademik › Hazırlık, ipuçları ve pet aksesuarları
+
+Uzaktan güncellemeyle gelir.
+- **Kategoriler:** Üstte artık yalnızca Akademik ve Genel var. İngilizce Hazırlık, Akademik içine taşındı.
+- **Hazırlık seviyeleri:** Seviye 1 · Workbook (B1), Seviye 1 · Reading (A2), Seviye 1.1 · Student's Book (B1+). Reading'e seviye çubuğundan geçilir.
+- **Yazarak ipucu:** Soruyla birlikte konu adı, kısa kural ve cevabı ele vermeyen çözülmüş bir örnek cümle.
+- **Pet aksesuarları:** Oyuncak ve Kozmik görünüşlerde şapka, gözlük ve fular doğru yere oturuyor.
+
+---
 # dam-la 2.14.4 — Yeni seçiciler ve düzeltmeler
 
 Uzaktan güncellemeyle gelir.
