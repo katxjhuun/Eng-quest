@@ -17,6 +17,8 @@ const REAL = {
   gecko: { file: 'gecko', fit: 'len', size: 104, feet: ['legFL', 'legBL', 'legFR', 'legBR'], head: 'body' },
   goat: { file: 'pudu', fit: 'h', size: 96, feet: ['legFL', 'legBL', 'legFR', 'legBR'], head: 'earL' },
 };
+// gerçek 3B modellerde (göz konumu bilinmiyor) baş/göz/boyun düzeltmeleri, baş genişliği (W) cinsinden
+const TOY_FIX = { chick: { ty: -0.06, ex: 0.22, ey: 0.24, ew: 0.42, ny: 0.55 }, gecko: { tx: 0.95, ex: 1.05, ey: -0.02, ny: 0.45 }, goat: { ty: -0.25, ey: 0.22, ex: 0.3, ny: 0.6 } };
 const SPEED = { Idle_A: 0.32, Idle_B: 0.36, Idle_C: 0.36, Sit: 0.28, Walk: 1, Run: 1, Eat: 0.55, Attack: 0.7, Bounce: 0.55, Clicked: 0.6, Death: 0.45, Fear: 0.7, Fly: 0.6, Hit: 0.7, Jump: 0.6, Roll: 0.5, Spin: 0.6, Swim: 0.5 };
 const VMAP = { hop: 'Bounce', eat: 'Eat', sad: 'Sit', cry: 'Sit', doze: 'Sit', lunge: 'Attack', bite: 'Attack', pounce: 'Attack', swat: 'Attack', guard: 'Idle_C', jump: 'Jump', freeze: 'Idle_A',
   look: 'Idle_B', headturn: 'Idle_B', focus: 'Idle_C', sniff: 'Eat', sip: 'Idle_C', groom: 'Idle_C', lick: 'Idle_C', tongue: 'Idle_B', stretch: 'Sit', shake: 'Hit', roll: 'Roll', dig: 'Eat',
@@ -160,7 +162,18 @@ export class Pet3D {
     if (this.real) { this.headBone.getWorldPosition(v3); head = v3.clone(); const s = this.inner.scale.x; top = head.clone().add(new THREE.Vector3(0, (this.sp === 'gecko' ? 10 : 6) * s / 0.6 * 0.6, 0)); w = (this.sp === 'goat' ? 34 : this.sp === 'chick' ? 40 : 30) * s / (REAL[this.sp].size / 100); }
     else { const M = this.M; M.head.getWorldPosition(v3); head = v3.clone(); const hr = M.headR * this.ps; top = head.clone().add(new THREE.Vector3(0, hr * (M.kind === 'plant' ? 1.8 : 0.95), 0)); w = hr * 2; }
     const [tx, ty] = toSvg(top), [hx, hy] = toSvg(head);
-    return [tx, ty, Math.min(60, Math.max(14, w)), hy + w * 0.35, hx + (this.facing > 0 ? w * 0.15 : -w * 0.15), hy - w * 0.05, w * 0.55];
+    const W = Math.min(60, Math.max(14, w));
+    // gözlük: kendi çizdiğimiz modellerde gerçek göz konumları ekrana izdüşürülür (profilde öndeki göz, yandan gözlük)
+    if (!this.real && this.M.eyes?.length >= 2) {
+      const P2 = this.M.eyes.map(e => { e.mesh.getWorldPosition(v3); return { s: toSvg(v3.clone()), z: v3.z }; });
+      const gap = Math.abs(P2[0].s[0] - P2[1].s[0]) + Math.abs(P2[0].s[1] - P2[1].s[1]);
+      if (gap >= W * 0.3) return [tx, ty, W, hy + W * 0.35, (P2[0].s[0] + P2[1].s[0]) / 2, (P2[0].s[1] + P2[1].s[1]) / 2, gap];
+      const f = P2[0].z >= P2[1].z ? P2[0] : P2[1];
+      return [tx, ty, W, hy + W * 0.35, f.s[0], f.s[1], gap];
+    }
+    const T = TOY_FIX[this.sp] || {};
+    const sideX = (this.facing > 0 ? 1 : -1) * W * (T.ex ?? 0.15);
+    return [tx + (T.tx || 0) * W, ty + (T.ty || 0) * W, W * (T.w || 1), hy + W * (T.ny ?? 0.35), hx + sideX, hy + W * (T.ey ?? -0.05), W * (T.ew ?? 0.55)];
   }
   draw(canvas) {
     const r = renderer(), px = canvas.width;

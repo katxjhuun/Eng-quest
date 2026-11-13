@@ -364,7 +364,7 @@ function makeStalk(sp, stage, ids) {
         g.push(`<path d="M${f1(ex - rx)} ${f1(ey - ry)}H${f1(ex + rx * 1.1)}V${f1(yl)}H${f1(ex - rx)}Z" fill="url(#${cid}a)"/>` + stroke(`M${f1(ex - rx * 0.78)} ${f1(yl + (eye === 'sad' ? 2 : 0))}L${f1(ex + rx * 0.92)} ${f1(yl + (eye === 'angry' ? 2 : 0))}`, 1.5));
       }
       if (I.tears > 0.05) { const q = (S.t * 1.4) % 1; g.push(`<path d="M${f1(ex)} ${f1(ey + ry + q * 10)}q-2.4 3.4 0 5.2q2.4-1.8 0-5.2Z" fill="#7FF7EE" opacity="${f1(I.tears * (1 - q))}"/>`); }
-      g.push(acc(sp, stage, ids, [ex, ey - ry * 1.1, rx * 2.1, ey + ry, ex, ey, rx * 0.5]));
+      g.push(acc(sp, stage, ids, [ex, ey - ry * 1.35, rx * 2.5, ey + ry * 1.7, ex, ey, rx * 0.5]));
       const [ca, cb] = PAL[sp];
       return wrap(me, { ...I, lift: I.lift + hop * 10, squash: I.squash }, S, g.join(''), h + ER * 2, lin(cid + 'a', ca, cb, -h - ER * 2, 0));
     },
