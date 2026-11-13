@@ -1,14 +1,41 @@
 // Sesli tekrar (telepromter): doğru cevaplanan sorunun tam cümlesini kullanıcı mikrofonla 5 kez söyler.
-// Söylenen kelimeler anında renklenir. Çok hızlı veya anlaşılmayan tekrarlar sayılmaz (hile engeli).
+// Söylenen kelimeler anında renklenir. Okumadan geçilen (aşırı hızlı) veya anlaşılmayan tekrarlar sayılmaz (hile engeli).
 // Motor: Android/iOS uygulamasında @capacitor-community/speech-recognition, tarayıcıda Web Speech API.
 import { Capacitor } from '@capacitor/core';
 import { SpeechRecognition } from '@capacitor-community/speech-recognition';
 export const DRILL_REPS = 5;
-const MAX_WPS = 4.0;       // saniyede en çok kelime: bunun üstü "çok hızlı" sayılır
-const MIN_MATCH = 0.85;    // kelimelerin en az bu oranı sırayla anlaşılmalı
-const LATENCY = 0.6;       // tanıyıcının ilk kelimeyi geç bildirmesi için pay (sn)
+const MAX_WPS = 4.5;       // saniyede en çok kelime (ölçüm cömert: tanıyıcı gecikmesi eklenir). Akıcı konuşma ölçümde ~2.5–3.5 çıkar
+const SPEED_MIN_WORDS = 6; // kısa cümlelerde zaman ölçümü güvenilmez: hız denetimi yapılmaz
+const LEAD_MS = 1500;      // tanıyıcı ilk kelimeyi geç ve toplu bildirir: konuşma bu kadar önce başlamış sayılır
+const MIN_COVER = 0.7;     // cümle sonuna ulaşıldıysa kelimelerin en az %70'i yeter
+const FULL_COVER = 0.9;    // sona ulaşılmasa da %90 anlaşıldıysa sayılır
 
-const norm = w => String(w).toLowerCase().replace(/[’‘`]/g, "'").replace(/[^a-z0-9']/g, '');
+// ---- metni karşılaştırılabilir kelime dizisine çevir (iki taraf da aynı yoldan geçer) ----
+const ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+function numWords(n) {
+  if (n < 20) return [ONES[n]];
+  if (n < 100) return [TENS[Math.floor(n / 10)], ...(n % 10 ? [ONES[n % 10]] : [])];
+  if (n < 1000) return [ONES[Math.floor(n / 100)], 'hundred', ...(n % 100 ? numWords(n % 100) : [])];
+  if (n < 10000) return [...numWords(Math.floor(n / 1000)), 'thousand', ...(n % 1000 ? numWords(n % 1000) : [])];
+  return [String(n)];
+}
+const CONTR = [[/\b(i)'m\b/g, '$1 am'], [/\b(it|he|she|that|what|there|here|who|where|how)'s\b/g, '$1 is'], [/\bcan't\b/g, 'can not'], [/\bwon't\b/g, 'will not'], [/\bshan't\b/g, 'shall not'],
+  [/n't\b/g, ' not'], [/'re\b/g, ' are'], [/'ve\b/g, ' have'], [/'ll\b/g, ' will'], [/'d\b/g, ' would'],
+  // tanıyıcı kesme işaretini yutabilir: im, dont, theyre …
+  [/\bim\b/g, 'i am'], [/\b(do|does|did|is|are|was|were|has|have|had|could|would|should|must)nt\b/g, '$1 not'], [/\bcant\b/g, 'can not'], [/\b(you|we|they)re\b/g, '$1 are'], [/\b(i|you|we|they)ve\b/g, '$1 have'], [/\b(it|that|what|there|he|she)s\b/g, '$1 is'],
+  [/\bgonna\b/g, 'going to'], [/\bwanna\b/g, 'want to'], [/\bgotta\b/g, 'got to']];
+function tokens(text) {
+  let t = String(text).toLowerCase().replace(/[’‘`´]/g, "'").replace(/&/g, ' and ').replace(/%/g, ' percent ').replace(/(\d),(\d{3})/g, '$1$2');
+  for (const [re, to] of CONTR) t = t.replace(re, to);
+  const out = [];
+  for (let w of t.split(/[\s\-–—\/]+/)) {
+    w = w.replace(/[^a-z0-9']/g, '').replace(/'/g, '');
+    if (!w) continue;
+    if (/^\d+$/.test(w)) out.push(...numWords(+w)); else out.push(w);
+  }
+  return out;
+}
 function sim(a, b) { // 0..1 benzerlik (küçük yazım/tanıma farkları için)
   if (a === b) return 1; if (!a || !b) return 0;
   const m = a.length, n = b.length, d = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
@@ -16,7 +43,22 @@ function sim(a, b) { // 0..1 benzerlik (küçük yazım/tanıma farkları için)
   for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
   return 1 - d[m][n] / Math.max(m, n);
 }
-const same = (a, b) => a === b || (a.length > 3 && b.length > 3 && sim(a, b) >= 0.8);
+const stem = w => w.length > 4 ? w.replace(/(ing|ed|es|s)$/, '') : w.replace(/s$/, '');
+function same(a, b) {
+  if (a === b) return true;
+  if (stem(a) === stem(b)) return true;                 // car/cars, walk/walked
+  const L = Math.min(a.length, b.length);
+  if (L >= 3 && sim(a, b) >= (L >= 6 ? 0.7 : 0.66)) return true; // tanıyıcının küçük harf hataları
+  return false;
+}
+// tanınan kelimeleri hedefe sırayla eşle (aradaki kaçan/fazla kelimeleri atla) → eşleşen hedef indeksleri
+function align(targets, spoken) {
+  const hit = new Set(); let p = 0;
+  for (const s of spoken) {
+    for (let k = p; k < Math.min(targets.length, p + 5); k++) if (same(targets[k], s)) { hit.add(k); p = k + 1; break; }
+  }
+  return { hit, last: p };
+}
 
 function nativePlugin() { try { return Capacitor.isNativePlatform() && Capacitor.isPluginAvailable('SpeechRecognition') ? SpeechRecognition : null; } catch { return null; } }
 const WebSR = () => window.SpeechRecognition || window.webkitSpeechRecognition || null;
@@ -26,19 +68,12 @@ export function drillSupport() {
   return WebSR() ? 'web' : 'none';
 }
 
-// tanınan cümleyi hedef kelimelere sırayla eşle → eşleşen indeksler kümesi
-function align(targets, spoken) {
-  const hit = new Set(); let p = 0;
-  for (const s of spoken) {
-    for (let k = p; k < Math.min(targets.length, p + 3); k++) if (same(targets[k], s)) { hit.add(k); p = k + 1; break; }
-  }
-  return { hit, last: p };
-}
-
 export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang = 'en-US' } = {}) {
-  const words = String(text).split(/\s+/).filter(Boolean), targets = words.map(norm);
-  const total = targets.filter(Boolean).length || 1;
-  let busy = false, count = Math.min(start, DRILL_REPS), active = false, stopped = false, rec = null, sessionStart = 0, tFirst = 0, hits = new Set(), listeners = [];
+  const words = String(text).split(/\s+/).filter(Boolean);
+  const targets = [], owner = []; // her hedef kelimenin ekrandaki kelime indeksi
+  words.forEach((w, i) => tokens(w).forEach(t => { targets.push(t); owner.push(i); }));
+  const total = targets.length || 1;
+  let busy = false, count = Math.min(start, DRILL_REPS), active = false, stopped = false, rec = null, repStart = 0, tFirst = 0, updates = 0, hits = new Set(), listeners = [];
   const support = drillSupport();
   root.innerHTML = `<div class="dr-head"><b>🎤 Sesli tekrar</b><span class="dr-count"></span></div>
     <p class="dr-text" lang="en">${words.map((w, i) => `<span class="dw" data-i="${i}">${w.replace(/[<>&]/g, '')}</span>`).join(' ')}</p>
@@ -46,7 +81,7 @@ export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang
     <div class="dr-row"><button type="button" class="primarybtn dr-go">🎤 Başla</button></div>`;
   const $c = root.querySelector('.dr-count'), $m = root.querySelector('.dr-msg'), $b = root.querySelector('.dr-go'), spans = [...root.querySelectorAll('.dw')];
   const say = (t, cls = '') => { $m.textContent = t; $m.className = 'dr-msg ' + cls; };
-  const paint = () => { spans.forEach((s, i) => s.classList.toggle('on', hits.has(i))); };
+  const paint = () => { const on = new Set([...hits].map(k => owner[k])); spans.forEach((s, i) => s.classList.toggle('on', on.has(i))); };
   const dots = () => { $c.innerHTML = Array.from({ length: DRILL_REPS }, (_, i) => `<i class="${i < count ? 'on' : ''}"></i>`).join('') + ` <small>${count}/${DRILL_REPS}</small>`; };
   dots();
   if (count >= DRILL_REPS) { say('✅ 5 tekrar tamam!', 'ok'); $b.classList.add('hidden'); }
@@ -55,20 +90,28 @@ export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang
     say(support === 'needs-update' ? '🎤 Mikrofon için uygulamanın yeni sürümünü (APK) kurman gerekiyor.' : '🎤 Bu tarayıcı mikrofonla tanımayı desteklemiyor (Chrome kullan).', 'warn');
   }
 
-  function handle(spokenText) {
-    const spoken = String(spokenText).split(/\s+/).map(norm).filter(Boolean);
-    if (!spoken.length) return;
+  // birden çok tanıma adayı gelir: hedefe en çok uyanı kullan
+  function handle(candidates) {
+    let best = null;
+    for (const c of candidates) {
+      const spoken = tokens(c); if (!spoken.length) continue;
+      const r = align(targets, spoken);
+      if (!best || r.hit.size > best.hit.size || (r.hit.size === best.hit.size && r.last > best.last)) best = r;
+    }
+    if (!best) return;
     const now = performance.now();
-    if (!tFirst) tFirst = now;
-    const { hit, last } = align(targets, spoken);
-    hit.forEach(i => hits.add(i)); paint();
-    const matched = hits.size / total;
-    if (last >= targets.length - 1 && matched >= MIN_MATCH) finishRep(now);
+    if (best.hit.size) { if (!tFirst) tFirst = now; updates++; }
+    best.hit.forEach(i => hits.add(i)); paint();
+    const cover = hits.size / total, reachedEnd = hits.has(total - 1) || (total >= 6 && hits.has(total - 2)); // son kelime(ler) söylenmeli
+    if ((reachedEnd && cover >= MIN_COVER) || cover >= FULL_COVER) finishRep(now);
   }
   function finishRep(now) {
-    const dur = Math.max(0.01, (now - tFirst) / 1000 + LATENCY), wps = total / dur;
-    hits = new Set(); const wasFast = wps > MAX_WPS; tFirst = 0;
-    if (wasFast) { say('⚠️ Çok hızlı! Cümleyi normal hızda, net söyle. Bu tekrar sayılmadı.', 'warn'); setTimeout(paint, 700); restart(); return; }
+    // konuşmanın başı: ilk kelime bildiriminden biraz önce (tanıyıcı gecikmesi), ama bu tekrarın dinlemesi başlamadan önce değil
+    // tanıyıcı ara sonuç göndermediyse (yalnız son sonuç) ilk bildirim zamanı güvenilmez: mikrofonun açıldığı an esas alınır
+    const begun = updates >= 3 ? Math.max(repStart, tFirst - LEAD_MS) : (repStart || now - LEAD_MS);
+    const dur = Math.max(0.3, (now - begun) / 1000), wps = words.length / dur;
+    hits = new Set(); tFirst = 0; updates = 0;
+    if (words.length >= SPEED_MIN_WORDS && wps > MAX_WPS) { say('⚠️ Çok hızlı geçtin. Cümleyi doğal hızınla, tam söyle. Bu tekrar sayılmadı.', 'warn'); setTimeout(paint, 700); restart(); return; }
     count++; dots(); onProgress?.(count);
     setTimeout(paint, 500);
     if (count >= DRILL_REPS) { halt(); say('✅ 5 tekrar tamam! Aferin.', 'ok'); $b.classList.add('hidden'); onComplete?.(); return; }
@@ -79,20 +122,23 @@ export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang
   async function begin() {
     if (stopped || busy || count >= DRILL_REPS) return;
     busy = true;
-    sessionStart = performance.now(); tFirst = 0;
+    if (!repStart) repStart = performance.now(); // motor yeniden başlasa da tekrarın başlangıcı korunur
     const N = nativePlugin();
     try {
       if (N) {
         const perm = await N.requestPermissions?.();
         if (perm && perm.speechRecognition && perm.speechRecognition !== 'granted') { say('🎤 Mikrofon izni verilmedi.', 'warn'); halt(); return; }
-        const l = await N.addListener('partialResults', e => { if (!active) return; handle((e.matches || e.value || [])[0] || ''); });
+        listeners.forEach(x => { try { x.remove(); } catch {} }); listeners = []; // yeniden başlarken dinleyiciler çoğalmasın
+        const l = await N.addListener('partialResults', e => { if (!active) return; handle([].concat(e.matches || e.value || [])); });
         listeners.push(l);
         const l2 = await N.addListener('listeningState', e => { if (active && e.status === 'stopped' && !stopped) setTimeout(() => active && begin(), 250); });
         listeners.push(l2);
-        await N.start({ language: lang, maxResults: 1, partialResults: true, popup: false });
+        await N.start({ language: lang, maxResults: 5, partialResults: true, popup: false });
       } else {
-        const SR = WebSR(); rec = new SR(); rec.lang = lang; rec.continuous = true; rec.interimResults = true;
-        rec.onresult = e => { let t = ''; for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript + ' '; if (active) handle(t); };
+        const SR = WebSR(); rec = new SR(); rec.lang = lang; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 5;
+        rec.onresult = e => { if (!active) return; const alts = [];
+          for (let k = 0; k < 5; k++) { let t = ''; for (let i = 0; i < e.results.length; i++) { const r = e.results[i]; t += (r[Math.min(k, r.length - 1)]?.transcript || '') + ' '; } alts.push(t); }
+          handle(alts); };
         rec.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { say('🎤 Mikrofon izni verilmedi.', 'warn'); halt(); } };
         rec.onend = () => { if (active && !stopped) setTimeout(() => { if (active) begin(); }, 200); };
         rec.start();
@@ -105,11 +151,11 @@ export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang
     try { if (N) { await N.stop?.(); } else rec?.stop(); } catch {}
     listeners.forEach(l => { try { l.remove(); } catch {} }); listeners = []; rec = null;
   }
-  async function restart() { await cleanup(); if (active && !stopped) setTimeout(begin, 150); }
+  async function restart() { await cleanup(); repStart = 0; if (active && !stopped) setTimeout(begin, 150); }
   function halt() { active = false; cleanup(); $b.textContent = count ? '🎤 Devam et' : '🎤 Başla'; }
   $b.addEventListener('click', () => {
     if (active) { halt(); say('Durduruldu.'); return; }
-    active = true; hits = new Set(); paint(); $b.textContent = '⏹ Durdur';
+    active = true; hits = new Set(); tFirst = 0; updates = 0; repStart = 0; paint(); $b.textContent = '⏹ Durdur';
     say('Dinliyorum… cümleyi okurken kelimeler renklenecek.'); begin();
   });
   return { stop() { stopped = true; active = false; cleanup(); }, get count() { return count; } };
