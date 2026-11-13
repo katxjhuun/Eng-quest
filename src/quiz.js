@@ -636,7 +636,13 @@ export function initQuiz(core) {
     if (!body.length && !rule) { const first = splitSentences(paras[0] || '')[0]; if (first && !leaks(first) && first.length <= 160) body = [first]; }
     if (!title && !body.length) return null;
     const n = String(item.a || '').trim().split(/\s+/).length;
-    return `<b>💡 Konu${title ? ': ' + esc(title) : ''}</b>${body.map(t => `<span>${esc(t)}</span>`).join('')}<small>Cevap ${item.optLang === 'en' ? 'İngilizce' : 'Türkçe'} · ${n} kelime</small>`;
+    // çözülmüş örnek: aynı kuraldaki başka bir sorunun doğru tam cümlesi (bu sorunun cevabını içermeyen)
+    let example = '';
+    if ((item.cat === 'ep' || item.cat === 'rd') && rule) {
+      const sib = epItems().filter(it => it.id !== item.id && it.b === item.b && it.u === item.u && it.full && String(it.exp || '').includes('📘 ' + title + ':') && !leaks(it.full));
+      if (sib.length) example = sib[hash(item.id) % sib.length].full;
+    }
+    return `<b>💡 Konu${title ? ': ' + esc(title) : ''}</b>${body.map(t => `<span>${esc(t)}</span>`).join('')}${example ? `<span class="qz-ex">✏️ Örnek: <i lang="en">${esc(example)}</i></span>` : ''}<small>Cevap ${item.optLang === 'en' ? 'İngilizce' : 'Türkçe'} · ${n} kelime</small>`;
   }
   // bölüm soruları (akh/aka/akm) henüz yoksa konu listesinde gösterme
   function acadHidden(id) { if (!/^ak[ham]$/.test(id)) return false; if (!ACAD) { loadAcad(); return true; } return !acadItems('haz').length && !acadItems('ana').length; }
