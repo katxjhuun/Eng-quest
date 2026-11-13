@@ -1,15 +1,12 @@
 // Sesli tekrar (telepromter): doğru cevaplanan sorunun tam cümlesini kullanıcı mikrofonla 5 kez söyler.
-// Söylenen kelimeler anında renklenir. Okumadan geçilen (aşırı hızlı) veya anlaşılmayan tekrarlar sayılmaz (hile engeli).
+// Söylenen kelimeler anında renklenir. Her tekrardan sonra 2 sn'lik yarı saydam sayaç çıkar; mikrofon açık kalır, sıradaki okumaya hazırlanır.
 // Motor: Android/iOS uygulamasında @capacitor-community/speech-recognition, tarayıcıda Web Speech API.
 import { Capacitor } from '@capacitor/core';
 import { SpeechRecognition } from '@capacitor-community/speech-recognition';
 export const DRILL_REPS = 5;
-const MAX_WPS = 4.5;       // saniyede en çok kelime (ölçüm cömert: tanıyıcı gecikmesi eklenir). Akıcı konuşma ölçümde ~2.5–3.5 çıkar
-const SPEED_MIN_WORDS = 6; // kısa cümlelerde zaman ölçümü güvenilmez: hız denetimi yapılmaz
-const LEAD_MS = 1500;      // tanıyıcı ilk kelimeyi geç ve toplu bildirir: konuşma bu kadar önce başlamış sayılır
-const MIN_COVER = 0.7;     // cümle sonuna ulaşıldıysa kelimelerin en az %70'i yeter
-const FULL_COVER = 0.9;    // sona ulaşılmasa da %90 anlaşıldıysa sayılır
-const COOLDOWN_MS = 2000;  // her tekrardan sonra mikrofon tamamen kapanıp yeniden hazırlanır (eski ses/sonuç karışmasın)
+const MIN_COVER = 0.6;     // cümle sonuna ulaşıldıysa kelimelerin %60'ı yeter
+const FULL_COVER = 0.85;   // sona ulaşılmasa da %85 anlaşıldıysa sayılır
+const PAUSE_MS = 2000;     // tekrar arası yarı saydam sayaç (mikrofon kapanmaz; eski sonuçlar atlanır)
 
 // ---- metni karşılaştırılabilir kelime dizisine çevir (iki taraf da aynı yoldan geçer) ----
 const ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
@@ -76,20 +73,25 @@ function iosStandalone() {
   return ios && (navigator.standalone === true || window.matchMedia?.('(display-mode: standalone)').matches);
 }
 // ---- ses düzeyi modu (VAD): kelime tanımaz; cümlenin yüksek sesle, uygun sürede ve doğal hızda söylendiğini ölçer ----
-const VAD = { secPerWord: 0.3, minVoiced: 0.55, endSilence: 750, minRms: 0.012 };
+const VAD = { secPerWord: 0.3, minVoiced: 0.5, endSilence: 750, minRms: 0.012 };
 
 export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang = 'en-US' } = {}) {
   const words = String(text).split(/\s+/).filter(Boolean);
   const targets = [], owner = []; // her hedef kelimenin ekrandaki kelime indeksi
   words.forEach((w, i) => tokens(w).forEach(t => { targets.push(t); owner.push(i); }));
   const total = targets.length || 1;
-  let busy = false, count = Math.min(start, DRILL_REPS), active = false, stopped = false, rec = null, repStart = 0, tFirst = 0, updates = 0, hits = new Set(), listeners = [], cooling = false, coolT = 0, tickT = 0;
+  let busy = false, count = Math.min(start, DRILL_REPS), active = false, stopped = false, rec = null, hits = new Set(), listeners = [], pausing = false, pauseT = 0, tickT = 0;
+  // mikrofon tekrarlar arasında açık kalır: önceki okumanın sonuçlarını atlamak için taban noktaları
+  let listening = false, webBase = 0, webLen = 0, natSkip = 0, natLast = [];
   const support = drillSupport();
+  root.classList.add('dr-root');
   root.innerHTML = `<div class="dr-head"><b>🎤 Sesli tekrar</b><span class="dr-count"></span></div>
     <p class="dr-text" lang="en">${words.map((w, i) => `<span class="dw" data-i="${i}">${w.replace(/[<>&]/g, '')}</span>`).join(' ')}</p>
     <div class="dr-msg" role="status"></div>
-    <div class="dr-row"><button type="button" class="primarybtn dr-go">🎤 Başla</button></div>`;
+    <div class="dr-row"><button type="button" class="primarybtn dr-go">🎤 Başla</button></div>
+    <div class="dr-ov hidden" aria-hidden="true"><div class="dr-ov-ring"><b class="dr-ov-n">2</b></div><div class="dr-ov-t"></div><div class="dr-ov-s">Sıradaki okumaya hazırlan…</div></div>`;
   const $c = root.querySelector('.dr-count'), $m = root.querySelector('.dr-msg'), $b = root.querySelector('.dr-go'), spans = [...root.querySelectorAll('.dw')];
+  const $ov = root.querySelector('.dr-ov'), $ovN = root.querySelector('.dr-ov-n'), $ovT = root.querySelector('.dr-ov-t'), $ring = root.querySelector('.dr-ov-ring');
   const say = (t, cls = '') => { $m.textContent = t; $m.className = 'dr-msg ' + cls; };
   const paint = () => { const on = new Set([...hits].map(k => owner[k])); spans.forEach((s, i) => s.classList.toggle('on', on.has(i))); };
   const dots = () => { $c.innerHTML = Array.from({ length: DRILL_REPS }, (_, i) => `<i class="${i < count ? 'on' : ''}"></i>`).join('') + ` <small>${count}/${DRILL_REPS}</small>`; };
@@ -102,45 +104,43 @@ export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang
 
   // birden çok tanıma adayı gelir: hedefe en çok uyanı kullan
   function handle(candidates) {
-    if (cooling) return; // hazırlık süresinde gelen (önceki tekrara ait) sonuçlar yok sayılır
+    if (pausing) return; // sayaç sırasında gelen sonuçlar sayılmaz
     let best = null;
     for (const c of candidates) {
-      const spoken = tokens(c); if (!spoken.length) continue;
+      const spoken = typeof c === 'string' ? tokens(c) : c; if (!spoken.length) continue;
       const r = align(targets, spoken);
       if (!best || r.hit.size > best.hit.size || (r.hit.size === best.hit.size && r.last > best.last)) best = r;
     }
     if (!best) return;
-    const now = performance.now();
-    if (best.hit.size) { if (!tFirst) tFirst = now; updates++; }
     best.hit.forEach(i => hits.add(i)); paint();
-    const cover = hits.size / total, reachedEnd = hits.has(total - 1) || (total >= 6 && hits.has(total - 2)); // son kelime(ler) söylenmeli
-    if ((reachedEnd && cover >= MIN_COVER) || cover >= FULL_COVER) finishRep(now);
+    const cover = hits.size / total, reachedEnd = hits.has(total - 1) || (total >= 6 && hits.has(total - 2));
+    if ((reachedEnd && cover >= MIN_COVER) || cover >= FULL_COVER) finishRep();
   }
-  function finishRep(now) {
-    // konuşmanın başı: ilk kelime bildiriminden biraz önce (tanıyıcı gecikmesi), ama bu tekrarın dinlemesi başlamadan önce değil
-    // tanıyıcı ara sonuç göndermediyse (yalnız son sonuç) ilk bildirim zamanı güvenilmez: mikrofonun açıldığı an esas alınır
-    const begun = updates >= 3 ? Math.max(repStart, tFirst - LEAD_MS) : (repStart || now - LEAD_MS);
-    const dur = Math.max(0.3, (now - begun) / 1000), wps = words.length / dur;
-    hits = new Set(); tFirst = 0; updates = 0;
-    if (words.length >= SPEED_MIN_WORDS && wps > MAX_WPS) { cooldown('⚠️ Çok hızlı geçtin. Doğal hızınla, tam söyle. Bu tekrar sayılmadı.', 'warn'); return; }
+  function finishRep() {
+    hits = new Set();
     count++; dots(); onProgress?.(count);
     if (count >= DRILL_REPS) { setTimeout(paint, 500); halt(); say('✅ 5 tekrar tamam! Aferin.', 'ok'); $b.classList.add('hidden'); onComplete?.(); return; }
-    cooldown(`✔ ${count}. tekrar sayıldı.`, 'ok');
+    pause(`✔ ${count}. tekrar sayıldı`);
   }
-  // tekrar arası 2 sn: mikrofon kapanır, eski sonuçlar temizlenir, geri sayımdan sonra temiz bir dinleme başlar
-  async function cooldown(msg, cls) {
-    cooling = true; clearTimeout(coolT); clearInterval(tickT);
-    hits = new Set(); tFirst = 0; updates = 0;
-    const until = performance.now() + COOLDOWN_MS;
-    const draw = () => { const left = Math.max(0, Math.ceil((until - performance.now()) / 1000));
-      $m.className = 'dr-msg ' + cls; $m.innerHTML = `${msg} <span class="dr-cd">🎤 Mikrofon hazırlanıyor… ${left}</span><span class="dr-cdbar" style="animation-duration:${COOLDOWN_MS}ms"></span>`; };
-    draw(); tickT = setInterval(draw, 250);
-    await cleanup();
-    coolT = setTimeout(() => {
-      clearInterval(tickT); cooling = false; repStart = 0; paint();
+  // tekrar arası: büyük yarı saydam 2 sn sayaç; mikrofon açık kalır, sayaç bitince önceki sonuçlar atlanır
+  function pause(msg) {
+    pausing = true; clearTimeout(pauseT); clearInterval(tickT);
+    if (support === 'vad') stopVad();
+    const until = performance.now() + PAUSE_MS;
+    $ovT.textContent = msg; $ring.style.animation = 'none'; void $ring.offsetWidth; $ring.style.animation = `drRing ${PAUSE_MS}ms linear forwards`;
+    const draw = () => { $ovN.textContent = Math.max(1, Math.ceil((until - performance.now()) / 1000)); };
+    draw(); tickT = setInterval(draw, 100);
+    $ov.classList.remove('hidden');
+    say(msg, 'ok');
+    pauseT = setTimeout(() => {
+      clearInterval(tickT); $ov.classList.add('hidden');
+      // önceki okumanın sonuçlarını atla
+      webBase = webLen; natSkip = natLast.reduce((m, c) => Math.max(m, tokens(c).length), 0);
+      hits = new Set(); paint(); pausing = false;
       if (!active || stopped) return;
-      say('🎤 Hazır! Şimdi cümleyi tekrar söyle.', 'go'); begin();
-    }, Math.max(0, until - performance.now()));
+      say('🎤 Hazır! Şimdi cümleyi baştan oku.', 'go');
+      if (support === 'vad' || !listening) begin();
+    }, PAUSE_MS);
   }
 
   // ---- ses düzeyi motoru ----
@@ -156,22 +156,20 @@ export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang
     const expect = Math.max(1.2, words.length * VAD.secPerWord); // bu cümle doğal hızda yaklaşık bu kadar sürer
     let calib = performance.now() + 350, floorSum = 0, floorN = 0, voiced = 0, first = 0, lastVoice = 0, prev = performance.now();
     const loop = now => {
-      if (!vad || cooling || !active) return;
+      if (!vad || pausing || !active) return;
       vad.an.getFloatTimeDomainData(vad.buf); let e = 0; for (const x of vad.buf) e += x * x; const rms = Math.sqrt(e / vad.buf.length);
       const dt = (now - prev) / 1000; prev = now;
       if (now < calib) { floorSum += rms; floorN++; }
       else {
         if (!vad.floor) vad.floor = floorN ? floorSum / floorN : 0.005;
         const on = rms > Math.max(VAD.minRms, vad.floor * 2.6);
-        if (on) { if (!first) { first = now; repStart = now; } voiced += dt; lastVoice = now; }
+        if (on) { if (!first) first = now; voiced += dt; lastVoice = now; }
         else if (!first) vad.floor = vad.floor * 0.98 + rms * 0.02; // sessizken gürültü tabanını izle
-        // telepromter: söylenen süreye göre kelimeleri sırayla yak
-        const k = Math.min(total, Math.floor((voiced / expect) * total * 1.05));
+        const k = Math.min(total, Math.floor((voiced / expect) * total * 1.05)); // telepromter: süreye göre kelimeleri yak
         if (k !== hits.size) { hits = new Set(Array.from({ length: k }, (_, i) => i)); paint(); }
         if (first && now - lastVoice > VAD.endSilence) { // konuşma bitti
-          const span = (lastVoice - first) / 1000;
-          if (voiced >= expect * VAD.minVoiced) { finishVad(span); return; }
-          if (span > 0.25) say('🎤 Cümlenin tamamını yüksek sesle söyle.', 'warn');
+          if (voiced >= expect * VAD.minVoiced) { hits = new Set(); paint(); finishRep(); return; }
+          if ((lastVoice - first) / 1000 > 0.25) say('🎤 Cümlenin tamamını yüksek sesle söyle.', 'warn');
           first = 0; voiced = 0; hits = new Set(); paint();
         }
       }
@@ -180,13 +178,6 @@ export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang
     say('🎤 Dinliyorum… cümleyi yüksek sesle söyle (bu cihazda ses düzeyiyle ölçülüyor).');
     vad.raf = requestAnimationFrame(loop);
   }
-  function finishVad(span) {
-    hits = new Set(); paint();
-    if (words.length >= SPEED_MIN_WORDS && words.length / Math.max(0.3, span) > MAX_WPS + 0.5) { cooldown('⚠️ Çok hızlı geçtin. Doğal hızınla, tam söyle. Bu tekrar sayılmadı.', 'warn'); return; }
-    count++; dots(); onProgress?.(count);
-    if (count >= DRILL_REPS) { halt(); say('✅ 5 tekrar tamam! Aferin.', 'ok'); $b.classList.add('hidden'); onComplete?.(); return; }
-    cooldown(`✔ ${count}. tekrar sayıldı.`, 'ok');
-  }
   function stopVad(full) {
     if (!vad) return; cancelAnimationFrame(vad.raf);
     if (full) { try { vad.stream.getTracks().forEach(t => t.stop()); vad.ctx.close(); } catch {} vad = null; }
@@ -194,9 +185,8 @@ export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang
 
   // ---- motor ----
   async function begin() {
-    if (stopped || busy || cooling || count >= DRILL_REPS) return;
+    if (stopped || busy || !active || count >= DRILL_REPS) return;
     busy = true;
-    if (!repStart) repStart = performance.now(); // motor yeniden başlasa da tekrarın başlangıcı korunur
     const N = nativePlugin();
     try {
       if (support === 'vad') { await startVad(); return; }
@@ -204,34 +194,43 @@ export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang
         const perm = await N.requestPermissions?.();
         if (perm && perm.speechRecognition && perm.speechRecognition !== 'granted') { say('🎤 Mikrofon izni verilmedi.', 'warn'); halt(); return; }
         listeners.forEach(x => { try { x.remove(); } catch {} }); listeners = []; // yeniden başlarken dinleyiciler çoğalmasın
-        const l = await N.addListener('partialResults', e => { if (!active) return; handle([].concat(e.matches || e.value || [])); });
+        natSkip = 0; natLast = []; // yeni oturum: sonuçlar sıfırdan gelir
+        const l = await N.addListener('partialResults', e => {
+          if (!active) return; natLast = [].concat(e.matches || e.value || []);
+          handle(natLast.map(c => tokens(c).slice(natSkip)));
+        });
         listeners.push(l);
-        const l2 = await N.addListener('listeningState', e => { if (active && !cooling && e.status === 'stopped' && !stopped) setTimeout(() => active && !cooling && begin(), 250); });
+        // Android konuşma bitince oturumu kapatır: açık tutmak için hemen yeniden başlat (sayaç sırasında da)
+        const l2 = await N.addListener('listeningState', e => { if (e.status === 'stopped') { listening = false; if (active && !stopped) setTimeout(() => active && !listening && begin(), 150); } });
         listeners.push(l2);
         await N.start({ language: lang, maxResults: 5, partialResults: true, popup: false });
+        listening = true;
       } else {
-        const SR = WebSR(); rec = new SR(); rec.lang = lang; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 5;
-        rec.onresult = e => { if (!active) return; const alts = [];
-          for (let k = 0; k < 5; k++) { let t = ''; for (let i = 0; i < e.results.length; i++) { const r = e.results[i]; t += (r[Math.min(k, r.length - 1)]?.transcript || '') + ' '; } alts.push(t); }
+        const SR = WebSR(), r = new SR(); rec = r; r.lang = lang; r.continuous = true; r.interimResults = true; r.maxAlternatives = 5;
+        webBase = 0; webLen = 0;
+        r.onresult = e => { if (!active || rec !== r) return; webLen = e.results.length; const alts = [];
+          for (let k = 0; k < 5; k++) { let t = ''; for (let i = webBase; i < e.results.length; i++) { const x = e.results[i]; t += (x[Math.min(k, x.length - 1)]?.transcript || '') + ' '; } alts.push(t); }
           handle(alts); };
-        rec.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { say('🎤 Mikrofon izni verilmedi.', 'warn'); halt(); } };
-        rec.onend = () => { if (active && !cooling && !stopped) setTimeout(() => { if (active && !cooling) begin(); }, 200); };
-        rec.start();
+        r.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { say('🎤 Mikrofon izni verilmedi.', 'warn'); halt(); } };
+        r.onend = () => { if (rec !== r) return; listening = false; rec = null; if (active && !stopped) setTimeout(() => { if (active && !listening) begin(); }, 150); };
+        r.start(); listening = true;
       }
     } catch (e) { say(e?.name === 'NotAllowedError' ? '🎤 Mikrofon izni verilmedi. Ayarlar’dan dam-la (ya da Safari) için mikrofona izin ver.' : '🎤 Mikrofon açılamadı: ' + (e?.message || e), 'warn'); halt(); }
     finally { busy = false; }
   }
   async function cleanup() {
-    const N = nativePlugin();
+    const N = nativePlugin(); listening = false;
     stopVad();
-    try { if (support === 'vad') {} else if (N) { await N.stop?.(); } else rec?.stop(); } catch {}
-    listeners.forEach(l => { try { l.remove(); } catch {} }); listeners = []; rec = null;
+    const r = rec; rec = null;
+    try { if (support === 'vad') {} else if (N) { await N.stop?.(); } else r?.stop(); } catch {}
+    listeners.forEach(l => { try { l.remove(); } catch {} }); listeners = [];
   }
-  function halt() { active = false; cooling = false; clearTimeout(coolT); clearInterval(tickT); cleanup(); stopVad(true); $b.textContent = count ? '🎤 Devam et' : '🎤 Başla'; }
+  function stopAll() { active = false; pausing = false; clearTimeout(pauseT); clearInterval(tickT); $ov.classList.add('hidden'); cleanup(); stopVad(true); }
+  function halt() { stopAll(); $b.textContent = count ? '🎤 Devam et' : '🎤 Başla'; }
   $b.addEventListener('click', () => {
     if (active) { halt(); say('Durduruldu.'); return; }
-    active = true; hits = new Set(); tFirst = 0; updates = 0; repStart = 0; paint(); $b.textContent = '⏹ Durdur';
+    active = true; hits = new Set(); paint(); $b.textContent = '⏹ Durdur';
     say('Dinliyorum… cümleyi okurken kelimeler renklenecek.'); begin();
   });
-  return { stop() { stopped = true; active = false; clearTimeout(coolT); clearInterval(tickT); cleanup(); stopVad(true); }, get count() { return count; } };
+  return { stop() { stopped = true; stopAll(); }, get count() { return count; } };
 }

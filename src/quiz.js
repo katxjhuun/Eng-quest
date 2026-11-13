@@ -607,13 +607,25 @@ export function initQuiz(core) {
     const box = $('#catTabs'); if (!box) return;
     const cat = A().cat;
     const tr = trackOf(cat);
-    const sw = $('#trackSw');
-    if (sw) sw.querySelectorAll('[data-track]').forEach(b => { const on = b.dataset.track === tr; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+    renderLock(tr);
     const list = CATS.filter(c => c.track === tr);
     box.classList.toggle('hidden', list.length < 2);
     box.innerHTML = list.map(c => `<button role="tab" class="cat-tab${c.id === cat ? ' on' : ''}" data-cat="${c.id}" aria-selected="${c.id === cat}"><span>${c.icon}</span>${esc(c.label)}</button>`).join('');
     const on = box.querySelector('.on'); // yalnızca sekme şeridini yatay kaydır; sayfa dikeyde hiç oynamasın
     if (on) { const l = on.offsetLeft - (box.clientWidth - on.offsetWidth) / 2; if (Math.abs(box.scrollLeft - l) > 4) box.scrollTo({ left: Math.max(0, l), behavior: 'smooth' }); }
+  }
+  // bavul kilidi tarzı kategori seçici: ortada seçili, iki yanda önceki/sonraki; döngüsel (sondan başa döner)
+  let lockIdx = -1;
+  function renderLock(tr) {
+    const sw = $('#trackSw'); if (!sw) return;
+    const n = TRACKS.length, i = Math.max(0, TRACKS.findIndex(t => t.id === tr));
+    if (i === lockIdx && sw.firstChild) return;
+    const dir = lockIdx < 0 ? '' : ((i - lockIdx + n) % n === 1 ? 'roll-l' : 'roll-r'); lockIdx = i;
+    const T = k => TRACKS[(i + k + n) % n];
+    const cell = (t, k) => `<button role="tab" class="lk-cell${k ? ' side' : ' on'}" data-track="${t.id}" aria-selected="${!k}"${k ? ' tabindex="-1"' : ''}><span>${t.icon}</span><em>${esc(t.label)}</em></button>`;
+    sw.innerHTML = `<button class="lk-arr" data-track="${T(-1).id}" aria-label="Önceki kategori">‹</button>
+      <div class="lk-win"><div class="lk-drum ${dir}">${cell(T(-1), -1)}${cell(T(0), 0)}${cell(T(1), 1)}</div></div>
+      <button class="lk-arr" data-track="${T(1).id}" aria-label="Sonraki kategori">›</button>`;
   }
   function renderModeBtn() {
     const m = MODES.find(x => x.id === A().profile.mode) || MODES[0];
@@ -946,6 +958,15 @@ export function initQuiz(core) {
     core.stopAudio(); app.cat = CATS.some(c => c.id === remembered && c.track === to) ? remembered : TRACKS.find(t => t.id === to).def;
     core.saveLocal(false); render();
   });
+  { // kilidi parmakla sağa-sola çevir
+    const sw = $('#trackSw'); let x0 = null, y0 = 0;
+    sw?.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+    sw?.addEventListener('touchend', e => {
+      if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null;
+      if (Math.abs(dx) < 35 || Math.abs(dy) > Math.abs(dx)) return;
+      sw.querySelectorAll('.lk-arr')[dx < 0 ? 1 : 0]?.click();
+    }, { passive: true });
+  }
   $('#modeBtn').addEventListener('click', () => {
     const app = A(), i = MODES.findIndex(m => m.id === app.profile.mode);
     app.profile.mode = MODES[(i + 1) % MODES.length].id;
