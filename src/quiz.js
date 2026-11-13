@@ -306,8 +306,8 @@ export function initQuiz(core) {
     const T = {
       join: ['🔒 Bu bölüm sınıfına özel', 'İngilizce Hazırlık soruları yalnızca sınıftaki öğrencilere açık. Öğretmeninin verdiği sınıf kodunu gir.'],
       offline: ['📶 İnternet gerekli', 'Hazırlık soruları ilk kez indirilirken bağlantı gerekir. Bağlanınca kendiliğinden yüklenir.'],
-      empty: ['📭 Henüz soru yok', 'Öğretmenin soruları henüz yüklemedi. Biraz sonra tekrar dene.'],
-    }[epGate] || ['📘 Bağlanıyor…', 'Sınıf kodun varsa aşağıya yazabilirsin. Daha önce katıldıysan sorular birazdan açılır.'];
+      empty: [A().cat === 'rd' ? '📭 Reading soruları henüz yok' : '📭 Henüz soru yok', A().cat === 'rd' ? 'Öğretmenin Hazırlık Reading sorularını henüz yüklemedi. Biraz sonra tekrar dene.' : 'Öğretmenin soruları henüz yüklemedi. Biraz sonra tekrar dene.'],
+    }[epEmpty(A().cat) ? 'empty' : epGate] || ['📘 Bağlanıyor…', 'Sınıf kodun varsa aşağıya yazabilirsin. Daha önce katıldıysan sorular birazdan açılır.'];
     showLegacy(false);
     $('#qzTag').textContent = A().cat === 'rd' ? '📖 HAZIRLIK READING' : '📘 İNGİLİZCE HAZIRLIK';
     $('#qzCount').textContent = '';
@@ -318,12 +318,14 @@ export function initQuiz(core) {
     $('#qzOptions').classList.remove('hidden');
     // kod kutusu yalnızca "henüz soru yok" dışında her durumda görünür (bağlantı yavaşsa da kod girilebilsin)
     const keep = $('#prepCode')?.value || '';
-    $('#qzOptions').innerHTML = epGate === 'empty' ? `<button class="mini-btn" type="button" data-ep-retry>↻ Tekrar dene</button>`
+    $('#qzOptions').innerHTML = (epGate === 'empty' || epEmpty(A().cat)) ? `<button class="mini-btn" type="button" data-ep-retry>↻ Tekrar dene</button>`
       : `<form class="prep-join" data-join><input id="prepCode" class="setting-input" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="32" placeholder="Sınıf kodu" aria-label="Sınıf kodu" value="${esc(keep)}"><button class="primarybtn" type="submit">Katıl ↗</button><div class="prep-join-msg" id="prepJoinMsg" role="status"></div></form>`
         + (epGate === 'offline' ? `<button class="mini-btn" type="button" data-ep-retry>↻ Tekrar dene</button>` : '');
     const ex = $('#qzExplain'); if (ex) ex.innerHTML = '';
   }
-  const pendingFor = cat => ((cat === 'akh' || cat === 'aka' || cat === 'akm') && !ACAD) || ((cat === 'ep' || cat === 'rd') && !EP);
+  // banka geldi ama bu bölümün (ör. Reading) sorusu yoksa: başka kitabın sorularını göstermek yerine “henüz soru yok” ekranı
+  const epEmpty = cat => (cat === 'ep' || cat === 'rd') && !!EP && !epItems().some(it => it.cat === cat);
+  const pendingFor = cat => ((cat === 'akh' || cat === 'aka' || cat === 'akm') && !ACAD) || ((cat === 'ep' || cat === 'rd') && !EP) || epEmpty(cat);
   function loadFor(cat) { if (cat === 'ep' || cat === 'rd') loadEp(); else if (cat === 'akh' || cat === 'aka' || cat === 'akm') loadAcad(); }
   const acadDept = () => (ACAD && ACAD[A().profile.dept] ? A().profile.dept : 'genel');
   function acadItems(kind, dept = acadDept()) {
@@ -524,7 +526,7 @@ export function initQuiz(core) {
     const q = Q();
     let c = q.cur[cat];
     // banka henüz yüklenmediyse yarım soruyu silme; yüklenince sürer
-    if (pendingFor(cat)) { loadFor(cat); return c && !c.legacy ? c : { pending: true }; }
+    if (pendingFor(cat)) { loadFor(cat); return c && !c.legacy && findItem(c.id) ? c : { pending: true }; }
     const mode = A().profile.mode;
     if (cat === 'en' && mode === 'type' && c && !c.legacy && !c.done) c = q.cur[cat] = { legacy: true };
     if (cat === 'en' && mode !== 'type' && mode !== 'mix' && c?.legacy) c = q.cur[cat] = newCur(cat);
