@@ -636,13 +636,57 @@ export function initQuiz(core) {
     if (!body.length && !rule) { const first = splitSentences(paras[0] || '')[0]; if (first && !leaks(first) && first.length <= 160) body = [first]; }
     if (!title && !body.length) return null;
     const n = String(item.a || '').trim().split(/\s+/).length;
-    // çözülmüş örnek: aynı kuraldaki başka bir sorunun doğru tam cümlesi (bu sorunun cevabını içermeyen)
-    let example = '';
-    if ((item.cat === 'ep' || item.cat === 'rd') && rule) {
-      const sib = epItems().filter(it => it.id !== item.id && it.b === item.b && it.u === item.u && it.full && String(it.exp || '').includes('📘 ' + title + ':') && !leaks(it.full));
-      if (sib.length) example = sib[hash(item.id) % sib.length].full;
+    // bu soruya özel ipucu: başka sorulardan örnek yerine, sorunun kendi notu + cevabın biçimi (cevabı vermeden)
+    const own = [];
+    const note = splitSentences(paras[0] && !/^📘/.test(paras[0].trim()) ? paras[0] : '')[0] || '';
+    if (note && !leaks(note) && note.length <= 140 && !/^(review|vf|ex|sb|wb)?\s*[\w–.\- ]{0,12}\d[\w–.\-]*\.?$/i.test(note.trim()) && !/^örnek cevap/i.test(note)) own.push('🗣️ ' + note);
+    const pv = String(item.q || '').match(/\(([a-z][a-z' ]{1,24})\)/i);
+    if (pv && String(item.a).trim().toLowerCase() !== pv[1].trim().toLowerCase()) own.push(`🔧 Parantezdeki <i lang="en">${esc(pv[1])}</i> kelimesini cümleye uygun biçime sok.`);
+    if (item.optLang === 'en') { const f = answerForm(item.a); if (f) own.push('🧩 Cevabın kalıbı: ' + f); }
+    own.push(`🔤 ${n > 1 ? n + " kelime · " : ""}ilk harf <b lang="en">${esc(String(item.a || '').trim().charAt(0).toUpperCase())}</b>`);
+    return `<b>💡 Konu${title ? ': ' + esc(title) : ''}</b>${body.map(t => `<span>${esc(t)}</span>`).join('')}<span class="qz-ex">${own.map(t => `<span>${t.startsWith('🔧') || t.startsWith('🔤') || t.startsWith('🧩') ? t : esc(t)}</span>`).join('')}</span><small>Cevap ${item.optLang === 'en' ? 'İngilizce' : 'Türkçe'}</small>`;
+  }
+  // cevabın dilbilgisi kalıbı (kelimeleri söylemeden): "be + fiil-ing", "fiil + edat (öbek fiil)" gibi
+  function answerForm(ans) {
+    const raw = String(ans || '').trim();
+    if (raw.includes(' / ')) return `${raw.split(' / ').length} parça: boşlukları sırayla doldur, cevapları “ / ” ile ayır`;
+    const w = raw.toLowerCase().replace(/[.,!?;:"“”()]/g, '').split(/\s+/).filter(Boolean);
+    if (!w.length) return '';
+    if (w.length > 6) return /[.!?]$/.test(raw) ? `tam cümle (${w.length} kelime): büyük harfle başla, noktalama ile bitir` : `${w.length} kelimelik öbek`;
+    const ONE = { the: 'artikel', a: 'artikel', an: 'artikel', for: 'edat (preposition)', at: 'edat (preposition)', in: 'edat (preposition)', on: 'edat (preposition)', to: 'edat (preposition)', with: 'edat (preposition)', by: 'edat (preposition)', of: 'edat (preposition)', from: 'edat (preposition)', about: 'edat (preposition)', since: 'zaman bağlacı/edatı', ago: 'zaman kelimesi', yet: 'zaman zarfı', already: 'zaman zarfı', just: 'zaman zarfı', some: 'miktar belirteci', any: 'miktar belirteci', much: 'miktar belirteci', many: 'miktar belirteci', who: 'ilgi zamiri (relative pronoun)', which: 'ilgi zamiri (relative pronoun)', that: 'ilgi zamiri / bağlaç', where: 'soru / ilgi kelimesi', whose: 'ilgi zamiri (relative pronoun)', and: 'bağlaç', but: 'bağlaç', because: 'bağlaç', although: 'bağlaç', so: 'bağlaç', if: 'bağlaç', unless: 'bağlaç' };
+    if (w.length === 1 && ONE[w[0]]) return 'tek kelime: ' + ONE[w[0]];
+    if (w[0] === 'there' && w.length <= 3) return 'there + be (var / yok yapısı)';
+    const BE = ['am', 'is', 'are', 'was', 'were', "'m", "'s", "'re", 'be', 'been', 'being'];
+    const MOD = ['can', 'could', 'should', 'must', 'might', 'may', 'would', "can't", "couldn't", "shouldn't", "mustn't", "wouldn't"];
+    const PART = ['up', 'down', 'on', 'off', 'out', 'away', 'back', 'over', 'in', 'into', 'through', 'after', 'around', 'along', 'forward'];
+    const ing = x => /..ing$/.test(x), ed = x => /..ed$/.test(x);
+    const neg = w.some(x => x === 'not' || /n't$/.test(x)) ? ' (olumsuz)' : '';
+    const i0 = w[0], last = w[w.length - 1];
+    if (i0 === 'will' || i0 === "won't" || i0 === "'ll") return 'will + fiilin yalın hali (gelecek zaman)' + neg;
+    if (w.includes('going') && w.includes('to')) return 'be going to + fiilin yalın hali (plan / tahmin)' + neg;
+    if (['have', 'has', "haven't", "hasn't"].includes(i0)) return w.includes('been') && ing(last) ? 'have/has been + fiil-ing (present perfect continuous)' + neg : 'have/has + fiilin 3. hali (present perfect)' + neg;
+    if (['had', "hadn't"].includes(i0) && w.length > 1) return 'had + fiilin 3. hali (past perfect)' + neg;
+    if (MOD.includes(i0)) return w.includes('have') ? 'modal + have + fiilin 3. hali (geçmişe dair)' : 'modal (can/should/must…) + fiilin yalın hali' + neg;
+    if (BE.includes(i0) && w.length > 1) { if (ing(last)) return 'be + fiil-ing (sürekli zaman)' + neg; if (ed(last) || w.includes('been')) return 'be + fiilin 3. hali (edilgen)' + neg; }
+    if (['do', 'does', 'did', "don't", "doesn't", "didn't"].includes(i0) && w.length > 1) return 'do/does/did yardımcı fiili + fiilin yalın hali' + neg;
+    if (w.length === 1 && /^(is|are|am|was|were|do|does|did|have|has|can|will)$/.test(i0)) return 'tek kelime: yardımcı fiil (soru ya da kısa cevap)';
+    if (w.length === 2 && PART.includes(last)) return 'fiil + edat (öbek fiil / multi-word verb)';
+    if (w.length === 3 && PART.includes(w[1])) return 'fiil + edat + edat/nesne (öbek fiil)';
+    if (['more', 'most', 'less', 'least'].includes(i0) && w.length === 2) return i0 === 'more' || i0 === 'less' ? 'more/less + sıfat (karşılaştırma)' : 'the most/least + sıfat (en üstünlük)';
+    if (i0 === 'the' && w.length === 2 && /est$/.test(last)) return 'the + sıfat-est (en üstünlük)';
+    if (w.length === 1) {
+      const x = i0;
+      if (/(tion|sion|ment|ness|ity|ance|ence|ship|hood|ism)$/.test(x)) return 'tek kelime: isim (isim yapım ekiyle biter)';
+      if (/(ful|less|ous|ive|able|ible|ical|ish)$/.test(x)) return 'tek kelime: sıfat (sıfat ekiyle biter)';
+      if (/..ly$/.test(x)) return x.length >= 7 ? 'tek kelime: zarf (-ly)' : 'tek kelime: -ly ile biter';
+      if (/..er$/.test(x) && x.length <= 8) return 'tek kelime: -er ile biter (karşılaştırma ya da kişi/meslek)';
+      if (ing(x)) return 'tek kelime: fiil-ing';
+      if (ed(x)) return 'tek kelime: fiil-ed (geçmiş ya da 3. hal)';
+      return /^[a-z]+$/.test(x) ? `tek kelime (${x.length} harf)` : '';
     }
-    return `<b>💡 Konu${title ? ': ' + esc(title) : ''}</b>${body.map(t => `<span>${esc(t)}</span>`).join('')}${example ? `<span class="qz-ex">✏️ Örnek: <i lang="en">${esc(example)}</i></span>` : ''}<small>Cevap ${item.optLang === 'en' ? 'İngilizce' : 'Türkçe'} · ${n} kelime</small>`;
+    if (['a', 'an', 'the'].includes(i0)) return `artikel (a/an/the) ile başlayan ${w.length} kelimelik öbek`;
+    if (['to'].includes(i0)) return 'to + fiilin yalın hali';
+    return `${w.length} kelimelik öbek`;
   }
   // bölüm soruları (akh/aka/akm) henüz yoksa konu listesinde gösterme
   function acadHidden(id) { if (!/^ak[ham]$/.test(id)) return false; if (!ACAD) { loadAcad(); return true; } return !acadItems('haz').length && !acadItems('ana').length; }
