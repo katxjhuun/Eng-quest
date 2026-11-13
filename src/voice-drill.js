@@ -9,6 +9,7 @@ const SPEED_MIN_WORDS = 6; // kısa cümlelerde zaman ölçümü güvenilmez: h�
 const LEAD_MS = 1500;      // tanıyıcı ilk kelimeyi geç ve toplu bildirir: konuşma bu kadar önce başlamış sayılır
 const MIN_COVER = 0.7;     // cümle sonuna ulaşıldıysa kelimelerin en az %70'i yeter
 const FULL_COVER = 0.9;    // sona ulaşılmasa da %90 anlaşıldıysa sayılır
+const COOLDOWN_MS = 2000;  // her tekrardan sonra mikrofon tamamen kapanıp yeniden hazırlanır (eski ses/sonuç karışmasın)
 
 // ---- metni karşılaştırılabilir kelime dizisine çevir (iki taraf da aynı yoldan geçer) ----
 const ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
@@ -73,7 +74,7 @@ export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang
   const targets = [], owner = []; // her hedef kelimenin ekrandaki kelime indeksi
   words.forEach((w, i) => tokens(w).forEach(t => { targets.push(t); owner.push(i); }));
   const total = targets.length || 1;
-  let busy = false, count = Math.min(start, DRILL_REPS), active = false, stopped = false, rec = null, repStart = 0, tFirst = 0, updates = 0, hits = new Set(), listeners = [];
+  let busy = false, count = Math.min(start, DRILL_REPS), active = false, stopped = false, rec = null, repStart = 0, tFirst = 0, updates = 0, hits = new Set(), listeners = [], cooling = false, coolT = 0, tickT = 0;
   const support = drillSupport();
   root.innerHTML = `<div class="dr-head"><b>🎤 Sesli tekrar</b><span class="dr-count"></span></div>
     <p class="dr-text" lang="en">${words.map((w, i) => `<span class="dw" data-i="${i}">${w.replace(/[<>&]/g, '')}</span>`).join(' ')}</p>
@@ -87,11 +88,14 @@ export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang
   if (count >= DRILL_REPS) { say('✅ 5 tekrar tamam!', 'ok'); $b.classList.add('hidden'); }
   if (support === 'none' || support === 'needs-update') {
     $b.disabled = true;
-    say(support === 'needs-update' ? '🎤 Mikrofon için uygulamanın yeni sürümünü (APK) kurman gerekiyor.' : '🎤 Bu tarayıcı mikrofonla tanımayı desteklemiyor (Chrome kullan).', 'warn');
+    const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    say(support === 'needs-update' ? (ios ? '🎤 Mikrofon için uygulamanın yeni iPhone sürümünü (IPA) kurman gerekiyor.' : '🎤 Mikrofon için uygulamanın yeni sürümünü (APK) kurman gerekiyor.')
+      : ios ? '🎤 iPhone’da ana ekrana eklenen web sürümü mikrofonla tanımayı desteklemiyor. Uygulamanın iPhone sürümünü (IPA) kur ya da Safari’de aç.' : '🎤 Bu tarayıcı mikrofonla tanımayı desteklemiyor (Chrome kullan).', 'warn');
   }
 
   // birden çok tanıma adayı gelir: hedefe en çok uyanı kullan
   function handle(candidates) {
+    if (cooling) return; // hazırlık süresinde gelen (önceki tekrara ait) sonuçlar yok sayılır
     let best = null;
     for (const c of candidates) {
       const spoken = tokens(c); if (!spoken.length) continue;
@@ -111,16 +115,30 @@ export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang
     const begun = updates >= 3 ? Math.max(repStart, tFirst - LEAD_MS) : (repStart || now - LEAD_MS);
     const dur = Math.max(0.3, (now - begun) / 1000), wps = words.length / dur;
     hits = new Set(); tFirst = 0; updates = 0;
-    if (words.length >= SPEED_MIN_WORDS && wps > MAX_WPS) { say('⚠️ Çok hızlı geçtin. Cümleyi doğal hızınla, tam söyle. Bu tekrar sayılmadı.', 'warn'); setTimeout(paint, 700); restart(); return; }
+    if (words.length >= SPEED_MIN_WORDS && wps > MAX_WPS) { cooldown('⚠️ Çok hızlı geçtin. Doğal hızınla, tam söyle. Bu tekrar sayılmadı.', 'warn'); return; }
     count++; dots(); onProgress?.(count);
-    setTimeout(paint, 500);
-    if (count >= DRILL_REPS) { halt(); say('✅ 5 tekrar tamam! Aferin.', 'ok'); $b.classList.add('hidden'); onComplete?.(); return; }
-    say(`✔ ${count}. tekrar sayıldı. Devam et!`, 'ok'); restart();
+    if (count >= DRILL_REPS) { setTimeout(paint, 500); halt(); say('✅ 5 tekrar tamam! Aferin.', 'ok'); $b.classList.add('hidden'); onComplete?.(); return; }
+    cooldown(`✔ ${count}. tekrar sayıldı.`, 'ok');
+  }
+  // tekrar arası 2 sn: mikrofon kapanır, eski sonuçlar temizlenir, geri sayımdan sonra temiz bir dinleme başlar
+  async function cooldown(msg, cls) {
+    cooling = true; clearTimeout(coolT); clearInterval(tickT);
+    hits = new Set(); tFirst = 0; updates = 0;
+    const until = performance.now() + COOLDOWN_MS;
+    const draw = () => { const left = Math.max(0, Math.ceil((until - performance.now()) / 1000));
+      $m.className = 'dr-msg ' + cls; $m.innerHTML = `${msg} <span class="dr-cd">🎤 Mikrofon hazırlanıyor… ${left}</span><span class="dr-cdbar" style="animation-duration:${COOLDOWN_MS}ms"></span>`; };
+    draw(); tickT = setInterval(draw, 250);
+    await cleanup();
+    coolT = setTimeout(() => {
+      clearInterval(tickT); cooling = false; repStart = 0; paint();
+      if (!active || stopped) return;
+      say('🎤 Hazır! Şimdi cümleyi tekrar söyle.', 'go'); begin();
+    }, Math.max(0, until - performance.now()));
   }
 
   // ---- motor ----
   async function begin() {
-    if (stopped || busy || count >= DRILL_REPS) return;
+    if (stopped || busy || cooling || count >= DRILL_REPS) return;
     busy = true;
     if (!repStart) repStart = performance.now(); // motor yeniden başlasa da tekrarın başlangıcı korunur
     const N = nativePlugin();
@@ -131,7 +149,7 @@ export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang
         listeners.forEach(x => { try { x.remove(); } catch {} }); listeners = []; // yeniden başlarken dinleyiciler çoğalmasın
         const l = await N.addListener('partialResults', e => { if (!active) return; handle([].concat(e.matches || e.value || [])); });
         listeners.push(l);
-        const l2 = await N.addListener('listeningState', e => { if (active && e.status === 'stopped' && !stopped) setTimeout(() => active && begin(), 250); });
+        const l2 = await N.addListener('listeningState', e => { if (active && !cooling && e.status === 'stopped' && !stopped) setTimeout(() => active && !cooling && begin(), 250); });
         listeners.push(l2);
         await N.start({ language: lang, maxResults: 5, partialResults: true, popup: false });
       } else {
@@ -140,7 +158,7 @@ export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang
           for (let k = 0; k < 5; k++) { let t = ''; for (let i = 0; i < e.results.length; i++) { const r = e.results[i]; t += (r[Math.min(k, r.length - 1)]?.transcript || '') + ' '; } alts.push(t); }
           handle(alts); };
         rec.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { say('🎤 Mikrofon izni verilmedi.', 'warn'); halt(); } };
-        rec.onend = () => { if (active && !stopped) setTimeout(() => { if (active) begin(); }, 200); };
+        rec.onend = () => { if (active && !cooling && !stopped) setTimeout(() => { if (active && !cooling) begin(); }, 200); };
         rec.start();
       }
     } catch (e) { say('🎤 Mikrofon açılamadı: ' + (e?.message || e), 'warn'); halt(); }
@@ -151,12 +169,11 @@ export function mountDrill(root, text, { start = 0, onProgress, onComplete, lang
     try { if (N) { await N.stop?.(); } else rec?.stop(); } catch {}
     listeners.forEach(l => { try { l.remove(); } catch {} }); listeners = []; rec = null;
   }
-  async function restart() { await cleanup(); repStart = 0; if (active && !stopped) setTimeout(begin, 150); }
-  function halt() { active = false; cleanup(); $b.textContent = count ? '🎤 Devam et' : '🎤 Başla'; }
+  function halt() { active = false; cooling = false; clearTimeout(coolT); clearInterval(tickT); cleanup(); $b.textContent = count ? '🎤 Devam et' : '🎤 Başla'; }
   $b.addEventListener('click', () => {
     if (active) { halt(); say('Durduruldu.'); return; }
     active = true; hits = new Set(); tFirst = 0; updates = 0; repStart = 0; paint(); $b.textContent = '⏹ Durdur';
     say('Dinliyorum… cümleyi okurken kelimeler renklenecek.'); begin();
   });
-  return { stop() { stopped = true; active = false; cleanup(); }, get count() { return count; } };
+  return { stop() { stopped = true; active = false; clearTimeout(coolT); clearInterval(tickT); cleanup(); }, get count() { return count; } };
 }

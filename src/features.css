@@ -567,3 +567,20 @@ body.study .challenge{box-shadow:none}
 .qz-open-mine span { font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; opacity: .65; }
 .qz-open-mine b { font-weight: 600; white-space: pre-wrap; }
 .qx-sample { background: #f3fbf8; }
+
+/* Hazırlık: açılmış seviye/ünite geçişi */
+.cefr-labels .ep-u { border: 0; background: transparent; color: inherit; font: inherit; font-weight: 750; padding: 4px 6px; min-width: 26px; border-radius: 8px; position: relative; }
+.cefr-labels .ep-u.on { color: var(--teal-dark); background: rgba(120,224,192,.14); }
+.cefr-labels .ep-u.locked { opacity: .45; cursor: default; }
+.cefr-labels .ep-u sup, .ep-levels sup { font-size: 9px; font-weight: 900; color: #fff; background: var(--coral); border-radius: 99px; padding: 0 4px; margin-left: 2px; }
+.ep-levels { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.ep-levels button { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px; padding: 7px 11px; font-size: 11px; font-weight: 800; }
+.ep-levels button.on { border-color: var(--teal); color: var(--teal-dark); }
+.ep-levels button.locked { opacity: .5; cursor: default; }
+.ep-levels .ep-home { background: var(--teal-dark); color: #f7f5ed; border-color: transparent; }
+
+/* sesli tekrar: tekrarlar arası 2 sn hazırlık */
+.dr-msg .dr-cd { display: block; margin-top: 4px; font-weight: 800; opacity: .85; }
+.dr-msg .dr-cdbar { display: block; height: 4px; margin-top: 6px; border-radius: 4px; background: var(--teal); transform-origin: left; animation: drCd linear forwards; }
+@keyframes drCd { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.dr-msg.go { color: var(--teal-dark); font-weight: 800; }
