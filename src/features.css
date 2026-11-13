@@ -552,9 +552,17 @@ body.study .challenge{box-shadow:none}
 .qx-drill .dr-msg.ok { color: var(--teal-dark); font-weight: 700; }
 .qx-drill .dr-msg.warn { color: #b3261e; font-weight: 700; }
 .qx-drill .dr-row { margin-top: 8px; }
-.qz-passage { margin: 0 0 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); }
-.qz-passage summary { cursor: pointer; font-weight: 700; }
-.qz-passage p { margin: 8px 0; line-height: 1.6; }
+/* okuma metni: kartın içinde kendi kaydırma alanı; uzun metin sayfayı itmez, yana taşmaz */
+.qz-passage { margin: 0 0 14px; border: 1px solid #e6ded3; border-radius: 16px; background: #fffdf8; overflow: hidden; max-width: 100%; box-shadow: 0 4px 12px rgba(53,40,35,.05); }
+.qz-passage summary { cursor: pointer; list-style: none; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 11px 14px; font-weight: 850; font-size: 14px; color: #201d23; background: #f4efff; border-bottom: 1px solid #e6ddff; }
+.qz-passage summary::-webkit-details-marker { display: none; }
+.qz-passage summary small { font-size: 11px; font-weight: 650; color: #7c739a; }
+.qz-passage:not([open]) summary { border-bottom: 0; }
+.qz-passage .qp-body { max-height: min(46vh, 420px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 4px 16px 14px; font-size: 15px; line-height: 1.7; color: #2b2730; overflow-wrap: anywhere; hyphens: auto; }
+.qz-passage .qp-title { margin: 12px 0 6px; font-size: 16px; font-weight: 900; line-height: 1.3; color: #201d23; }
+.qz-passage .qp-sub { margin: 14px 0 2px; font-size: 12px; font-weight: 900; letter-spacing: .06em; color: #4f3bd4; }
+.qz-passage p { margin: 9px 0; }
+.qz-passage .qp-n { display: inline-grid; place-items: center; min-width: 20px; height: 20px; margin-right: 7px; border-radius: 6px; background: #ece6ff; color: #4f3bd4; font-size: 11px; font-weight: 900; vertical-align: 1px; }
 .qz-passage.hidden { display: none; }
 
 /* açık uçlu sorular (Hazırlık: konuşma/yazma görevleri) */

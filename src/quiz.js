@@ -738,7 +738,21 @@ export function initQuiz(core) {
     let pe = $('#qzPassage');
     if (item.passage) {
       if (!pe) { pe = document.createElement('details'); pe.id = 'qzPassage'; pe.className = 'qz-passage'; const t = $('#qzTitle'); t.parentNode.insertBefore(pe, t); }
-      if (pe.dataset.id !== c.id) { pe.dataset.id = c.id; pe.open = true; pe.innerHTML = `<summary>📖 Metin</summary><div lang="en">${String(item.passage).split(/\n+/).map(x => `<p>${esc(x)}</p>`).join('')}</div>`; }
+      // aynı metne bağlı sorular arasında kutu yeniden çizilmez: açık/kapalı durumu ve kaydırma yeri korunur
+      const pkey = hash(item.passage);
+      if (pe.dataset.key !== String(pkey)) {
+        pe.dataset.key = String(pkey); pe.open = true;
+        const lines = String(item.passage).split(/\n+/).map(x => x.trim()).filter(Boolean);
+        const body = lines.map((x, i) => {
+          if (i === 0) return `<h4 class="qp-title">${esc(x)}</h4>`;
+          const num = x.match(/^(\d{1,2})\.\s+(.*)$/);
+          if (num) return `<p><span class="qp-n">${num[1]}</span>${esc(num[2])}</p>`;
+          if (x.length <= 48 && x === x.toUpperCase() && /[A-Z]/.test(x)) return `<h5 class="qp-sub">${esc(x)}</h5>`;
+          return `<p>${esc(x)}</p>`;
+        }).join('');
+        pe.innerHTML = `<summary><span>📖 Okuma metni</span><small>dokun: aç / kapat</small></summary><div class="qp-body" lang="en">${body}</div>`;
+        const pb = pe.querySelector('.qp-body'); if (pb) pb.scrollTop = 0;
+      }
       pe.classList.remove('hidden');
     }
     const catOfItem = item.cat, catInfo = CATS.find(x => x.id === catOfItem);
