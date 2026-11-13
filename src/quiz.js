@@ -16,8 +16,8 @@ export const MODE_TAG = { type: 'YAZARAK', quiz: 'POP QUIZ', listen: 'DİNLEYERE
 export const TRACKS = [
   { id: 'akademik', icon: '🎓', label: 'Akademik', def: 'akh' },
   { id: 'genel', icon: '🧭', label: 'Genel', def: 'en' },
-  { id: 'hazirlik', icon: '📘', label: 'İngilizce Hazırlık', def: 'ep' },
-  { id: 'okuma', icon: '📖', label: 'Hazırlık Reading', def: 'rd' },
+  { id: 'hazirlik', icon: '📘', label: 'İngilizce Hazırlık', short: 'Hazırlık', def: 'ep' },
+  { id: 'okuma', icon: '📖', label: 'Hazırlık Reading', short: 'Reading', def: 'rd' },
 ];
 export const CATS = [
   { id: 'mix', icon: '🔀', label: 'Karışık', track: 'genel' },
@@ -413,7 +413,7 @@ export function initQuiz(core) {
     const items = epItems().filter(it => it.cat === cat), q = Q(), now = Date.now(), recent = new Set(q.recent.slice(-6));
     const V = epView(cat);
     if (V.back) { // geri dönüş: önce hiç görülmemiş (sonradan eklenen) sorular, sonra öğrenilemeyenler, sonra vakti gelen tekrarlar
-      const here = items.filter(it => it.b === V.b && it.u === V.u);
+      const here = items.filter(it => it.b === V.b && it.u === V.u && it.id !== q.recent[q.recent.length - 1]);
       const pick = here.find(it => !q.items[it.id])
         || here.filter(it => !(q.items[it.id]?.c > 0) && !recent.has(it.id)).sort((x, y) => (q.items[x.id]?.due || 0) - (q.items[y.id]?.due || 0))[0]
         || here.filter(it => q.items[it.id] && q.items[it.id].due <= now && !recent.has(it.id)).sort((x, y) => q.items[x.id].due - q.items[y.id].due)[0];
@@ -425,7 +425,12 @@ export function initQuiz(core) {
     if (due.length && (Math.random() < 0.25 || P.allDone)) return due.sort((x, y) => q.items[x.id].due - q.items[y.id].due)[0];
     const here = items.filter(it => it.b === P.book && it.u === P.unit && !recent.has(it.id));
     // kitaptaki sırayla: henüz görülmemiş ilk soru; hepsi görüldüyse henüz bilinemeyenler
-    return here.find(it => !q.items[it.id]) || here.filter(it => !(q.items[it.id]?.c > 0)).sort((x, y) => (q.items[x.id]?.due || 0) - (q.items[y.id]?.due || 0))[0] || due[0] || here[0] || items.find(it => !recent.has(it.id)) || items[0];
+    // küçük ünitelerde (ör. Reading: bir metin + birkaç soru) hepsi "son 6"da olabilir: o zaman az önce sorulan soru
+    // asla yeniden seçilmesin; en uzun süredir görülmeyen soruya geç
+    const last = q.recent[q.recent.length - 1];
+    const stale = list => list.filter(it => it.id !== last).sort((x, y) => q.recent.lastIndexOf(x.id) - q.recent.lastIndexOf(y.id))[0];
+    return here.find(it => !q.items[it.id]) || here.filter(it => !(q.items[it.id]?.c > 0)).sort((x, y) => (q.items[x.id]?.due || 0) - (q.items[y.id]?.due || 0))[0] || due[0] || here[0]
+      || items.find(it => !recent.has(it.id)) || stale(items.filter(it => it.b === P.book && it.u === P.unit)) || stale(items) || items[0];
   }
   // ---- seviye sonucu: kitaptaki tüm sorular görülünce başarı = doğru / toplam deneme ----
   let lvlPrompt = null; // { cat, b, n, rate }: %80 altında kalınca sorulan "tekrar edilsin mi?" ekranı
@@ -611,30 +616,46 @@ export function initQuiz(core) {
     renderLock(tr);
     const list = CATS.filter(c => c.track === tr);
     box.classList.toggle('hidden', list.length < 2);
-    box.innerHTML = list.map(c => `<button role="tab" class="cat-tab${c.id === cat ? ' on' : ''}" data-cat="${c.id}" aria-selected="${c.id === cat}"><span>${c.icon}</span>${esc(c.label)}</button>`).join('');
-    const on = box.querySelector('.on'); // yalnızca sekme şeridini yatay kaydır; sayfa dikeyde hiç oynamasın
-    if (on) { const l = on.offsetLeft - (box.clientWidth - on.offsetWidth) / 2; if (Math.abs(box.scrollLeft - l) > 4) box.scrollTo({ left: Math.max(0, l), behavior: 'smooth' }); }
+    if (list.length >= 2) renderDial(box, 'cat', { items: list, cur: cat, attr: 'data-cat', label: 'Konu' });
   }
-  // bavul kilidi tarzı kategori seçici: ortada seçili, iki yanda önceki/sonraki; döngüsel (sondan başa döner)
-  let lockIdx = -1;
-  function renderLock(tr) {
-    const sw = $('#trackSw'); if (!sw) return;
-    const n = TRACKS.length, i = Math.max(0, TRACKS.findIndex(t => t.id === tr));
-    if (i === lockIdx && sw.firstChild) return;
-    const dir = lockIdx < 0 ? '' : ((i - lockIdx + n) % n === 1 ? 'roll-l' : 'roll-r'); lockIdx = i;
-    const T = k => TRACKS[(i + k + n) % n];
-    const cell = (t, k) => `<button role="tab" class="lk-cell${k ? ' side' : ' on'}" data-track="${t.id}" aria-selected="${!k}"${k ? ' tabindex="-1"' : ''}><span>${t.icon}</span><em>${esc(t.label)}</em></button>`;
-    sw.innerHTML = `<button class="lk-arr" data-track="${T(-1).id}" aria-label="Önceki kategori">‹</button>
-      <div class="lk-win"><div class="lk-drum ${dir}">${cell(T(-1), -1)}${cell(T(0), 0)}${cell(T(1), 1)}</div></div>
-      <button class="lk-arr" data-track="${T(1).id}" aria-label="Sonraki kategori">›</button>`;
+  // ---- seçim kadranı: Kategori, Konu ve Soru tipi için ortak bileşen ----
+  // ortada seçili (koyu hap), iki yanda önceki/sonraki; oklar, kaydırma ve dokunma ile döner; döngüsel
+  const dialState = {};
+  function dialHTML({ items, cur, attr, label, note }) {
+    const n = items.length, i = Math.max(0, items.findIndex(x => x.id === cur));
+    const at = k => items[(i + k + n) % n];
+    const cell = (t, k) => `<button type="button" role="tab" class="dl-cell${k ? ' side' : ' on'}" ${attr}="${t.id}" aria-selected="${!k}"${k ? ' tabindex="-1"' : ''}><span aria-hidden="true">${t.icon}</span><em>${esc(t.short || t.label)}</em></button>`;
+    const dots = n <= 8 ? `<span class="dl-dots" aria-hidden="true">${items.map((_, j) => `<i${j === i ? ' class="on"' : ''}></i>`).join('')}</span>` : `<small>${i + 1}/${n}</small>`;
+    return `<div class="dl-head"><b>${label}</b>${note ? `<small class="dl-note">${esc(note)}</small>` : ''}${dots}</div>
+      <div class="dl-body"><button type="button" class="dl-arr" ${attr}="${at(-1).id}" aria-label="Önceki ${label.toLowerCase()}">‹</button>
+      <div class="dl-win"><div class="dl-row">${n > 2 ? cell(at(-1), -1) : '<i class="dl-gap"></i>'}${cell(at(0), 0)}${n > 1 ? cell(at(1), 1) : '<i class="dl-gap"></i>'}</div></div>
+      <button type="button" class="dl-arr" ${attr}="${at(1).id}" aria-label="Sonraki ${label.toLowerCase()}">›</button></div>`;
   }
+  function renderDial(el, key, opts) {
+    if (!el) return;
+    const list = opts.items.map(x => x.id).join(','), i = Math.max(0, opts.items.findIndex(x => x.id === opts.cur));
+    const sig = list + '|' + opts.cur + '|' + (opts.note || '');
+    if (el.dataset.sig === sig && el.firstChild) return;
+    const p = dialState[key], n = opts.items.length;
+    let dir = '';
+    if (p && p.list === list && p.i !== i) dir = ((i - p.i + n) % n) <= n / 2 ? 'go-next' : 'go-prev';
+    dialState[key] = { list, i }; el.dataset.sig = sig;
+    el.innerHTML = dialHTML(opts);
+    if (dir) el.querySelector('.dl-row')?.classList.add(dir);
+    if (!el.dataset.swipe) { // parmakla sağa-sola kaydır
+      el.dataset.swipe = '1'; let x0 = null, y0 = 0;
+      el.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+      el.addEventListener('touchend', e => {
+        if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null;
+        if (Math.abs(dx) < 35 || Math.abs(dy) > Math.abs(dx)) return;
+        el.querySelectorAll('.dl-arr')[dx < 0 ? 1 : 0]?.click();
+      }, { passive: true });
+    }
+  }
+  function renderLock(tr) { renderDial($('#trackSw'), 'track', { items: TRACKS, cur: tr, attr: 'data-track', label: 'Kategori' }); }
   function renderModeBtn() {
     const m = MODES.find(x => x.id === A().profile.mode) || MODES[0];
-    const b = $('#modeBtn'); if (!b) return;
-    b.querySelector('.mode-ico').textContent = m.icon;
-    b.querySelector('strong').textContent = m.label;
-    b.querySelector('small').textContent = m.hint;
-    b.dataset.mode = m.id;
+    renderDial($('#modeDial'), 'mode', { items: MODES, cur: m.id, attr: 'data-mode', label: 'Soru tipi', note: m.hint });
   }
   function showLegacy(show) {
     $('#legacyBlock')?.classList.toggle('hidden', !show);
@@ -953,7 +974,7 @@ export function initQuiz(core) {
     if (msg.textContent.startsWith('✓')) prepStatus();
   });
   $('#settingsBtn')?.addEventListener('click', () => setTimeout(prepStatus, 50));
-  $('#qzOptions').addEventListener('click', e => { const g = e.target.closest('[data-goto-track]'); if (g) { document.querySelector(`.lk-drum [data-track="${g.dataset.gotoTrack}"], #trackSw [data-track="${g.dataset.gotoTrack}"]`)?.click(); } });
+  $('#qzOptions').addEventListener('click', e => { const g = e.target.closest('[data-goto-track]'); if (g) { document.querySelector(`#trackSw [data-track="${g.dataset.gotoTrack}"]`)?.click(); } });
   $('#qzOptions').addEventListener('click', e => { if (e.target.closest('[data-ep-retry]')) { epGate = ''; epP = null; render(); loadEp(); } });
   // kategori anahtarı: her kategoride en son açık olan sekme hatırlanır
   $('#trackSw')?.addEventListener('click', e => {
@@ -965,18 +986,10 @@ export function initQuiz(core) {
     core.stopAudio(); app.cat = CATS.some(c => c.id === remembered && c.track === to) ? remembered : TRACKS.find(t => t.id === to).def;
     core.saveLocal(false); render();
   });
-  { // kilidi parmakla sağa-sola çevir
-    const sw = $('#trackSw'); let x0 = null, y0 = 0;
-    sw?.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
-    sw?.addEventListener('touchend', e => {
-      if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null;
-      if (Math.abs(dx) < 35 || Math.abs(dy) > Math.abs(dx)) return;
-      sw.querySelectorAll('.lk-arr')[dx < 0 ? 1 : 0]?.click();
-    }, { passive: true });
-  }
-  $('#modeBtn').addEventListener('click', () => {
-    const app = A(), i = MODES.findIndex(m => m.id === app.profile.mode);
-    app.profile.mode = MODES[(i + 1) % MODES.length].id;
+  $('#modeDial')?.addEventListener('click', e => {
+    const pick = e.target.closest('[data-mode]'); if (!pick) return;
+    const app = A(); if (pick.dataset.mode === app.profile.mode) return;
+    app.profile.mode = pick.dataset.mode;
     const q = Q(), c = q.cur[app.cat];
     // cevaplanmamış soruyu yeni biçimle yeniden başlat
     if (c && !c.done) {
@@ -987,7 +1000,6 @@ export function initQuiz(core) {
     core.saveLocal(false);
     const m = MODES.find(x => x.id === app.profile.mode);
     core.toast(`${m.icon} Öğrenme biçimi: ${m.label}`);
-    const btn = $('#modeBtn'); btn.classList.remove('spin'); void btn.offsetWidth; btn.classList.add('spin');
     render({ speak: true });
   });
   $('#qzOptions').addEventListener('click', e => {
