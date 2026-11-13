@@ -10,7 +10,7 @@
   <title>dam-la · Yönetici paneli</title>
   <link rel="icon" href="./logo.png">
   <link rel="stylesheet" href="./admin.css">
-</head>
+<style>.rd-pass{border:1px solid rgba(127,127,127,.3);border-radius:12px;padding:10px 12px;margin:12px 0}.rd-pass legend{font-weight:800;padding:0 6px}.rd-pass textarea{width:100%;font:inherit;font-size:14px;line-height:1.5}.rd-pass select{margin-left:6px}</style></head>
 <body>
   <header class="top">
     <div class="brand"><img src="./logo.png" alt="" class="logo"><div><strong>dam-la</strong><small>Yönetici paneli</small></div></div>
@@ -228,6 +228,11 @@
       <div class="row"><label>Sınıf kodu<input name="code" minlength="6" maxlength="32" placeholder="ör. EMPOWER-B1-2026" autocomplete="off"></label><button type="button" class="primary" id="prepSaveCode">Kodu kaydet</button></div>
       <p class="note" id="prepInfo">Yükleniyor…</p>
       <label>Soru bankası (JSON)<input type="file" name="bank" accept="application/json,.json"></label>
+      <fieldset class="rd-pass"><legend>📖 Reading metinleri</legend>
+        <div class="row"><label>Ünite<select name="rdUnit" id="rdUnit"><option value="">Önce bankayı yükle</option></select></label><label>Okuma<select name="rdSec" id="rdSec"><option value="R1">Reading 1</option><option value="R2">Reading 2</option></select></label></div>
+        <label>Metin (kitaptan yapıştır)<textarea name="rdText" id="rdText" rows="8" placeholder="Okuma metnini buraya yapıştır. Paragrafları boş satırla ayırabilirsin."></textarea></label>
+        <div class="row end"><button type="button" class="ghost" id="rdLoad">Kayıtlı metni getir</button><button type="button" class="primary" id="rdSave">Metni kaydet</button></div>
+        <p class="note" id="rdMsg">Kaydedilen metin seçili okumanın bütün sorularına bağlanır; öğrenciler soruyla birlikte görür.</p></fieldset>
       <label>AI ses paketleri (JSON, birden çok seçilebilir)<input type="file" name="audio" accept="application/json,.json" multiple></label><div class="row end"><button type="button" class="primary" id="prepAudio">Sesleri yükle</button></div><p class="note" id="prepAudioMsg"></p>
       <div class="row end"><button type="button" class="ghost" id="prepReset">Üyelikleri sıfırla</button><button type="button" class="ghost" id="prepClose">Kapat</button><button type="button" class="primary" id="prepUpload">Bankayı yükle</button></div>
     </form>

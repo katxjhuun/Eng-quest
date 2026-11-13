@@ -669,3 +669,33 @@ $('#prepAudio')?.addEventListener('click', async () => {
     msg.textContent = `✓ ${total} ses dosyası yüklendi.`; toast('Sesler yüklendi');
   } catch (e) { msg.textContent = `Hata: ${e.message} (${done}/${total} yüklendi; tekrar denersen kalanlar da yüklenir)`; }
 });
+
+// ---- Reading metinleri: yönetici kitaptaki metni yapıştırır, seçili ünite/okumanın tüm sorularına (item[7]) yazılır ----
+let rdBank = null;
+async function rdRefresh() {
+  const sel = $('#rdUnit'); if (!sel) return;
+  try { rdBank = (await get(ref(db, 'prep/bank/rd'))).val() || []; } catch { rdBank = []; }
+  sel.innerHTML = rdBank.length ? rdBank.map((u, i) => u ? `<option value="${i}">Ünite ${u.u} · ${String(u.t || '').replace(/[<>&"]/g, '')}</option>` : '').join('') : '<option value="">Bankada Reading yok</option>';
+  rdShowCount();
+}
+function rdItems() { const u = rdBank?.[+$('#rdUnit').value]; const sec = $('#rdSec').value; return u ? (u.items || []).map((it, i) => [it, i]).filter(([it]) => it && it[0] === sec) : []; }
+function rdShowCount() {
+  const list = rdItems(), has = list.filter(([it]) => it[7]).length;
+  $('#rdMsg').textContent = list.length ? `Bu okumada ${list.length} soru var · ${has ? `${has} tanesinde metin kayıtlı` : 'henüz metin yok'}.` : 'Bu ünitede bu okumaya ait soru yok.';
+}
+$('#prepBtn')?.addEventListener('click', () => setTimeout(rdRefresh, 300));
+$('#rdUnit')?.addEventListener('change', rdShowCount);
+$('#rdSec')?.addEventListener('change', rdShowCount);
+$('#rdLoad')?.addEventListener('click', () => { const f = rdItems().find(([it]) => it[7]); $('#rdText').value = f ? f[0][7] : ''; if (!f) toast('Bu okuma için kayıtlı metin yok'); });
+$('#rdSave')?.addEventListener('click', async () => {
+  const ui = +$('#rdUnit').value, text = String($('#rdText').value || '').replace(/\r/g, '').trim();
+  const list = rdItems();
+  if (!rdBank?.[ui] || !list.length) return toast('Önce ünite ve okuma seç');
+  if (text.length > 20000) return toast('Metin çok uzun (en fazla 20.000 karakter)');
+  if (!confirm(`${list.length} soruya bu metin bağlansın mı?${text ? '' : ' (Boş: kayıtlı metin silinir)'}`)) return;
+  const upd = {};
+  for (const [it, i] of list) { const row = [...it]; while (row.length < 7) row.push(''); if (row[6] == null) row[6] = ''; row[7] = text; upd[`prep/bank/rd/${ui}/items/${i}`] = row; }
+  upd['prep/ver'] = Date.now();
+  try { await update(ref(db), upd); toast('Metin kaydedildi'); await rdRefresh(); $('#rdUnit').value = String(ui); rdShowCount(); }
+  catch (e) { toast('Kaydedilemedi: ' + e.message); }
+});
