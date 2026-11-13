@@ -654,3 +654,23 @@ html,body{overflow-x:hidden;overflow-x:clip;max-width:100%}
 
 /* iPhone: 16 px altındaki yazı alanlarına dokununca Safari sayfayı yakınlaştırır; dokunmatik cihazlarda en az 16 px */
 @media (pointer: coarse) { input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select { font-size: max(16px, 1em) !important; } }
+.challenge-top{position:relative}
+.qz-timer{position:absolute;top:10px;right:12px;width:50px;height:50px;display:grid;place-items:center;z-index:2;pointer-events:none;transform:scale(var(--qt-scale,1));transform-origin:top right;transition:transform .6s ease}
+.qz-timer svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.qt-ring{fill:none;stroke:var(--teal,#78e0c0);stroke-width:3.5;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:0;transition:stroke-dashoffset .25s linear,stroke .3s}
+.qt-num{position:relative;font-size:15px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--ink,#f4f2ff);line-height:1}
+.qz-timer.beat .qt-ring{stroke:#f08c00}
+.qz-timer.beat .qt-num{font-size:18px;color:#e07800;animation:qtBeat 1s ease-in-out infinite}
+.qz-timer.low .qt-ring{stroke:#ff4d5e}
+.qz-timer.low .qt-num{font-size:20px;color:#ff4d5e}
+.qz-timer.low{animation:qtBlink .5s steps(1,end) infinite}
+.qz-timer.low .qt-num{animation:qtBeat .5s ease-in-out infinite}
+.qz-timer.out .qt-num{color:#ff4d5e;font-size:20px}
+@keyframes qtBeat{0%,100%{transform:scale(1)}15%{transform:scale(1.28)}30%{transform:scale(1)}45%{transform:scale(1.14)}}
+@keyframes qtBlink{50%{opacity:.35}}
+.challenge-top .challenge-meta{padding-right:64px}
+.challenge-meta{flex-wrap:wrap}
+.qz-timeout{display:flex;flex-direction:column;align-items:stretch;gap:6px;margin:0 0 14px;padding:14px;border-radius:16px;background:#492d3b;border:1px solid #6d3d50;color:#ffd6d4;text-align:center}
+.qz-timeout b{font-size:18px;color:#ff9e9b}
+.qz-timeout span{font-size:12px}
+.qz-timeout .primarybtn{margin-top:6px}

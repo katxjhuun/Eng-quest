@@ -803,7 +803,7 @@ export function initQuiz(core) {
       const note = !ok && chosen && item.notes?.[chosen] ? `<p class="qx-note">${esc(item.notes[chosen])}</p>` : '';
       const ladder = item.ladder ? `<ol class="qx-ladder">${item.ladder.map(l => `<li class="${l.on ? 'on' : ''}${chosen && l.text === chosen ? ' picked' : ''}"><b>${l.level}</b><span><span lang="en">${esc(l.text)}</span><small>${esc(l.clue)}</small></span></li>`).join('')}</ol>` : '';
       const open = c.style === 'open';
-      ex.innerHTML = `<div class="qx-head">${open ? '📝 Örnek cevap' : ok ? '✅ Doğru!' : '❌ Yanlış'} <span class="qx-xp ${d > 0 ? 'pos' : d < 0 ? 'neg' : 'zero'}">${d === 0 ? 'XP değişmedi' : `${d > 0 ? '+' : '−'}${Math.abs(d)} XP`}</span></div>`
+      ex.innerHTML = `<div class="qx-head">${open ? '📝 Örnek cevap' : ok ? '✅ Doğru!' : c.timeout ? '⏱ Süre bitti' : '❌ Yanlış'} <span class="qx-xp ${d > 0 ? 'pos' : d < 0 ? 'neg' : 'zero'}">${d === 0 ? 'XP değişmedi' : `${d > 0 ? '+' : '−'}${Math.abs(d)} XP`}</span></div>`
         + (ok ? '' : `<p class="qx-answer">Doğru cevap: <strong lang="${item.optLang}">${esc(item.a)}</strong>${c.choice != null && c.choice !== 0 && c.style !== 'type' ? ` · Senin seçimin: <s>${esc(optionText(item, c.choice))}</s>` : ''}${c.style === 'type' && c.typedFinal ? ` · Senin cevabın: <s>${esc(c.typedFinal)}</s>` : ''}</p>`)
         + note
         + (open ? `<p class="qx-full qx-sample"><span>Örnek cevap · tek doğru cevap değil</span><b lang="en">${esc(item.a)}</b></p>` : '')
@@ -815,6 +815,13 @@ export function initQuiz(core) {
       mountDrillFor(item, c, ok, ex);
     } else { ex.classList.add('hidden'); unmountDrill(); }
     $('#qzNext').classList.toggle('hidden', !c.done);
+    { // süre: soru başına 1:30; bitince yanlış sayılır, soru yerinde "Süre bitti" + sonraki soru
+      let tb = $('#qzTimeout');
+      if (!tb) { tb = document.createElement('div'); tb.id = 'qzTimeout'; tb.className = 'qz-timeout hidden'; tb.setAttribute('role', 'alert'); optBox.parentNode.insertBefore(tb, optBox); }
+      tb.classList.toggle('hidden', !c.timeout);
+      if (c.timeout) tb.innerHTML = `<b>⏱ Süre bitti</b><span>Bu soru yanlış sayıldı.</span><button class="primarybtn" type="button" data-timeout-next="1">Sonraki soruya geç <span>→</span></button>`;
+      try { timerTick(); } catch {}
+    }
     core.renderProgress();
     notifyLive(item, c);
     if (speak && c.style === 'listen' && !c.done) setTimeout(() => sayItem(item), 250);
@@ -929,6 +936,47 @@ export function initQuiz(core) {
     c.choice = idx;
     finish(item, c, idx === 0, idx === 0 ? (c.style === 'listen' ? XP.listen : XP.quiz) : XP.wrong, btn);
   }
+  // ---- soru süresi ----
+  const Q_TIME = 90000;
+  let tLast = 0, tHandle = 0;
+  function timerEl() {
+    let el = $('#qzTimer');
+    if (!el) {
+      el = document.createElement('div'); el.id = 'qzTimer'; el.className = 'qz-timer'; el.setAttribute('role', 'timer'); el.setAttribute('aria-label', 'Kalan süre');
+      el.innerHTML = `<svg viewBox="0 0 48 48" aria-hidden="true"><circle class="qt-ring" cx="24" cy="24" r="21" pathLength="100"/></svg><b class="qt-num"></b>`;
+      const top = $('#quizCard .challenge-top'); top.insertBefore(el, top.firstChild);
+    }
+    return el;
+  }
+  function timerPaint(el, left) {
+    const sec = Math.ceil(left / 1000), frac = Math.max(0, Math.min(1, left / Q_TIME));
+    el.querySelector('.qt-num').textContent = sec >= 60 ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : String(sec);
+    el.querySelector('.qt-ring').style.strokeDashoffset = String(100 - frac * 100); // halka kendini yiyerek azalır
+    el.style.setProperty('--qt-scale', (1 + (1 - frac) * 0.55).toFixed(3)); // süre azaldıkça sayı büyür
+    el.className = 'qz-timer' + (left <= 0 ? ' out' : sec <= 10 ? ' low beat' : sec <= 30 ? ' beat' : '');
+  }
+  function timerOn(c, item) {
+    const card = $('#quizCard');
+    return !!(item && c && !c.done && !c.pending && !c.legacy && c.style !== 'open' && !item.open && card && !card.classList.contains('hidden') && card.offsetParent !== null && !lvlPrompt);
+  }
+  function timerTick() {
+    const now = Date.now(), dt = tLast ? Math.min(now - tLast, 1000) : 0; tLast = now;
+    const c = cur(), item = c && !c.pending && !c.legacy ? findItem(c.id) : null, el = timerEl();
+    const on = timerOn(c, item);
+    if (!on) { const show = !!(c && c.done && c.timeout); if (show) timerPaint(el, 0); el.classList.toggle('hidden', !show); return; }
+    if (!document.hidden) c.used = (c.used || 0) + dt;
+    const left = Math.max(0, Q_TIME - (c.used || 0));
+    timerPaint(el, left);
+    if (left <= 0) {
+      c.timeout = true; c.choice = null;
+      try { $('#qzInput')?.blur(); } catch {}
+      finish(item, c, false, XP.wrong, $('#qzOptions'));
+    }
+  }
+  if (!tHandle) tHandle = setInterval(() => { try { timerTick(); } catch {} }, 250);
+  document.addEventListener('visibilitychange', () => { tLast = Date.now(); if (document.hidden) try { core.saveLocal(false); } catch {} });
+  document.addEventListener('click', e => { if (e.target.closest('[data-timeout-next]')) { e.preventDefault(); next(); } });
+
   function finish(item, c, right, delta, fromEl) {
     const q = Q(), app = A(), now = Date.now();
     const st = q.items[item.id] || { c: 0, w: 0, box: 0, due: 0 };
