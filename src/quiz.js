@@ -22,8 +22,8 @@ export const CATS = [
   { id: 'en', icon: '🇬🇧', label: 'İngilizce', track: 'genel' },
   ...SUBJECT_ORDER.map(id => ({ id, icon: SUBJECTS[id].icon, label: SUBJECTS[id].label, track: 'genel' })),
   // Akademik › Hazırlık: Empower (Seviye 1 Workbook, Seviye 2 Student's Book) ve Reading (Prism, ikinci Seviye 1)
-  { id: 'ep', icon: '📘', label: 'Hazırlık · Empower', short: 'Empower', track: 'akademik' },
-  { id: 'rd', icon: '📖', label: 'Hazırlık · Reading', short: 'Reading', track: 'akademik' },
+  { id: 'ep', icon: '📘', label: 'Hazırlık', track: 'akademik' },
+  { id: 'rd', icon: '📖', label: 'Hazırlık · Reading', short: 'Reading', track: 'akademik', hidden: true }, // seviye çubuğundan açılır (ikinci Seviye 1)
   // bölüme özel sorular: bankaları boşken gizli
   { id: 'akh', icon: '🧱', label: 'Bölüm hazırlığı', short: 'Bölüm', track: 'akademik' },
   { id: 'aka', icon: '🎓', label: 'Ana dersler', track: 'akademik' },
@@ -341,7 +341,11 @@ export function initQuiz(core) {
   // 1. seviye barı: Empower B1 (Pre-intermediate, 1. baskı) Workbook · 2. seviye barı: Empower B1 2. baskı Student's Book.
   // Kitaplar birbirine karışmaz; ünite sırasıyla. Biçim: [bölüm, tür, soru, cevap, [3 yanlış], açıklama, (sesli metin)]
   const KIND = { gr: 'Dilbilgisi', vo: 'Kelime', ee: 'Gündelik İngilizce', wp: 'Wordpower', pr: 'Telaffuz', rc: 'Okuma', op: 'Açık uçlu' };
-  const LEVELS = { ep: ['wb', 'sb'], rd: ['rd'] }; // her kategorinin seviyeleri (kitaplar sırayla)
+  const LEVELS = { ep: ['wb', 'sb'], rd: ['rd'] };
+  const LEVEL_NO = { wb: '1', rd: '1', sb: '1.1' };
+  // seviye adları ve kitapların CEFR zorluk düzeyi (Empower Pre-intermediate = B1, Empower Intermediate = B1+, Prism Reading 1 = A2)
+  const LEVEL_NAME = { wb: 'Workbook', rd: 'Reading', sb: "Student's Book" }, LEVEL_CEFR = { wb: 'B1', rd: 'A2', sb: 'B1+' };
+  const levelTag = b => `Seviye ${LEVEL_NO[b] || 1} · ${LEVEL_NAME[b] || BOOK_SHORT[b]} · ${LEVEL_CEFR[b] || ''}`.replace(/ · $/, ''); // Reading, Workbook'un yanında ikinci bir Seviye 1 // her kategorinin seviyeleri (kitaplar sırayla)
   const BOOK = { wb: 'Empower B1 · Workbook', sb: "Empower B1 2. baskı · Student's Book", rd: 'Prism Reading 1' };
   const BOOK_SHORT = { wb: 'Empower B1', sb: 'Empower B1 2nd', rd: 'Prism Reading 1' };
   // Soruyu dinlerken cevap söylenmez: boşluk “…” olarak okunur; tırnaklı İngilizce kısım varsa yalnız o okunur.
@@ -561,11 +565,11 @@ export function initQuiz(core) {
     if (!cat || cat === 'en') return false;
     if ((cat === 'ep' || cat === 'rd') && EP) {
       const V = epView(cat), P = V.P, ci = CATS.find(x => x.id === cat), units = P.all[V.b], U = P.list(V.b), open = new Set(unlockedUnits(P, V.b));
-      const levelNo = (LEVELS[cat] || []).indexOf(V.b) + 1;
+      const levelNo = LEVEL_NO[V.b] || 1;
       $('#topLevel').textContent = `${ci.icon} ${levelNo}·Ü${V.u ?? '-'}`;
-      $('#levelCaption').textContent = `Seviye ${levelNo} · ${BOOK[V.b]}${V.back ? ' · geri dönüş' : P.allDone ? ' · tamamlandı' : ''}`;
+      $('#levelCaption').textContent = `Seviye ${levelNo} · ${BOOK[V.b]} · ${LEVEL_CEFR[V.b] || ''}${V.back ? ' · geri dönüş' : P.allDone ? ' · tamamlandı' : ''}`;
       const u = units[V.u] || { n: 1, ok: 0, seen: 0 }, fresh = freshIn(cat, V.b, V.u);
-      $('#xpCaption').textContent = V.back ? `Ünite ${V.u}: ${fresh ? fresh + ' yeni soru · ' : ''}${u.ok}/${u.n} öğrenildi · kaldığın yer: Seviye ${P.levelNo} Ünite ${P.unit}`
+      $('#xpCaption').textContent = V.back ? `Ünite ${V.u}: ${fresh ? fresh + ' yeni soru · ' : ''}${u.ok}/${u.n} öğrenildi · kaldığın yer: Seviye ${LEVEL_NO[P.book] || P.levelNo} Ünite ${P.unit}`
         : P.allDone ? 'Tüm seviyeler bitti: artık tekrar soruları geliyor.' : `Ünite ${V.u}: ${u.ok}/${u.n} öğrenildi · tüm sorular görülüp %80'de sıradaki ünite açılır${P.levelNo < P.levels ? ' · kitap bitince seviye sonucu' : ''}`;
       const tot = U.reduce((t, n) => t + units[n].n, 0), ok = U.reduce((t, n) => t + units[n].ok, 0);
       $('#xpNumber').textContent = `%${Math.round((tot ? ok / tot : 0) * 100)}`;
@@ -576,9 +580,14 @@ export function initQuiz(core) {
       // seviye (kitap) düğmeleri ve “kaldığın yere dön”
       let bar = $('#epLevels'); if (!bar) { bar = document.createElement('div'); bar.id = 'epLevels'; bar.className = 'ep-levels'; $('#cefrLabels').after(bar); }
       const books = P.has.filter(b => unlockedUnits(P, b).length || b === P.book), locked = P.has.filter(b => !books.includes(b));
-      bar.innerHTML = (books.length + locked.length > 1 ? [...books, ...locked].map(b => { const isOpen = books.includes(b), nf = isOpen && b !== P.book ? freshIn(cat, b) : 0, no = (LEVELS[cat] || []).indexOf(b) + 1;
-        return `<button type="button" class="ep-b${b === V.b ? ' on' : ''}${isOpen ? '' : ' locked'}" data-ep-book="${b}" ${isOpen ? '' : 'disabled'}>${isOpen ? (P.decided(b) ? '✓ ' : '') : '🔒 '}Seviye ${no} · ${BOOK_SHORT[b]}${nf ? ` <sup>${nf} yeni</sup>` : ''}</button>`; }).join('') : '')
-        + (V.back ? `<button type="button" class="ep-home" data-ep-home="1">➜ Kaldığın yere dön (Seviye ${P.levelNo} · Ünite ${P.unit})</button>` : '');
+      const own = [...books, ...locked].map(b => { const isOpen = books.includes(b), nf = isOpen && b !== P.book ? freshIn(cat, b) : 0, no = LEVEL_NO[b] || 1;
+        return [b, `<button type="button" class="ep-b${b === V.b ? ' on' : ''}${isOpen ? '' : ' locked'}" data-ep-book="${b}" ${isOpen ? '' : 'disabled'}>${isOpen ? (P.decided(b) ? '✓ ' : '') : '🔒 '}${levelTag(b)}${nf ? ` <sup>${nf} yeni</sup>` : ''}</button>`]; });
+      // Hazırlık: Empower ve Reading aynı çubukta (Reading ikinci Seviye 1); diğerine geçiş düğmesi
+      const other = cat === 'ep' ? (EP?.rd?.length ? [['rd', `<button type="button" class="ep-b" data-goto-cat="rd">📖 ${levelTag('rd')}</button>`]] : [])
+        : [['wb', `<button type="button" class="ep-b" data-goto-cat="ep">📘 ${levelTag('wb')}</button>`], ['sb', `<button type="button" class="ep-b" data-goto-cat="ep">📘 ${levelTag('sb')}</button>`]];
+      const ORDER = ['wb', 'rd', 'sb'], all = [...own, ...other].sort((x, y) => ORDER.indexOf(x[0]) - ORDER.indexOf(y[0]));
+      bar.innerHTML = (all.length > 1 ? all.map(x => x[1]).join('') : '')
+        + (V.back ? `<button type="button" class="ep-home" data-ep-home="1">➜ Kaldığın yere dön (Seviye ${LEVEL_NO[P.book] || P.levelNo} · Ünite ${P.unit})</button>` : '');
       bar.classList.toggle('hidden', !bar.innerHTML);
       return true;
     }
@@ -609,6 +618,26 @@ export function initQuiz(core) {
     else if (cat === 'mix') { h1.textContent = 'Karışık pop quiz.'; p.textContent = 'Her soru farklı bir konudan gelir. Doğru da bilsen yanlış da, açıklamayı oku: asıl öğrenme orada.'; }
     else { h1.textContent = `${c.label} pop quiz.`; p.textContent = 'Seç ya da yaz; her cevaptan sonra güvenilir kaynaklara dayanan ayrıntılı açıklama gelir.'; }
   }
+  // ---- Yazarak ipucu ----
+  function topicBox() {
+    let b = $('#qzTopic');
+    if (!b) { b = document.createElement('div'); b.id = 'qzTopic'; b.className = 'qz-topic hidden'; $('#qzSub').after(b); }
+    return b;
+  }
+  function topicHint(item) {
+    const ans = String(item.a || '').toLowerCase();
+    const words = ans.split(/[^a-zçğıöşü']+/i).filter(w => w.length >= 3);
+    const leaks = t => { const x = t.toLowerCase(); return (ans.length >= 2 && x.includes(ans)) || words.some(w => x.includes(w)); };
+    const paras = String(item.exp || '').split(/\n\n+/);
+    const rule = paras.map(p => p.match(/^📘\s*([^:]{1,80}):\s*([\s\S]+)$/)).find(Boolean);
+    let title = rule ? rule[1].trim() : '', body = [];
+    if (rule) body = splitSentences(rule[2]).filter(t => !leaks(t) && t.length <= 180).slice(0, 2);
+    if (!title) { const sub = String(item.sub || '').split(' · ').pop(); title = sub && !leaks(sub) ? sub : ''; }
+    if (!body.length && !rule) { const first = splitSentences(paras[0] || '')[0]; if (first && !leaks(first) && first.length <= 160) body = [first]; }
+    if (!title && !body.length) return null;
+    const n = String(item.a || '').trim().split(/\s+/).length;
+    return `<b>💡 Konu${title ? ': ' + esc(title) : ''}</b>${body.map(t => `<span>${esc(t)}</span>`).join('')}<small>Cevap ${item.optLang === 'en' ? 'İngilizce' : 'Türkçe'} · ${n} kelime</small>`;
+  }
   // bölüm soruları (akh/aka/akm) henüz yoksa konu listesinde gösterme
   function acadHidden(id) { if (!/^ak[ham]$/.test(id)) return false; if (!ACAD) { loadAcad(); return true; } return !acadItems('haz').length && !acadItems('ana').length; }
   function renderTabs() {
@@ -616,7 +645,7 @@ export function initQuiz(core) {
     const cat = A().cat;
     const tr = trackOf(cat);
     renderLock(tr);
-    const list = CATS.filter(c => c.track === tr && !acadHidden(c.id));
+    const list = CATS.filter(c => c.track === tr && !c.hidden && !acadHidden(c.id));
     box.classList.toggle('hidden', list.length < 2);
     if (list.length >= 2) renderDial(box, 'cat', { items: list, cur: cat, attr: 'data-cat', label: 'Konu' });
   }
@@ -680,6 +709,7 @@ export function initQuiz(core) {
   function optionText(item, idx) { return idx === 0 ? item.a : item.opts[idx - 1]; }
   let shownId = null;
   function render({ speak = false } = {}) {
+    $('#qzTopic')?.classList.add('hidden');
     { const a0 = A(); if (acadHidden(a0.cat)) a0.cat = 'ep'; } // boş bölüm konusu seçiliyse Hazırlık'a geç
     const app = A(), cat = app.cat;
     headline(); renderTabs(); renderModeBtn();
@@ -715,6 +745,10 @@ export function initQuiz(core) {
     title.classList.toggle('qz-hidden', !c.revealed);
     $('#qzSub').textContent = item.sub || (cat === 'mix' ? `Konu: ${catInfo.label}` : '');
     $('#qzSub').classList.toggle('qz-hidden', !c.revealed);
+    { // Yazarak: cevabı ele vermeden konuyu anlatan ipucu (kural adı + cevabı içermeyen kısa özet)
+      const box = topicBox(), tip = c.style === 'type' && !c.done ? topicHint(item) : null;
+      box.classList.toggle('hidden', !tip); if (tip) box.innerHTML = tip;
+    }
     $('#qzReveal').classList.toggle('hidden', c.revealed);
     $('#qzListen').textContent = c.style === 'listen' ? '🎧 Soruyu tekrar dinle' : '▶ Soruyu dinle';
     // seçenekler
@@ -977,6 +1011,7 @@ export function initQuiz(core) {
     if (msg.textContent.startsWith('✓')) prepStatus();
   });
   $('#settingsBtn')?.addEventListener('click', () => setTimeout(prepStatus, 50));
+  document.addEventListener('click', e => { const g = e.target.closest('[data-goto-cat]'); if (!g) return; core.stopAudio(); A().cat = g.dataset.gotoCat; core.saveLocal(false); render(); });
   $('#qzOptions').addEventListener('click', e => { const g = e.target.closest('[data-goto-track]'); if (g) { document.querySelector(`#trackSw [data-track="${g.dataset.gotoTrack}"]`)?.click(); } });
   $('#qzOptions').addEventListener('click', e => { if (e.target.closest('[data-ep-retry]')) { epGate = ''; epP = null; render(); loadEp(); } });
   // kategori anahtarı: her kategoride en son açık olan sekme hatırlanır
