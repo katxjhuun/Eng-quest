@@ -1,3 +1,12 @@
+# dam-la 2.14.4 — Yeni seçiciler ve düzeltmeler
+
+Uzaktan güncellemeyle gelir.
+- **Yeni seçim kadranı:** Kategori, Konu ve Soru tipi aynı tarzda; oklarla ya da parmakla kaydırarak seçilir.
+- Reading'de aynı sorunun art arda gelmesi düzeltildi.
+- Akademik sekmesi artık sonsuza kadar "yükleniyor" demiyor; sorular hazır olana kadar Genel'e ya da Hazırlık'a geçiş düğmeleri var.
+- Hatırlatma bildirimleri yeniden gönderiliyor.
+
+---
 # dam-la — Ekrana sığan ana ekran, kilit tarzı kategori seçici, akıcı sesli tekrar
 
 Uzaktan güncellemeyle gelir.
