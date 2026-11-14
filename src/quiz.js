@@ -105,6 +105,8 @@ export function smoothCenter(el) {
   const from = window.scrollY, to = Math.max(0, Math.min(max, from + r.top + r.height / 2 - window.innerHeight / 2)), dist = to - from;
   if (Math.abs(dist) < 6) return;
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { window.scrollTo({ top: to, behavior: 'instant' }); return; }
+  // tarayıcının kendi yumuşak kaydırması: kaydırma iş parçacığında akar (iPhone'da her karede scrollTo takılır)
+  if ('scrollBehavior' in document.documentElement.style) { window.scrollTo({ top: to, behavior: 'smooth' }); return; }
   const dur = Math.min(620, 300 + Math.abs(dist) * 0.3), t0 = performance.now();
   const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; // easeInOutCubic
   let id = 0;
@@ -279,33 +281,55 @@ export function initQuiz(core) {
   const BANK_KEY = 'dl-prep-bank';
   let epGate = '';          // '' | 'join' | 'offline' | 'empty'
   const wait = ms => new Promise(r => setTimeout(r, ms));
+  // banka 3-4 MB: iPhone'da localStorage kotasına sığmaz (sessizce kaydedilmez, her açılışta yeniden iner) → IndexedDB
+  const idb = (() => {
+    let dbp = null;
+    const open = () => dbp || (dbp = new Promise((res, rej) => { try { const r = indexedDB.open('dl-prep', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); } }));
+    const tx = (mode, fn) => open().then(db => new Promise((res, rej) => { const t = db.transaction('kv', mode), st = t.objectStore('kv'), r = fn(st); t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); }));
+    return { get: k => tx('readonly', st => st.get(k)).catch(() => null), set: (k, v) => tx('readwrite', st => st.put(v, k)).catch(() => null) };
+  })();
+  const CODE_KEY = 'dl-prep-code';
+  let epVer = null, epChecked = 0, epTried = 0;
   function loadEp() {
     if (epP) return epP;
     epP = (async () => {
-      let cached = null;
-      try { cached = JSON.parse(localStorage.getItem(BANK_KEY) || 'null'); } catch {}
-      // render sırasında çağrılır: yeniden çizimi bir sonraki tura bırak (iç içe render dıştakini ezmesin)
-      if (cached && cached.bank && !EP) { EP = cached.bank; epCache = null; setTimeout(() => render(), 0); }
+      if (!EP) {
+        let cached = await idb.get(BANK_KEY);
+        if (!cached) { try { cached = JSON.parse(localStorage.getItem(BANK_KEY) || 'null'); } catch {} if (cached) { idb.set(BANK_KEY, cached); try { localStorage.removeItem(BANK_KEY); } catch {} } }
+        if (cached && cached.bank && !EP) { EP = cached.bank; epVer = cached.ver; epCache = null; epGate = ''; setTimeout(() => render(), 0); }
+      }
+      // sunucu denetimi en çok 10 dakikada bir (her konu/tip geçişinde değil)
+      if (EP && Date.now() - epChecked < 600000) return;
+      if (!EP && epGate && epGate !== 'loading' && Date.now() - epTried < 15000) return;
+      epTried = Date.now();
       let P = null;
       for (let i = 0; i < 50; i++) { P = core.prep?.(); if (P && P.ready()) break; await wait(200); }
       if (!P || !P.ready()) { if (!EP) { epGate = 'offline'; render(); } return; }
-      const m = await P.member();
-      if (m === false) { EP = null; epCache = null; try { localStorage.removeItem(BANK_KEY); } catch {} epGate = 'join'; render(); return; }
+      let m = await P.member();
+      if (m === false) { // üyelik kaybolduysa (ör. yeni oturum kimliği) kayıtlı kodla sessizce yeniden katıl
+        let code = ''; try { code = localStorage.getItem(CODE_KEY) || ''; } catch {}
+        if (code && (await P.join(code)) === 'ok') m = true;
+      }
+      if (m === false) { if (!EP) { epGate = 'join'; render(); } return; } // elde banka varsa kod sormadan kullanmaya devam
       if (m == null) { if (!EP) { epGate = 'offline'; render(); } return; }
       const v = await P.ver();
-      if (EP && cached && cached.ver === v) return;
-      const b = await P.bank();
-      if (!b) { if (!EP) { epGate = 'empty'; render(); } return; }
-      EP = b; epCache = null; epGate = '';
-      try { localStorage.setItem(BANK_KEY, JSON.stringify({ ver: v, bank: b })); } catch {}
-      render();
-    })().finally(() => { setTimeout(() => { epP = null; }, 60000); });
+      epChecked = Date.now();
+      if (EP && epVer === v) return;
+      if (!EP) { epGate = 'loading'; render(); }
+      const bk = await P.bank();
+      if (!bk) { if (!EP) { epGate = 'empty'; render(); } return; }
+      const was = !!EP;
+      EP = bk; epVer = v; epCache = null; epGate = '';
+      idb.set(BANK_KEY, { ver: v, bank: bk });
+      if (!was || !A().cat || !/^(ep|rd)$/.test(A().cat)) render(); else setTimeout(() => render(), 0);
+    })().catch(e => console.warn('[prep]', e)).finally(() => { epP = null; });
     return epP;
   }
   function renderGate() {
     const T = {
       join: ['🔒 Bu bölüm sınıfına özel', 'İngilizce Hazırlık soruları yalnızca sınıftaki öğrencilere açık. Öğretmeninin verdiği sınıf kodunu gir.'],
       offline: ['📶 İnternet gerekli', 'Hazırlık soruları ilk kez indirilirken bağlantı gerekir. Bağlanınca kendiliğinden yüklenir.'],
+      loading: ['⬇️ Sorular indiriliyor…', 'Soru bankası ilk kez indiriliyor; bağlantına göre birkaç saniye sürebilir. Bir kez inince internetsiz de çalışır.'],
       empty: [A().cat === 'rd' ? '📭 Reading soruları henüz yok' : '📭 Henüz soru yok', A().cat === 'rd' ? 'Öğretmenin Hazırlık Reading sorularını henüz yüklemedi. Biraz sonra tekrar dene.' : 'Öğretmenin soruları henüz yüklemedi. Biraz sonra tekrar dene.'],
     }[epEmpty(A().cat) ? 'empty' : epGate] || ['📘 Bağlanıyor…', 'Sınıf kodun varsa aşağıya yazabilirsin. Daha önce katıldıysan sorular birazdan açılır.'];
     showLegacy(false);
@@ -318,6 +342,8 @@ export function initQuiz(core) {
     $('#qzOptions').classList.remove('hidden');
     // kod kutusu yalnızca "henüz soru yok" dışında her durumda görünür (bağlantı yavaşsa da kod girilebilsin)
     const keep = $('#prepCode')?.value || '';
+    let hasCode = false; try { hasCode = !!localStorage.getItem(CODE_KEY); } catch {}
+    if (epGate === 'loading' || (!epGate && hasCode)) { $('#qzOptions').innerHTML = '<div class="ep-loading" aria-hidden="true"></div>'; const ex0 = $('#qzExplain'); if (ex0) ex0.innerHTML = ''; return; }
     $('#qzOptions').innerHTML = (epGate === 'empty' || epEmpty(A().cat)) ? `<button class="mini-btn" type="button" data-ep-retry>↻ Tekrar dene</button>`
       : `<form class="prep-join" data-join><input id="prepCode" class="setting-input" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="32" placeholder="Sınıf kodu" aria-label="Sınıf kodu" value="${esc(keep)}"><button class="primarybtn" type="submit">Katıl ↗</button><div class="prep-join-msg" id="prepJoinMsg" role="status"></div></form>`
         + (epGate === 'offline' ? `<button class="mini-btn" type="button" data-ep-retry>↻ Tekrar dene</button>` : '');
@@ -469,9 +495,10 @@ export function initQuiz(core) {
     if (SUBJECTS[cat]) return subjectItems(cat);
     return [];
   }
+  const epIdx = { src: null, map: null };
   function findItem(id) {
     if (!id) return null;
-    if (id.startsWith('ep-')) return epItems().find(x => x.id === id) || null;
+    if (id.startsWith('ep-')) { const all = epItems(); if (epIdx.src !== all) { epIdx.src = all; epIdx.map = new Map(all.map(x => [x.id, x])); } return epIdx.map.get(id) || null; }
     if (id.startsWith('akh-') || id.startsWith('aka-')) { const [k, dept] = id.split('-'); return acadItems(k === 'akh' ? 'haz' : 'ana', dept).find(x => x.id === id) || null; }
     if (id.startsWith('en-')) return englishItems().find(x => x.id === id);
     if (id.startsWith('dv-')) { const dept = id.split('-')[1]; return vocabItems(dept).find(x => x.id === id); }
@@ -1087,9 +1114,12 @@ export function initQuiz(core) {
   }
 
   // ---- olaylar ----
+  // kadran önce kendini çizer (kayma animasyonu hemen başlar), ağır yeniden çizim bir sonraki karede; art arda dokunuşlarda yalnızca sonuncusu çizilir
+  let laterId = 0;
+  function later(fn) { cancelAnimationFrame(laterId); laterId = requestAnimationFrame(() => { laterId = requestAnimationFrame(fn); }); }
   $('#catTabs').addEventListener('click', e => {
     const b = e.target.closest('[data-cat]'); if (!b) return;
-    core.stopAudio(); A().cat = b.dataset.cat; core.saveLocal(false); render();
+    core.stopAudio(); A().cat = b.dataset.cat; renderTabs(); later(() => { core.saveLocal(false); render(); });
   });
   // sınıf koduyla katılma
   $('#qzOptions').addEventListener('submit', async e => {
@@ -1104,7 +1134,7 @@ export function initQuiz(core) {
   async function joinPrep(code) {
     const P = await prepApi();
     const r = P ? await P.join(code) : 'offline';
-    if (r === 'ok') { epGate = ''; epP = null; loadEp(); return '✓ Katıldın! Sorular indiriliyor… Ana ekranda İngilizce Hazırlık’a geç.'; }
+    if (r === 'ok') { try { localStorage.setItem(CODE_KEY, code); } catch {} epGate = ''; epP = null; epChecked = 0; epTried = 0; loadEp(); return '✓ Katıldın! Sorular indiriliyor… Ana ekranda İngilizce Hazırlık’a geç.'; }
     return r === 'offline' ? 'Bağlantı kurulamadı; internetini kontrol edip tekrar dene.' : 'Kod yanlış. Öğretmeninden kontrol etmesini iste.';
   }
   // Ayarlar › Genel › Sınıf kodu
@@ -1125,7 +1155,7 @@ export function initQuiz(core) {
   $('#settingsBtn')?.addEventListener('click', () => setTimeout(prepStatus, 50));
   document.addEventListener('click', e => { const g = e.target.closest('[data-goto-cat]'); if (!g) return; core.stopAudio(); A().cat = g.dataset.gotoCat; core.saveLocal(false); render(); });
   $('#qzOptions').addEventListener('click', e => { const g = e.target.closest('[data-goto-track]'); if (g) { document.querySelector(`#trackSw [data-track="${g.dataset.gotoTrack}"]`)?.click(); } });
-  $('#qzOptions').addEventListener('click', e => { if (e.target.closest('[data-ep-retry]')) { epGate = ''; epP = null; render(); loadEp(); } });
+  $('#qzOptions').addEventListener('click', e => { if (e.target.closest('[data-ep-retry]')) { epGate = ''; epP = null; epChecked = 0; epTried = 0; render(); loadEp(); } });
   // kategori anahtarı: her kategoride en son açık olan sekme hatırlanır
   $('#trackSw')?.addEventListener('click', e => {
     const b = e.target.closest('[data-track]'); if (!b) return;
@@ -1134,7 +1164,7 @@ export function initQuiz(core) {
     app.profile.trackCat = { ...(app.profile.trackCat || {}), [from]: app.cat };
     const remembered = app.profile.trackCat[to];
     core.stopAudio(); app.cat = CATS.some(c => c.id === remembered && c.track === to) ? remembered : TRACKS.find(t => t.id === to).def;
-    core.saveLocal(false); render();
+    renderTabs(); later(() => { core.saveLocal(false); render(); });
   });
   $('#modeDial')?.addEventListener('click', e => {
     const pick = e.target.closest('[data-mode]'); if (!pick) return;
@@ -1147,10 +1177,8 @@ export function initQuiz(core) {
       else if (c.legacy) q.cur[app.cat] = newCur(app.cat);
       else { const item = findItem(c.id); q.cur[app.cat] = newCur(app.cat, item); }
     }
-    core.saveLocal(false);
-    const m = MODES.find(x => x.id === app.profile.mode);
-    core.toast(`${m.icon} Öğrenme biçimi: ${m.label}`);
-    render({ speak: true });
+    renderModeBtn();
+    later(() => { core.saveLocal(false); render({ speak: true }); });
   });
   $('#qzOptions').addEventListener('click', e => {
     const say = e.target.closest('[data-say]');
