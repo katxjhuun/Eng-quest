@@ -1,3 +1,11 @@
+# dam-la 2.14.8 — Soruya özel ipucu, AI sesleri
+
+Uzaktan güncellemeyle gelir.
+- **Yazarak ipucu:** Başka soruların cümleleri yerine her soruya özel ipucu: sorunun notu, parantezdeki kelime, cevabın kalıbı (ör. "be + fiil-ing"), kelime sayısı ve ilk harf.
+- **AI sesleri:** Hazırlık bankasındaki bütün İngilizce metinlerin 4 sesle hazır sesi var; sorularda telefon sesine düşmez.
+- **Seçim düğmeleri:** Kategori, konu ve soru tipi düğmelerinin alt kenarı artık kesilmiyor.
+
+---
 # dam-la 2.14.7 — Soru süresi, Reading metinleri ve sınıf kodu
 
 Uzaktan güncellemeyle gelir.
