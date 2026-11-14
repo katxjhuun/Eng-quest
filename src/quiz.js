@@ -289,11 +289,16 @@ export function initQuiz(core) {
     return { get: k => tx('readonly', st => st.get(k)).catch(() => null), set: (k, v) => tx('readwrite', st => st.put(v, k)).catch(() => null) };
   })();
   const CODE_KEY = 'dl-prep-code';
+  // tanılama: takılınca ekranda neyin beklendiği görünsün (ekran görüntüsüyle sorun bulunabilsin)
+  let epStep = 'başlıyor', epStepAt = Date.now(), epErr = '';
+  const step = t => { epStep = t; epStepAt = Date.now(); };
+  const epDiag = () => `Durum: ${epStep} · ${Math.round((Date.now() - epStepAt) / 1000)} sn${epErr ? ' · hata: ' + epErr : ''} · banka ${EP ? 'yüklü' : 'yok'}`;
   let epVer = null, epChecked = 0, epTried = 0;
   function loadEp() {
     if (epP) return epP;
     epP = (async () => {
       if (!EP) {
+        step('telefondaki kopya okunuyor');
         let cached = await idb.get(BANK_KEY);
         if (!cached) { try { cached = JSON.parse(localStorage.getItem(BANK_KEY) || 'null'); } catch {} if (cached) { idb.set(BANK_KEY, cached); try { localStorage.removeItem(BANK_KEY); } catch {} } }
         if (cached && cached.bank && !EP) { EP = cached.bank; epVer = cached.ver; epCache = null; epGate = ''; setTimeout(() => render(), 0); }
@@ -303,8 +308,10 @@ export function initQuiz(core) {
       if (!EP && epGate && epGate !== 'loading' && Date.now() - epTried < 15000) return;
       epTried = Date.now();
       let P = null;
+      step('sunucuya bağlanılıyor');
       for (let i = 0; i < 50; i++) { P = core.prep?.(); if (P && P.ready()) break; await wait(200); }
       if (!P || !P.ready()) { if (!EP) { epGate = 'offline'; render(); } return; }
+      step('üyelik denetleniyor');
       let m = await P.member();
       if (m === false) { // üyelik kaybolduysa (ör. yeni oturum kimliği) kayıtlı kodla sessizce yeniden katıl
         let code = ''; try { code = localStorage.getItem(CODE_KEY) || ''; } catch {}
@@ -315,14 +322,16 @@ export function initQuiz(core) {
       const v = await P.ver();
       epChecked = Date.now();
       if (EP && epVer === v) return;
+      step('sorular indiriliyor');
       if (!EP) { epGate = 'loading'; render(); }
       const bk = await P.bank();
+      step(bk ? 'indirildi' : 'indirilemedi');
       if (!bk) { if (!EP) { epGate = 'empty'; render(); } return; }
       const was = !!EP;
       EP = bk; epVer = v; epCache = null; epGate = '';
       idb.set(BANK_KEY, { ver: v, bank: bk });
       if (!was || !A().cat || !/^(ep|rd)$/.test(A().cat)) render(); else setTimeout(() => render(), 0);
-    })().catch(e => console.warn('[prep]', e)).finally(() => { epP = null; });
+    })().catch(e => { epErr = String(e?.message || e).slice(0, 80); console.warn('[prep]', e); }).finally(() => { epP = null; });
     return epP;
   }
   function renderGate() {
@@ -343,7 +352,7 @@ export function initQuiz(core) {
     // kod kutusu yalnızca "henüz soru yok" dışında her durumda görünür (bağlantı yavaşsa da kod girilebilsin)
     const keep = $('#prepCode')?.value || '';
     let hasCode = false; try { hasCode = !!localStorage.getItem(CODE_KEY); } catch {}
-    if (epGate === 'loading' || (!epGate && hasCode)) { $('#qzOptions').innerHTML = '<div class="ep-loading" aria-hidden="true"></div>'; const ex0 = $('#qzExplain'); if (ex0) ex0.innerHTML = ''; return; }
+    if (epGate === 'loading' || (!epGate && hasCode)) { $('#qzOptions').innerHTML = `<div class="ep-loading" aria-hidden="true"></div><p class="ep-diag">${esc(epDiag())}</p><button class="mini-btn" type="button" data-ep-retry>↻ Tekrar dene</button>`; const ex0 = $('#qzExplain'); if (ex0) ex0.innerHTML = ''; return; }
     $('#qzOptions').innerHTML = (epGate === 'empty' || epEmpty(A().cat)) ? `<button class="mini-btn" type="button" data-ep-retry>↻ Tekrar dene</button>`
       : `<form class="prep-join" data-join><input id="prepCode" class="setting-input" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="32" placeholder="Sınıf kodu" aria-label="Sınıf kodu" value="${esc(keep)}"><button class="primarybtn" type="submit">Katıl ↗</button><div class="prep-join-msg" id="prepJoinMsg" role="status"></div></form>`
         + (epGate === 'offline' ? `<button class="mini-btn" type="button" data-ep-retry>↻ Tekrar dene</button>` : '');
@@ -1115,6 +1124,10 @@ export function initQuiz(core) {
   }
 
   // ---- olaylar ----
+  // beklenmeyen hata: sessizce takılmak yerine kısa bir uyarı (ekran görüntüsüyle bildirilebilsin)
+  { let last = 0; const rep = m => { const now = Date.now(); if (now - last < 8000) return; last = now; epErr = String(m || '').slice(0, 80); try { core.toast?.('⚠️ Hata: ' + epErr); } catch {} };
+    window.addEventListener('error', e => { if (e?.message && !/ResizeObserver|Script error/i.test(e.message)) rep(e.message); });
+    window.addEventListener('unhandledrejection', e => { const m = e?.reason?.message || String(e?.reason || ''); if (m && !/abort|timeout|network|fetch/i.test(m)) rep(m); }); }
   // kadran önce kendini çizer (kayma animasyonu hemen başlar), ağır yeniden çizim bir sonraki karede; art arda dokunuşlarda yalnızca sonuncusu çizilir
   let laterId = 0;
   function later(fn) { cancelAnimationFrame(laterId); laterId = requestAnimationFrame(() => { laterId = requestAnimationFrame(fn); }); }
