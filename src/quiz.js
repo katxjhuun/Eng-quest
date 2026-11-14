@@ -289,6 +289,21 @@ export function initQuiz(core) {
     return { get: k => tx('readonly', st => st.get(k)).catch(() => null), set: (k, v) => tx('readwrite', st => st.put(v, k)).catch(() => null) };
   })();
   const CODE_KEY = 'dl-prep-code';
+  // Firebase boş dizileri (ör. açık uçlu sorunun boş şıkları) saklamaz, boşluklu dizileri nesneye çevirir:
+  // indirilen bankayı dizi biçimine geri getir (yoksa soru oluşturma hata verip ekran eski soruda takılı kalıyordu)
+  function toArr(x) { if (Array.isArray(x)) return x; if (!x || typeof x !== 'object') return []; const a = []; for (const [k, v] of Object.entries(x)) if (/^\d+$/.test(k)) a[+k] = v; return a; }
+  function normBank(bank) {
+    if (!bank || typeof bank !== 'object') return bank;
+    const out = { ...bank };
+    for (const b of ['wb', 'sb', 'rd']) {
+      if (!(b in bank)) continue;
+      out[b] = toArr(bank[b]).filter(Boolean).map(un => ({ ...un, items: toArr(un.items).map(it => {
+        if (!it) return it; const r = toArr(it);
+        return [r[0] ?? '', r[1] ?? '', r[2] ?? '', r[3] ?? '', toArr(r[4]).filter(x => x != null), r[5] ?? '', r[6] ?? '', r[7] ?? ''];
+      }) }));
+    }
+    return out;
+  }
   // tanılama: takılınca ekranda neyin beklendiği görünsün (ekran görüntüsüyle sorun bulunabilsin)
   let epStep = 'başlıyor', epStepAt = Date.now(), epErr = '';
   const step = t => { epStep = t; epStepAt = Date.now(); };
@@ -301,7 +316,7 @@ export function initQuiz(core) {
         step('telefondaki kopya okunuyor');
         let cached = await idb.get(BANK_KEY);
         if (!cached) { try { cached = JSON.parse(localStorage.getItem(BANK_KEY) || 'null'); } catch {} if (cached) { idb.set(BANK_KEY, cached); try { localStorage.removeItem(BANK_KEY); } catch {} } }
-        if (cached && cached.bank && !EP) { EP = cached.bank; epVer = cached.ver; epCache = null; epGate = ''; setTimeout(() => render(), 0); }
+        if (cached && cached.bank && !EP) { EP = normBank(cached.bank); epVer = cached.ver; epCache = null; epGate = ''; setTimeout(() => render(), 0); }
       }
       // sunucu denetimi en çok 10 dakikada bir (her konu/tip geçişinde değil)
       if (EP && Date.now() - epChecked < 600000) return;
@@ -328,7 +343,7 @@ export function initQuiz(core) {
       step(bk ? 'indirildi' : 'indirilemedi');
       if (!bk) { if (!EP) { epGate = 'empty'; render(); } return; }
       const was = !!EP;
-      EP = bk; epVer = v; epCache = null; epGate = '';
+      EP = normBank(bk); epVer = v; epCache = null; epGate = '';
       idb.set(BANK_KEY, { ver: v, bank: bk });
       if (!was || !A().cat || !/^(ep|rd)$/.test(A().cat)) render(); else setTimeout(() => render(), 0);
     })().catch(e => { epErr = String(e?.message || e).slice(0, 80); console.warn('[prep]', e); }).finally(() => { epP = null; });
@@ -388,7 +403,8 @@ export function initQuiz(core) {
     if (epCache) return epCache;
     if (!EP) return [];
     const out = [];
-    for (const b of ['wb', 'sb', 'rd']) (EP[b] || []).forEach(un => un.items.forEach((it, i) => {
+    for (const b of ['wb', 'sb', 'rd']) (EP[b] || []).forEach(un => (un.items || []).forEach((it, i) => {
+      if (!it) return;
       const [sec, kind, q, a, opts, exp, say, passage] = it;
       const en = /[a-z]/i.test(a) && !/[çğıöşüÇĞİÖŞÜ]/.test(a);
       out.push({ id: `ep-${b}-${un.u}-${i}`, cat: b === 'rd' ? 'rd' : 'ep', b, u: un.u, ord: out.length, q, a, opts, exp, passage: passage || '',
@@ -565,7 +581,7 @@ export function initQuiz(core) {
     if (!item) return { empty: true }; // bu bölümde henüz soru yok (ör. boş akademik banka): çökmek yerine boş durum
     const style = resolveStyle(item, mode);
     const seen = Q().items[item.id];
-    return { id: item.id, style, done: false, choice: null, typed: '', hints: [], tries: 0, order: seededShuffle([0, ...item.opts.map((_, i) => i + 1)], hash(item.id + Date.now())), revealed: style !== 'listen', rep: !!(seen && (seen.c + seen.w) > 0), at: Date.now() };
+    return { id: item.id, style, done: false, choice: null, typed: '', hints: [], tries: 0, order: seededShuffle([0, ...(item.opts || []).map((_, i) => i + 1)], hash(item.id + Date.now())), revealed: style !== 'listen', rep: !!(seen && (seen.c + seen.w) > 0), at: Date.now() };
   }
   let prefId = null;
   function cur(cat = A().cat) {
