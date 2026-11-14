@@ -1,3 +1,12 @@
+# dam-la 2.14.9 — Takılmalar giderildi, daha akıcı geçişler
+
+Uzaktan güncellemeyle gelir.
+- **Takılma:** Hazırlık soru bankası artık telefonda kalıcı olarak saklanıyor (iPhone'da sığmıyordu ve sürekli yeniden iniyordu). Konu, seviye ve soru tipi geçişlerinde sorular takılmaz, cevaplar işler.
+- **Sınıf kodu:** Kod bir kez girilince hatırlanır; bağlantı koparsa sessizce yeniden katılır, banka varken kod sorulmaz.
+- **Akıcılık:** Seçim kadranları dokununca anında ve daha hızlı döner; sonraki soruya kaydırma akıcı.
+- **Uyumluluk:** Eski iOS sürümlerinde açılmama riski giderildi; sayaç küçük ekranlarda taşmaz.
+
+---
 # dam-la 2.14.8 — Soruya özel ipucu, AI sesleri
 
 Uzaktan güncellemeyle gelir.
