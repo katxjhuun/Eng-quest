@@ -1,3 +1,12 @@
+# dam-la 2.14.10 — Reading kilitlenmesi giderildi, kitap görselleri
+
+Uzaktan güncellemeyle gelir.
+- **Kilitlenme:** Workbook ile Reading arasında geçince ekranın eski soruda takılı kalması giderildi (açık uçlu soruların boş şıkları Firebase'den eksik geliyordu).
+- **Görseller:** Reading'deki "Look at the photo" sorularında kitabın fotoğrafları ve grafikleri metnin üstünde görünür (panelden yüklenir).
+- **Yükleme ekranı:** Sorular inerken ne beklendiğini gösteren durum satırı ve Tekrar dene düğmesi; beklenmeyen hatalar kısa uyarı olarak görünür.
+- **Kurulum rehberi:** /indir/ sayfası her sürümde en güncel APK'ya doğrudan bağlanır.
+
+---
 # dam-la 2.14.9 — Takılmalar giderildi, daha akıcı geçişler
 
 Uzaktan güncellemeyle gelir.
