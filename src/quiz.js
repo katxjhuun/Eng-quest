@@ -772,7 +772,8 @@ export function initQuiz(core) {
   }
 
   // Açıklamayı okunur kıl: kural kutusu + madde madde cümleler, kısa etiketler kalın.
-  function splitSentences(t) { return t.split(/(?<=[.!?…])\s+(?=[A-ZÇĞİÖŞÜ“"(])|\s+·\s+/).map(x => x.trim()).filter(Boolean); }
+  // geriye bakan regex (?<=) iOS 16.4 öncesinde tüm uygulamayı açılmaz yapar: işaretleyip böl
+  function splitSentences(t) { return String(t).replace(/([.!?…])\s+(?=[A-ZÇĞİÖŞÜ“"(])/g, '$1\u0001').split(/\u0001|\s+·\s+/).map(x => x.trim()).filter(Boolean); }
   function lineHtml(t) { const m = t.match(/^([^:]{2,30}):\s+(.+)$/s); return m ? `<b>${esc(m[1])}:</b> ${esc(m[2])}` : esc(t); }
   function formatExp(exp) {
     return String(exp || '').split(/\n\n+/).map((para, i) => {
@@ -1023,7 +1024,7 @@ export function initQuiz(core) {
     const sec = Math.ceil(left / 1000), frac = Math.max(0, Math.min(1, left / Q_TIME));
     el.querySelector('.qt-num').textContent = sec >= 60 ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : String(sec);
     el.querySelector('.qt-ring').style.strokeDashoffset = String(100 - frac * 100); // halka kendini yiyerek azalır
-    el.style.setProperty('--qt-scale', (1 + (1 - frac) * 0.55).toFixed(3)); // süre azaldıkça sayı büyür
+    el.style.setProperty('--qt-scale', (1 + (1 - frac) * 0.5).toFixed(3)); // süre azaldıkça sayı büyür
     el.className = 'qz-timer' + (left <= 0 ? ' out' : sec <= 10 ? ' low beat' : sec <= 30 ? ' beat' : '');
   }
   function timerOn(c, item) {
