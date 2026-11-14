@@ -399,6 +399,8 @@ export function initQuiz(core) {
   const BOOK = { wb: 'Empower B1 · Workbook', sb: "Empower B1 2. baskı · Student's Book", rd: 'Prism Reading 1' };
   const BOOK_SHORT = { wb: 'Empower B1', sb: 'Empower B1 2nd', rd: 'Prism Reading 1' };
   // Soruyu dinlerken cevap söylenmez: boşluk “…” olarak okunur; tırnaklı İngilizce kısım varsa yalnız o okunur.
+  // kitap görselleri (bank.img: "rd-u1-R1", "rd-u1-R1-2" …): o ünite+bölümün sorularında metnin üstünde
+  function imgKeys(k) { const I = EP && EP.img; if (!I) return []; return Object.keys(I).filter(x => x === k || (x.startsWith(k + '-') && /^\d+$/.test(x.slice(k.length + 1)))).sort((a, b) => (+(a.split(k)[1].slice(1)) || 0) - (+(b.split(k)[1].slice(1)) || 0)); }
   function epItems() {
     if (epCache) return epCache;
     if (!EP) return [];
@@ -407,7 +409,8 @@ export function initQuiz(core) {
       if (!it) return;
       const [sec, kind, q, a, opts, exp, say, passage] = it;
       const en = /[a-z]/i.test(a) && !/[çğıöşüÇĞİÖŞÜ]/.test(a);
-      out.push({ id: `ep-${b}-${un.u}-${i}`, cat: b === 'rd' ? 'rd' : 'ep', b, u: un.u, ord: out.length, q, a, opts, exp, passage: passage || '',
+      const ik = `${b}-u${un.u}-${sec}`, imgs = imgKeys(ik);
+      out.push({ imgs, id: `ep-${b}-${un.u}-${i}`, cat: b === 'rd' ? 'rd' : 'ep', b, u: un.u, ord: out.length, q, a, opts, exp, passage: passage || '',
         sub: `${BOOK[b]} · Ünite ${un.u} ${un.t} · ${sec} · ${KIND[kind] || ''}`,
         src: `${b === 'wb' ? 'Empower B1 (Pre-intermediate) Workbook' : b === 'sb' ? "Empower B1 2nd edition Student's Book" : 'Prism Reading 1'} · Ünite ${un.u} (${sec}) · ${KIND[kind] || ''}`,
         lang: 'tr', optLang: en ? 'en' : 'tr', speak: questionSpeech(q), ans: say ? { text: say, lang: 'en' } : { text: a, lang: en ? 'en' : 'tr' }, full: say || null, open: kind === 'op', typeable: kind !== 'op' && typeable(a) });
@@ -817,7 +820,7 @@ export function initQuiz(core) {
     const app = A(), cat = app.cat;
     headline(); renderTabs(); renderModeBtn();
     const c = cur(cat);
-    $('#qzPassage')?.classList.add('hidden');
+    $('#qzPassage')?.classList.add('hidden'); $('#qzImgs')?.classList.add('hidden');
     if ((cat === 'ep' || cat === 'rd') && lvlPrompt && lvlPrompt.cat === cat) { unmountDrill(); renderLevelEnd(); core.renderProgress(); return; }
     if (c.pending && (cat === 'ep' || cat === 'rd')) { renderGate(); core.renderProgress(); return; }
     if (c.pending) { showLegacy(false); $('#qzTitle').textContent = 'Sorular yükleniyor…'; $('#qzSub').textContent = ''; $('#qzOptions').innerHTML = ''; $('#qzExplain') && ($('#qzExplain').innerHTML = ''); core.renderProgress(); return; }
@@ -831,6 +834,16 @@ export function initQuiz(core) {
       $('#qzExplain') && ($('#qzExplain').innerHTML = ''); core.renderProgress(); return; }
     if (!item) { $('#qzTitle').textContent = 'Sorular yükleniyor…'; $('#qzOptions').innerHTML = ''; loadFacts(); return; }
     if (shownId !== c.id && !c.done) { shownId = c.id; setTimeout(() => window.dispatchEvent(new CustomEvent('dl:question', { detail: { id: c.id, cat: item.cat, style: c.style } })), 0); }
+    // kitap görselleri
+    { let ie = $('#qzImgs'); const keys = item.imgs || [];
+      if (keys.length) {
+        if (!ie) { ie = document.createElement('div'); ie.id = 'qzImgs'; ie.className = 'qz-imgs'; const t = $('#qzTitle'); t.parentNode.insertBefore(ie, t); }
+        const sig = keys.join(',');
+        if (ie.dataset.sig !== sig) { ie.dataset.sig = sig; ie.classList.toggle('multi', keys.length > 1);
+          ie.innerHTML = keys.map((k, j) => `<img src="${EP.img[k]}" alt="Kitaptaki görsel ${j + 1}" loading="lazy" decoding="async" class="${j === 0 && keys.length > 1 ? 'main' : ''}">`).join(''); }
+        ie.classList.remove('hidden');
+      } else ie?.classList.add('hidden');
+    }
     // okuma metni (Prism Reading): soruyla birlikte, kapatılıp açılabilir
     let pe = $('#qzPassage');
     if (item.passage) {

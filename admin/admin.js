@@ -647,12 +647,21 @@ const PACK_VOICES_OK = /^(am_michael|bf_emma|bf_isabella|am_puck)$/;
 $('#prepAudio')?.addEventListener('click', async () => {
   const files = [...($('#fPrep').audio.files || [])];
   const msg = $('#prepAudioMsg');
-  if (!files.length) return toast('Önce ses paketi dosyalarını seç');
-  const packs = [];
+  if (!files.length) return toast('Önce ses paketi ya da görsel dosyasını seç');
+  const packs = [], imgs = [];
   for (const f of files) {
     let p; try { p = JSON.parse(await f.text()); } catch { return toast(`${f.name}: JSON okunamadı`); }
+    if (p && p.img && typeof p.img === 'object') { imgs.push(p.img); continue; } // Reading görselleri: { img: { "rd-u1-R1": "data:image/jpeg;base64,…" } }
     if (!p || !PACK_VOICES_OK.test(p.voice || '') || !p.items || typeof p.items !== 'object') return toast(`${f.name}: biçim hatalı`);
     packs.push(p);
+  }
+  if (imgs.length) {
+    const all = Object.assign({}, ...imgs), bad = Object.entries(all).filter(([k, v]) => !/^(rd|wb|sb)-u\d+-[\w]+(-\d+)?$/.test(k) || !/^data:image\/(jpeg|png|webp);base64,/.test(String(v)));
+    if (bad.length) return toast(`Görsel biçimi hatalı: ${bad[0][0]}`);
+    if (!confirm(`${Object.keys(all).length} görsel yüklensin mi? Aynı adlı eski görsel varsa üzerine yazılır.`)) return;
+    try { await update(ref(db, 'prep/bank/img'), all); await set(ref(db, 'prep/ver'), Date.now()); msg.textContent = `✓ ${Object.keys(all).length} görsel yüklendi; öğrenciler bir sonraki açılışta görür.`; toast('Görseller yüklendi'); }
+    catch (e) { msg.textContent = `Hata: ${e.message}`; }
+    if (!packs.length) return;
   }
   const total = packs.reduce((n, p) => n + Object.keys(p.items).length, 0);
   if (!confirm(`${packs.length} ses paketi (${total} ses dosyası) yüklensin mi? Aynı cümlenin eski sesi varsa üzerine yazılır.`)) return;
